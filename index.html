@@ -8973,6 +8973,53 @@
                 
                 console.log('✅ Contexto procesado');
                 
+                // ⚡⚡⚡ SOLUCIÓN DIRECTA - MODO DUAL ⚡⚡⚡
+                if (window.dualMode === true) {
+                    console.log('===== 🔥 MODO DUAL - Llamando directamente a showDualConfirm =====');
+                    
+                    // Extraer datos del resultado
+                    const tariff = lastComparisonResult.tariffType || currentTariffType || '2.0TD';
+                    const drkCost = lastComparisonResult.totalAnnual || 0;
+                    
+                    const data = {
+                        kwh_p1: lastComparisonResult.consumo_punta || lastComparisonResult.kwh_p1 || 0,
+                        kwh_p2: lastComparisonResult.consumo_llano || lastComparisonResult.kwh_p2 || 0,
+                        kwh_p3: lastComparisonResult.consumo_valle || lastComparisonResult.kwh_p3 || 0,
+                        potencia_p1: lastComparisonResult.potencia_p1_kw || lastComparisonResult.power_p1 || 0,
+                        potencia_p2: lastComparisonResult.potencia_p2_kw || lastComparisonResult.power_p2 || 0,
+                        dias: lastComparisonResult.dias_facturados || lastComparisonResult.dias || 30,
+                        cups: lastComparisonResult.cups || ''
+                    };
+                    
+                    const results = {
+                        drk: {
+                            total: drkCost / 12,
+                            total_anual: drkCost
+                        },
+                        powercup: {
+                            total: 0,
+                            total_anual: 0
+                        }
+                    };
+                    
+                    console.log('Datos para DUAL:', { tariff, data, results });
+                    console.log('Llamando showDualConfirm...');
+                    
+                    showDualConfirm('electricidad', tariff, data, results);
+                    
+                    console.log('✅ showDualConfirm ejecutada');
+                    
+                    // Resetear bandera
+                    setTimeout(() => {
+                        isProcessingBestOption = false;
+                        console.log('✅ Bandera reseteada');
+                    }, 100);
+                    
+                    return; // Salir
+                }
+                
+                console.log('🔍 Ejecutando función apropiada...');
+                
                 try {
                     console.log('🔍 Ejecutando función apropiada...');
                     console.log('🔍 Verificando variables antes del if...');
