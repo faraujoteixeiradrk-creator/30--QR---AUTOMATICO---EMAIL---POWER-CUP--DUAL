@@ -8922,7 +8922,19 @@
             }
             
             // Actualizar variables globales
+            console.log('🔍 ANTES de asignar lastComparisonResult:');
+            console.log('  - bestChosen:', bestChosen);
+            console.log('  - bestChosen.offer:', bestChosen?.offer);
+            console.log('  - bestChosen.totalAnnual:', bestChosen?.totalAnnual);
+            console.log('  - resFijo:', resFijo);
+            
             lastComparisonResult = resFijo || bestChosen;
+            
+            console.log('✅ DESPUÉS de asignar lastComparisonResult:');
+            console.log('  - lastComparisonResult:', lastComparisonResult);
+            console.log('  - lastComparisonResult.offer:', lastComparisonResult?.offer);
+            console.log('  - lastComparisonResult.totalAnnual:', lastComparisonResult?.totalAnnual);
+            console.log('  - lastComparisonResult.tariffType:', lastComparisonResult?.tariffType);
             
             if (hadCheckMarked && resIndexado) {
                 // Mantener comparación dual
@@ -9069,7 +9081,13 @@
             console.log('lastComparisonResult exists:', !!lastComparisonResult);
             console.log('=================================================');
             
+            console.log('🔍 ANTES de closeOfferDecisionModal:');
+            console.log('  - lastComparisonResult:', lastComparisonResult);
+            
             closeOfferDecisionModal();
+            
+            console.log('✅ DESPUÉS de closeOfferDecisionModal:');
+            console.log('  - lastComparisonResult:', lastComparisonResult);
             
             if (!lastComparisonResult) {
                 console.error('❌ No hay lastComparisonResult');
@@ -9090,6 +9108,13 @@
             }
             
             console.log('selectBestOptionDirectSingle: Forzando vista SIMPLE (sin comparativa)');
+            
+            console.log('🔍🔍🔍 ESTADO JUSTO ANTES DEL INTERCEPTOR DUAL:');
+            console.log('  - lastComparisonResult:', lastComparisonResult);
+            console.log('  - lastComparisonResult type:', typeof lastComparisonResult);
+            console.log('  - lastComparisonResult.offer exists:', !!lastComparisonResult?.offer);
+            console.log('  - lastComparisonResult.totalAnnual:', lastComparisonResult?.totalAnnual);
+            console.log('  - lastComparisonResult.tariffType:', lastComparisonResult?.tariffType);
             
             // ⚡ INTERCEPTAR MODO DUAL AQUÍ
             if (window.dualMode === true) {
