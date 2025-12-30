@@ -2382,50 +2382,64 @@
                     let drkCost = 0;
                     let powercupCost = 0;
                     
-                    // Opción 1: Desde bestOffer.annual_cost
-                    if (bestOffer && bestOffer.annual_cost) {
+                    // Opción 1: Desde bestOffer.totalAnnual (CORRECTO según logs)
+                    if (bestOffer && bestOffer.totalAnnual) {
+                        drkCost = parseFloat(bestOffer.totalAnnual);
+                        console.log('✅ DRK cost desde bestOffer.totalAnnual:', drkCost);
+                    }
+                    // Opción 2: Desde bestOffer.annual_cost
+                    else if (bestOffer && bestOffer.annual_cost) {
                         drkCost = parseFloat(bestOffer.annual_cost);
-                        console.log('DRK cost desde bestOffer.annual_cost:', drkCost);
+                        console.log('✅ DRK cost desde bestOffer.annual_cost:', drkCost);
                     }
-                    // Opción 2: Desde final.bestOffer
-                    else if (final.bestOffer && final.bestOffer.annual_cost) {
-                        drkCost = parseFloat(final.bestOffer.annual_cost);
-                        console.log('DRK cost desde final.bestOffer.annual_cost:', drkCost);
+                    // Opción 3: Desde final.bestOffer.totalAnnual
+                    else if (final.bestOffer && final.bestOffer.totalAnnual) {
+                        drkCost = parseFloat(final.bestOffer.totalAnnual);
+                        console.log('✅ DRK cost desde final.bestOffer.totalAnnual:', drkCost);
                     }
-                    // Opción 3: Desde final.aggregatedData
+                    // Opción 4: Desde final.aggregatedData
                     else if (final.aggregatedData && final.aggregatedData.total_anual_drk) {
                         drkCost = parseFloat(final.aggregatedData.total_anual_drk);
-                        console.log('DRK cost desde aggregatedData.total_anual_drk:', drkCost);
+                        console.log('✅ DRK cost desde aggregatedData.total_anual_drk:', drkCost);
                     }
-                    // Opción 4: Calcular desde bestOffer.total_cost_period
+                    // Opción 5: Calcular desde bestOffer.total_cost_period
                     else if (bestOffer && bestOffer.total_cost_period) {
                         drkCost = parseFloat(bestOffer.total_cost_period) * 12;
-                        console.log('DRK cost calculado desde total_cost_period * 12:', drkCost);
+                        console.log('✅ DRK cost calculado desde total_cost_period * 12:', drkCost);
                     }
                     
-                    // PowerCup desde indexedResult
-                    if (final.indexedResult && final.indexedResult.annual_cost) {
+                    // PowerCup desde indexedResult (si existe)
+                    if (final.indexedResult && final.indexedResult.totalAnnual) {
+                        powercupCost = parseFloat(final.indexedResult.totalAnnual);
+                        console.log('✅ PowerCup cost desde indexedResult.totalAnnual:', powercupCost);
+                    }
+                    else if (final.indexedResult && final.indexedResult.annual_cost) {
                         powercupCost = parseFloat(final.indexedResult.annual_cost);
-                        console.log('PowerCup cost desde indexedResult.annual_cost:', powercupCost);
+                        console.log('✅ PowerCup cost desde indexedResult.annual_cost:', powercupCost);
                     }
                     // Opción 2: Desde aggregatedData
                     else if (final.aggregatedData && final.aggregatedData.total_anual_powercup) {
                         powercupCost = parseFloat(final.aggregatedData.total_anual_powercup);
-                        console.log('PowerCup cost desde aggregatedData.total_anual_powercup:', powercupCost);
+                        console.log('✅ PowerCup cost desde aggregatedData.total_anual_powercup:', powercupCost);
                     }
                     // Opción 3: Calcular desde indexedResult.total_cost_period
                     else if (final.indexedResult && final.indexedResult.total_cost_period) {
                         powercupCost = parseFloat(final.indexedResult.total_cost_period) * 12;
-                        console.log('PowerCup cost calculado desde total_cost_period * 12:', powercupCost);
+                        console.log('✅ PowerCup cost calculado desde total_cost_period * 12:', powercupCost);
+                    }
+                    else {
+                        // Si no hay PowerCup, usar 0 (puede ser que solo haya DRK)
+                        powercupCost = 0;
+                        console.log('ℹ️ PowerCup no disponible, usando 0');
                     }
                     
                     console.log('Costes finales - DRK:', drkCost, 'PowerCup:', powercupCost);
                     
-                    if (drkCost === 0 && powercupCost === 0) {
-                        console.error('⚠️ ADVERTENCIA: Ambos costes son 0');
+                    if (drkCost === 0) {
+                        console.error('⚠️ ADVERTENCIA: DRK cost es 0');
                         console.error('bestOffer completo:', JSON.stringify(bestOffer, null, 2));
-                        console.error('final.indexedResult completo:', JSON.stringify(final.indexedResult, null, 2));
-                        alert('Error: No se pudieron capturar los costes. Por favor, revisa la consola (F12) y envía un pantallazo.');
+                        console.error('final.bestOffer completo:', JSON.stringify(final.bestOffer, null, 2));
+                        alert('Error: No se pudo capturar el coste DRK. Por favor, revisa la consola (F12) y envía un pantallazo.');
                         return;
                     }
                     
