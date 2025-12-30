@@ -10941,8 +10941,9 @@
         
         // Función: Volver al gestor DUAL
         function backToDualManager() {
-            // Limpiar flag de modo DUAL
-            window.dualMode = false;
+            // IMPORTANTE: NO desactivar dualMode aquí - debe permanecer activo
+            // Solo se desactiva cuando sales completamente del DUAL
+            console.log('Volviendo al gestor DUAL - manteniendo dualMode activo');
             
             hideAllScreens();
             document.getElementById('screen-dual').classList.add('active');
@@ -10953,6 +10954,19 @@
         
         // Función: Añadir suministro
         function dualAddSupply() {
+            console.log('=== dualAddSupply - Iniciando nuevo suministro ===');
+            
+            // CRÍTICO: Activar modo DUAL
+            window.dualMode = true;
+            
+            // Limpiar variables anteriores para empezar limpio
+            dualTempSupply = null;
+            lastComparisonResult = null;
+            lastIndexedResult = null;
+            availableOffers = [];
+            
+            console.log('dualMode activado:', window.dualMode);
+            
             hideAllScreens();
             document.getElementById('screen-dual-add-type').classList.add('active');
         }
