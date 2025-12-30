@@ -727,6 +727,69 @@
             </div>
         </div>
         
+        <!-- NUEVO: PANTALLA DUAL - Confirmación de suministro -->
+        <div id="screen-dual-confirm" class="screen">
+            <button onclick="dualCancelAdd()" style="background:none;border:none;padding:0.5rem;margin-bottom:1rem;cursor:pointer;" class="text-sm text-slate-500 hover:text-drk-600 flex items-center gap-1">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+                Cancelar
+            </button>
+            
+            <div class="fade-in flex flex-col items-center justify-center min-h-[60vh] py-8">
+                <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full border-t-4 border-drk-500">
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner" style="background: linear-gradient(135deg, #f0f9ff 0%, #f7fee7 100%);">
+                        <span class="text-4xl" id="dual-confirm-icon">⚡</span>
+                    </div>
+                    <h2 class="text-2xl font-black mb-2 text-center text-drk-900">Suministro Calculado</h2>
+                    <p class="text-slate-500 mb-6 text-center">¿Deseas añadir este suministro a tu comparativa DUAL?</p>
+                    
+                    <!-- Resumen del suministro -->
+                    <div class="bg-slate-50 rounded-xl p-4 mb-6">
+                        <div class="space-y-2 text-sm">
+                            <div class="flex justify-between">
+                                <span class="text-slate-600">Tipo:</span>
+                                <span class="font-bold text-slate-900" id="dual-confirm-type">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-600">Tarifa:</span>
+                                <span class="font-bold text-slate-900" id="dual-confirm-tariff">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-600">Consumo:</span>
+                                <span class="font-bold text-slate-900" id="dual-confirm-consumption">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-600">Días:</span>
+                                <span class="font-bold text-slate-900" id="dual-confirm-days">-</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4 pt-4 border-t border-slate-200">
+                            <div class="flex justify-between mb-2">
+                                <span class="text-slate-600">DRK (anual):</span>
+                                <span class="font-bold text-drk-600" id="dual-confirm-drk">-</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-600">Power Cup (anual):</span>
+                                <span class="font-bold text-powercup-600" id="dual-confirm-powercup">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones de acción -->
+                    <div class="space-y-3">
+                        <button onclick="dualConfirmAdd()" class="w-full py-4 text-white font-bold rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3" style="background: linear-gradient(135deg, #0ea5e9 0%, #84cc16 100%);">
+                            <span class="text-2xl">✓</span>
+                            <span>SÍ, AÑADIR A DUAL</span>
+                        </button>
+                        
+                        <button onclick="dualCancelAdd()" class="w-full py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition-all">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <!-- FIN MÓDULO DUAL -->
         
         <!-- 2. MultiCups Saga View (Intermediate Step) -->
@@ -2100,11 +2163,73 @@
                 console.log('Showing results view...');
                 document.getElementById('initial-view').classList.add('hidden');
                 document.getElementById('scanner-view').classList.add('hidden');
-                document.getElementById('results-view').classList.remove('hidden');
-                document.getElementById('results-view').classList.add('animate-fade-in-up');
                 
-                // NUEVO: Detectar modo DUAL y mostrar botón si corresponde
-                if (window.checkDualMode) window.checkDualMode();
+                // NUEVO: Si estamos en modo DUAL, mostrar confirmación en lugar de resultados
+                if (window.dualMode === true) {
+                    console.log('Modo DUAL detectado - mostrando confirmación');
+                    
+                    // Extraer datos para DUAL
+                    const tariff = final.tariffType || currentTariffType || '2.0TD';
+                    const data = {
+                        tariff: tariff,
+                        kwh_p1: parseFloat(final.kwh_p1) || 0,
+                        kwh_p2: parseFloat(final.kwh_p2) || 0,
+                        kwh_p3: parseFloat(final.kwh_p3) || 0,
+                        kwh_p4: parseFloat(final.kwh_p4) || 0,
+                        kwh_p5: parseFloat(final.kwh_p5) || 0,
+                        kwh_p6: parseFloat(final.kwh_p6) || 0,
+                        p1: parseFloat(final.p1) || 0,
+                        p2: parseFloat(final.p2) || 0,
+                        p3: parseFloat(final.p3) || 0,
+                        p4: parseFloat(final.p4) || 0,
+                        p5: parseFloat(final.p5) || 0,
+                        p6: parseFloat(final.p6) || 0,
+                        dias: parseInt(final.dias) || 30
+                    };
+                    
+                    let drkCost = 0;
+                    let powercupCost = 0;
+                    
+                    if (final.bestOffer) {
+                        drkCost = parseFloat(final.bestOffer.annual_cost) || parseFloat(final.bestOffer.total_cost_period) * 12 || 0;
+                    }
+                    
+                    if (final.indexedResult) {
+                        powercupCost = parseFloat(final.indexedResult.annual_cost) || parseFloat(final.indexedResult.total_cost_period) * 12 || 0;
+                    }
+                    
+                    if (drkCost === 0 && final.aggregatedData) {
+                        drkCost = parseFloat(final.aggregatedData.total_anual_drk) || 0;
+                    }
+                    
+                    if (powercupCost === 0 && final.aggregatedData) {
+                        powercupCost = parseFloat(final.aggregatedData.total_anual_powercup) || 0;
+                    }
+                    
+                    if (drkCost === 0 && final.offer) {
+                        drkCost = parseFloat(final.offer.annual_cost) || 0;
+                    }
+                    
+                    const results = {
+                        drk: {
+                            total: drkCost / 12,
+                            total_anual: drkCost
+                        },
+                        powercup: {
+                            total: powercupCost / 12,
+                            total_anual: powercupCost
+                        }
+                    };
+                    
+                    showDualConfirm('electricidad', tariff, data, results);
+                } else {
+                    // Flujo normal - mostrar resultados
+                    document.getElementById('results-view').classList.remove('hidden');
+                    document.getElementById('results-view').classList.add('animate-fade-in-up');
+                    
+                    // Detectar modo DUAL y mostrar botón si corresponde
+                    if (window.checkDualMode) window.checkDualMode();
+                }
                 
                 console.log('compareOffers completed successfully');
             } catch (error) {
@@ -10543,6 +10668,7 @@
             document.getElementById('screen-dual').classList.remove('active');
             document.getElementById('screen-dual-add-type').classList.remove('active');
             document.getElementById('screen-dual-results').classList.remove('active');
+            document.getElementById('screen-dual-confirm').classList.remove('active');
         }
 
         function goToInicio() {
@@ -10577,6 +10703,7 @@
         let dualSupplies = []; // Array para almacenar todos los suministros
         let dualCurrentType = null; // 'electricidad' o 'gas'
         let dualTempData = null; // Datos temporales del suministro actual
+        let dualTempSupply = null; // Suministro temporal pendiente de confirmación
         
         // Función: Ir a pantalla DUAL
         function goToDual() {
@@ -10791,6 +10918,68 @@
         function dualGeneratePDF() {
             alert('Generando PDF global... (función en desarrollo)');
             // Aquí se implementaría la generación del PDF combinado
+        }
+        
+        // NUEVO: Funciones para pantalla de confirmación
+        
+        // Función: Mostrar pantalla de confirmación DUAL
+        function showDualConfirm(type, tariff, data, results) {
+            console.log('=== showDualConfirm ===');
+            console.log('Type:', type);
+            console.log('Tariff:', tariff);
+            console.log('Data:', data);
+            console.log('Results:', results);
+            
+            // Guardar datos temporalmente
+            dualTempSupply = { type, tariff, data, results };
+            
+            // Actualizar UI
+            const formatEuro = (val) => val.toFixed(2).replace('.', ',') + ' €';
+            
+            document.getElementById('dual-confirm-icon').textContent = type === 'electricidad' ? '⚡' : '🔥';
+            document.getElementById('dual-confirm-type').textContent = type === 'electricidad' ? 'Electricidad' : 'Gas';
+            document.getElementById('dual-confirm-tariff').textContent = tariff;
+            
+            let totalKwh = 0;
+            if (type === 'electricidad') {
+                totalKwh = (parseFloat(data.kwh_p1) || 0) + 
+                          (parseFloat(data.kwh_p2) || 0) + 
+                          (parseFloat(data.kwh_p3) || 0) + 
+                          (parseFloat(data.kwh_p4) || 0) + 
+                          (parseFloat(data.kwh_p5) || 0) + 
+                          (parseFloat(data.kwh_p6) || 0);
+            } else {
+                totalKwh = parseFloat(data.kwh) || 0;
+            }
+            
+            document.getElementById('dual-confirm-consumption').textContent = totalKwh.toFixed(0) + ' kWh';
+            document.getElementById('dual-confirm-days').textContent = data.dias + ' días';
+            document.getElementById('dual-confirm-drk').textContent = formatEuro(results.drk.total_anual);
+            document.getElementById('dual-confirm-powercup').textContent = formatEuro(results.powercup.total_anual);
+            
+            // Mostrar pantalla
+            hideAllScreens();
+            document.getElementById('screen-dual-confirm').classList.add('active');
+        }
+        
+        // Función: Confirmar y añadir a DUAL
+        function dualConfirmAdd() {
+            if (!dualTempSupply) {
+                alert('Error: No hay datos para añadir');
+                return;
+            }
+            
+            const { type, tariff, data, results } = dualTempSupply;
+            window.dualAddFromResults(type, tariff, data, results);
+            
+            // Limpiar temporal
+            dualTempSupply = null;
+        }
+        
+        // Función: Cancelar y volver al gestor
+        function dualCancelAdd() {
+            dualTempSupply = null;
+            backToDualManager();
         }
         
         // Función auxiliar: Añadir suministro desde resultados
@@ -11309,10 +11498,42 @@
             
             // Mostrar pantalla de resultados
             hideAllScreens();
-            document.getElementById('screen-gas-results').classList.add('active');
             
-            // NUEVO: Detectar modo DUAL y mostrar botón si corresponde
-            if (window.checkDualMode) window.checkDualMode();
+            // NUEVO: Si estamos en modo DUAL, mostrar confirmación en lugar de resultados
+            if (window.dualMode === true) {
+                console.log('Modo DUAL detectado en GAS - mostrando confirmación');
+                
+                // Extraer mejor resultado para DUAL
+                const bestResult = results[0]; // Ya están ordenados por ahorro
+                
+                const data = window.gasCalculationParams;
+                const gasResults = {
+                    drk: {
+                        total: bestResult.total,
+                        total_anual: bestResult.total_anual
+                    },
+                    powercup: {
+                        total: 0,
+                        total_anual: 0
+                    }
+                };
+                
+                // Si hay dos resultados, el segundo es PowerCup
+                if (results.length > 1) {
+                    gasResults.powercup = {
+                        total: results[1].total,
+                        total_anual: results[1].total_anual
+                    };
+                }
+                
+                showDualConfirm('gas', currentGasTariff, data, gasResults);
+            } else {
+                // Flujo normal - mostrar resultados
+                document.getElementById('screen-gas-results').classList.add('active');
+                
+                // Detectar modo DUAL y mostrar botón si corresponde
+                if (window.checkDualMode) window.checkDualMode();
+            }
         }
         
         // Función: Renderizar selector de tarifas con ordenamiento
@@ -11857,10 +12078,42 @@
             
             // Mostrar pantalla de resultados
             hideAllScreens();
-            document.getElementById('screen-gas-results').classList.add('active');
             
-            // NUEVO: Detectar modo DUAL y mostrar botón si corresponde
-            if (window.checkDualMode) window.checkDualMode();
+            // NUEVO: Si estamos en modo DUAL, mostrar confirmación en lugar de resultados
+            if (window.dualMode === true) {
+                console.log('Modo DUAL detectado en GAS (showGasResults) - mostrando confirmación');
+                
+                // Extraer mejor resultado para DUAL
+                const bestResult = results[0]; // Ya están ordenados por ahorro
+                
+                const data = window.gasCalculationParams;
+                const gasResults = {
+                    drk: window.lastGasDRKResult || {
+                        total: bestResult.total,
+                        total_anual: bestResult.total_anual
+                    },
+                    powercup: window.lastGasPowerCupResult || {
+                        total: 0,
+                        total_anual: 0
+                    }
+                };
+                
+                // Si hay dos resultados, usar los guardados o los calculados
+                if (results.length > 1 && gasResults.powercup.total_anual === 0) {
+                    gasResults.powercup = {
+                        total: results[1].total,
+                        total_anual: results[1].total_anual
+                    };
+                }
+                
+                showDualConfirm('gas', currentGasTariff, data, gasResults);
+            } else {
+                // Flujo normal - mostrar resultados
+                document.getElementById('screen-gas-results').classList.add('active');
+                
+                // Detectar modo DUAL y mostrar botón si corresponde
+                if (window.checkDualMode) window.checkDualMode();
+            }
         }
         
         // ===== FUNCIONES DE BÚSQUEDA (filtran DOM sin re-renderizar) =====
