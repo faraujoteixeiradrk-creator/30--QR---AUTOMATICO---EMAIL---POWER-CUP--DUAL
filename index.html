@@ -9095,26 +9095,44 @@
             if (window.dualMode === true) {
                 console.log('===== 🔥 MODO DUAL - Interceptando en selectBestOptionDirectSingle =====');
                 
-                // Preparar datos para confirmación DUAL
-                const tariff = lastComparisonResult.tariffType || currentTariffType || '2.0TD';
-                const data = extractDataFromResult(lastComparisonResult);
-                
-                const drkCost = lastComparisonResult.totalAnnual || 0;
-                
-                const results = {
-                    drk: {
-                        total: drkCost / 12,
-                        total_anual: drkCost
-                    },
-                    powercup: {
-                        total: 0,
-                        total_anual: 0
-                    }
-                };
-                
-                console.log('Datos preparados para DUAL:', { tariff, data, results });
-                showDualConfirm('electricidad', tariff, data, results);
-                return;
+                try {
+                    // Preparar datos para confirmación DUAL
+                    console.log('🔍 Extrayendo tariff...');
+                    const tariff = lastComparisonResult.tariffType || currentTariffType || '2.0TD';
+                    console.log('✅ Tariff:', tariff);
+                    
+                    console.log('🔍 Extrayendo datos con extractDataFromResult...');
+                    const data = extractDataFromResult(lastComparisonResult);
+                    console.log('✅ Data extraída:', data);
+                    
+                    console.log('🔍 Extrayendo coste DRK...');
+                    const drkCost = lastComparisonResult.totalAnnual || 0;
+                    console.log('✅ DRK cost:', drkCost);
+                    
+                    const results = {
+                        drk: {
+                            total: drkCost / 12,
+                            total_anual: drkCost
+                        },
+                        powercup: {
+                            total: 0,
+                            total_anual: 0
+                        }
+                    };
+                    
+                    console.log('✅ Results completo:', results);
+                    console.log('🚀 Llamando a showDualConfirm...');
+                    
+                    showDualConfirm('electricidad', tariff, data, results);
+                    
+                    console.log('✅ showDualConfirm ejecutada exitosamente');
+                    return;
+                } catch (error) {
+                    console.error('❌❌❌ ERROR en interceptor DUAL:', error);
+                    console.error('Error stack:', error.stack);
+                    alert('Error al preparar confirmación DUAL: ' + error.message);
+                    return;
+                }
             }
             
             // Verificar si estamos en contexto MultiCups
