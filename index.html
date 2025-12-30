@@ -8978,12 +8978,28 @@
                 // CRÍTICO: Ejecutar según si hay comparación dual o no
                 if (hadCheckMarked && resIndexado) {
                     // Con comparación dual
-                    console.log('→ selectBestOptionDirectDual');
-                    selectBestOptionDirectDual();
+                    console.log('→ Rama: CON comparación dual');
+                    console.log('→ Llamando selectBestOptionDirectDual');
+                    try {
+                        selectBestOptionDirectDual();
+                        console.log('✅ selectBestOptionDirectDual ejecutada');
+                    } catch (e) {
+                        console.error('❌ Error en selectBestOptionDirectDual:', e);
+                    }
                 } else {
                     // Sin comparación dual
-                    console.log('→ selectBestOptionDirectSingle');
-                    selectBestOptionDirectSingle();
+                    console.log('→ Rama: SIN comparación dual');
+                    console.log('→ A punto de llamar selectBestOptionDirectSingle');
+                    console.log('→ typeof selectBestOptionDirectSingle:', typeof selectBestOptionDirectSingle);
+                    
+                    try {
+                        console.log('→ Ejecutando selectBestOptionDirectSingle()...');
+                        selectBestOptionDirectSingle();
+                        console.log('✅ selectBestOptionDirectSingle ejecutada');
+                    } catch (e) {
+                        console.error('❌ Error al llamar selectBestOptionDirectSingle:', e);
+                        console.error('Error stack:', e.stack);
+                    }
                 }
                 
                 console.log('✅ Función lanzada');
