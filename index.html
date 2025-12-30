@@ -10864,46 +10864,47 @@
             window.dualMode = true;
             
             if (type === 'electricidad') {
-                // Para electricidad, configurar el tipo de tarifa y mostrar pantalla
-                if (tariff === '2.0TD') {
-                    currentTariffType = '2.0TD';
-                    multiCupsAddType = '2.0TD';
-                    showScreen('initial-view');
-                    
-                    hideAllScreens();
-                    document.getElementById('screen-electricidad').classList.add('active');
-                    
-                    // Asegurar que initial-view está visible
-                    document.getElementById('landing-view').classList.add('hidden');
-                    document.getElementById('initial-view').classList.remove('hidden');
-                    document.getElementById('scanner-view').classList.add('hidden');
-                    document.getElementById('results-view').classList.add('hidden');
-                    
-                } else if (tariff === '3.0TD') {
-                    currentTariffType = '3.0TD';
-                    multiCupsAddType = '3.0TD';
-                    
-                    hideAllScreens();
-                    document.getElementById('screen-electricidad').classList.add('active');
-                    
-                    // Para 3.0TD, ir directo a manual
-                    document.getElementById('landing-view').classList.add('hidden');
-                    document.getElementById('initial-view').classList.add('hidden');
-                    document.getElementById('scanner-view').classList.add('hidden');
-                    document.getElementById('results-view').classList.add('hidden');
-                    
-                    // Abrir modal manual para 3.0TD
-                    openManualInputModal();
-                }
-            } else if (type === 'gas') {
-                // Para gas, establecer la tarifa y abrir el modal
-                currentGasTariff = tariff;
+                // Configurar el tipo de tarifa ANTES de cambiar pantallas
+                currentTariffType = tariff;
+                console.log('Tarifa configurada:', currentTariffType);
                 
+                // Ocultar todas las pantallas
                 hideAllScreens();
+                
+                // Mostrar la pantalla de electricidad
+                document.getElementById('screen-electricidad').classList.add('active');
+                
+                // Limpiar vistas internas de electricidad
+                document.getElementById('landing-view').classList.add('hidden');
+                document.getElementById('scanner-view').classList.add('hidden');
+                document.getElementById('results-view').classList.add('hidden');
+                document.getElementById('multicups-saga-view').classList.add('hidden');
+                
+                // Mostrar initial-view
+                document.getElementById('initial-view').classList.remove('hidden');
+                
+                // IMPORTANTE: Llamar a selectTariffType DESPUÉS de configurar las pantallas
+                setTimeout(() => {
+                    selectTariffType(tariff);
+                    console.log('selectTariffType ejecutado para:', tariff);
+                }, 50);
+                
+            } else if (type === 'gas') {
+                // Para gas, establecer la tarifa
+                currentGasTariff = tariff;
+                console.log('Tarifa gas configurada:', currentGasTariff);
+                
+                // Ocultar todas las pantallas
+                hideAllScreens();
+                
+                // Mostrar la pantalla de gas
                 document.getElementById('screen-gas').classList.add('active');
                 
-                // Abrir modal de entrada de gas
-                selectGasTariff(tariff);
+                // Abrir modal de entrada de gas con un pequeño delay
+                setTimeout(() => {
+                    selectGasTariff(tariff);
+                    console.log('Modal gas abierto para:', tariff);
+                }, 100);
             }
         }
         
