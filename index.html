@@ -9098,15 +9098,19 @@
                 try {
                     // Preparar datos para confirmación DUAL
                     console.log('🔍 Extrayendo tariff...');
-                    const tariff = lastComparisonResult.tariffType || currentTariffType || '2.0TD';
-                    console.log('✅ Tariff:', tariff);
+                    console.log('lastComparisonResult:', lastComparisonResult);
+                    console.log('lastComparisonResult.tariffType:', lastComparisonResult?.tariffType);
+                    console.log('currentTariffType:', currentTariffType);
                     
-                    console.log('🔍 Extrayendo datos con extractDataFromResult...');
+                    const tariff = lastComparisonResult?.tariffType || currentTariffType || '2.0TD';
+                    console.log('✅ Tariff extraída:', tariff);
+                    
+                    console.log('🔍 Llamando extractDataFromResult...');
                     const data = extractDataFromResult(lastComparisonResult);
                     console.log('✅ Data extraída:', data);
                     
                     console.log('🔍 Extrayendo coste DRK...');
-                    const drkCost = lastComparisonResult.totalAnnual || 0;
+                    const drkCost = lastComparisonResult?.totalAnnual || 0;
                     console.log('✅ DRK cost:', drkCost);
                     
                     const results = {
@@ -9121,15 +9125,21 @@
                     };
                     
                     console.log('✅ Results completo:', results);
-                    console.log('🚀 Llamando a showDualConfirm...');
+                    console.log('🚀 A punto de llamar showDualConfirm con:');
+                    console.log('  - type: electricidad');
+                    console.log('  - tariff:', tariff);
+                    console.log('  - data:', data);
+                    console.log('  - results:', results);
                     
                     showDualConfirm('electricidad', tariff, data, results);
                     
-                    console.log('✅ showDualConfirm ejecutada exitosamente');
+                    console.log('✅✅✅ showDualConfirm ejecutada exitosamente');
                     return;
                 } catch (error) {
-                    console.error('❌❌❌ ERROR en interceptor DUAL:', error);
+                    console.error('❌❌❌ ERROR CAPTURADO en interceptor DUAL:');
+                    console.error('Error message:', error.message);
                     console.error('Error stack:', error.stack);
+                    console.error('Error completo:', error);
                     alert('Error al preparar confirmación DUAL: ' + error.message);
                     return;
                 }
