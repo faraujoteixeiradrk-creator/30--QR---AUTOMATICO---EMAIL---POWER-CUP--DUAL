@@ -1493,6 +1493,7 @@
         let comparisonMode = 'drk_prioritized';
         let compareWithIndexed = false; // Control para comparación con tarifas indexadas
         let bestOptionTariffChoice = 'fija'; // NUEVO: Elección de tarifa para VER MEJOR OPCIÓN ('fija' o 'indexada')
+        let isProcessingBestOption = false; // NUEVO: Bandera para prevenir llamadas concurrentes
         let activeBrand = BRANDS.DRK;
         let qrCodeInstance = null; // Instancia de QRCode.js
         
@@ -8800,11 +8801,26 @@
         function selectBestOptionWithChoice() {
             console.log('=================================================');
             console.log('⚡⚡⚡ selectBestOptionWithChoice LLAMADA ⚡⚡⚡');
+            
+            // PROTECCIÓN: Prevenir llamadas concurrentes
+            if (isProcessingBestOption) {
+                console.warn('⚠️⚠️⚠️ LLAMADA CONCURRENTE DETECTADA Y BLOQUEADA');
+                console.warn('Ya hay una ejecución de selectBestOptionWithChoice en curso');
+                return;
+            }
+            
+            isProcessingBestOption = true;
+            console.log('✅ Bandera isProcessingBestOption activada');
+            
             console.log('Elección:', bestOptionTariffChoice);
             console.log('dualMode:', window.dualMode);
             console.log('lastComparisonResult exists:', !!lastComparisonResult);
             console.log('availableOffers.length:', availableOffers.length);
             console.log('=================================================');
+            
+            // CRÍTICO: Cerrar INMEDIATAMENTE el modal para prevenir eventos duplicados
+            closeOfferDecisionModal();
+            console.log('✅ Modal cerrado inmediatamente');
             
             // Cerrar el selector
             document.getElementById('best-option-tariff-selector')?.classList.add('hidden');
@@ -8999,12 +9015,22 @@
                 }
                 
                 console.log('✅ Función ejecutada exitosamente');
+                
+                // Resetear bandera después de un pequeño delay para permitir que las funciones terminen
+                setTimeout(() => {
+                    isProcessingBestOption = false;
+                    console.log('✅ Bandera isProcessingBestOption reseteada');
+                }, 100);
             } catch (error) {
                 console.error('❌❌❌ ERROR CRÍTICO en selectBestOptionWithChoice:');
                 console.error('Error message:', error.message);
                 console.error('Error stack:', error.stack);
                 console.error('Error completo:', error);
                 alert('Error crítico: ' + error.message);
+                
+                // Resetear bandera incluso si hay error
+                isProcessingBestOption = false;
+                console.log('✅ Bandera isProcessingBestOption reseteada (después de error)');
             }
         }
         
