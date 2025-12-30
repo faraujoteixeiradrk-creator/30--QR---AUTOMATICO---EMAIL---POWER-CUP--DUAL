@@ -8968,6 +8968,11 @@
         
         // Función auxiliar: Extraer datos de consumo desde resultado
         function extractDataFromResult(result) {
+            console.log('📦 extractDataFromResult INICIO');
+            console.log('  - result:', result);
+            console.log('  - result.kwh_p1:', result.kwh_p1);
+            console.log('  - result.consumo_punta:', result.consumo_punta);
+            
             // Intentar múltiples ubicaciones
             let kwh_p1 = 0, kwh_p2 = 0, kwh_p3 = 0, kwh_p4 = 0, kwh_p5 = 0, kwh_p6 = 0;
             let p1 = 0, p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0;
@@ -8976,6 +8981,7 @@
             
             // Opción 1: Desde result directamente
             if (result.kwh_p1 !== undefined) {
+                console.log('  ✅ Usando Opción 1: result.kwh_p1 existe');
                 kwh_p1 = parseFloat(result.kwh_p1) || 0;
                 kwh_p2 = parseFloat(result.kwh_p2) || 0;
                 kwh_p3 = parseFloat(result.kwh_p3) || 0;
@@ -8992,33 +8998,47 @@
             }
             // Opción 2: Desde QR (nombres alternativos)
             else if (result.consumo_punta !== undefined) {
+                console.log('  ✅ Usando Opción 2: result.consumo_punta existe');
                 kwh_p1 = parseFloat(result.consumo_punta) || 0;
                 kwh_p2 = parseFloat(result.consumo_llano) || 0;
                 kwh_p3 = parseFloat(result.consumo_valle) || 0;
                 p1 = parseFloat(result.potencia_p1_kw) || parseFloat(result.p_potencia_1) || 0;
                 p2 = parseFloat(result.potencia_p2_kw) || parseFloat(result.p_potencia_2) || 0;
                 dias = parseInt(result.dias_facturados) || parseInt(result.dias) || 30;
+                console.log('  - kwh_p1:', kwh_p1, 'kwh_p2:', kwh_p2, 'kwh_p3:', kwh_p3);
+                console.log('  - p1:', p1, 'p2:', p2);
+                console.log('  - dias:', dias);
+            } else {
+                console.error('  ❌ NO se encontró ninguna opción válida');
             }
             
             // Capturar factura actual del cliente
             if (result.originalBillAnnual) {
                 originalBillAnnual = parseFloat(result.originalBillAnnual);
+                console.log('  - originalBillAnnual desde result.originalBillAnnual:', originalBillAnnual);
             } else if (result.factura_actual_anual) {
                 originalBillAnnual = parseFloat(result.factura_actual_anual);
+                console.log('  - originalBillAnnual desde result.factura_actual_anual:', originalBillAnnual);
             } else if (result.importe_total) {
                 // Desde QR: calcular anualizado
                 const diasFacturados = dias || 30;
                 const factorAnual = 365 / diasFacturados;
                 originalBillAnnual = parseFloat(result.importe_total) * factorAnual;
+                console.log('  - originalBillAnnual calculado desde importe_total:', result.importe_total, '* factorAnual:', factorAnual, '=', originalBillAnnual);
+            } else {
+                console.warn('  ⚠️  NO se pudo obtener originalBillAnnual');
             }
             
-            return {
+            const extracted = {
                 tariff: result.tariffType || currentTariffType || '2.0TD',
                 kwh_p1, kwh_p2, kwh_p3, kwh_p4, kwh_p5, kwh_p6,
                 p1, p2, p3, p4, p5, p6,
                 dias,
                 originalBillAnnual
             };
+            
+            console.log('📦 extractDataFromResult RESULTADO:', extracted);
+            return extracted;
         }
         
         // Nueva función para ejecutar con COMPARACIÓN DUAL (cuando CHECK estaba marcado)
