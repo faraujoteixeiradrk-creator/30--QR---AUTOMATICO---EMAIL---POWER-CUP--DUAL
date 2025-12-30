@@ -2253,9 +2253,11 @@
                 // PERO SOLO en modo individual, NO en MultiCups
                 const isMultiCupsMode = currentTariffType === 'MULTICUPS';
                 
-                // NUEVO: Si estamos en modo DUAL, saltar el modal y ir directo a confirmación
-                if (window.dualMode === true && !isMultiCupsMode) {
-                    console.log('===== Modo DUAL detectado - saltando modal de decisión =====');
+                // ⚡⚡⚡ CRÍTICO: INTERCEPTAR DUAL PRIMERO, ANTES DE CUALQUIER OTRA COSA ⚡⚡⚡
+                if (window.dualMode === true) {
+                    console.log('===== 🔥 MODO DUAL DETECTADO - INTERCEPTANDO ANTES DEL MODAL 🔥 =====');
+                    console.log('isMultiCupsMode:', isMultiCupsMode);
+                    console.log('availableOffers.length:', availableOffers.length);
                     console.log('final object completo:', JSON.stringify(final, null, 2));
                     console.log('availableOffers:', availableOffers);
                     
