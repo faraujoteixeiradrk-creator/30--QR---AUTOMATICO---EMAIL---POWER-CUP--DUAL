@@ -2273,7 +2273,7 @@
                     let p1 = 0, p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0;
                     let dias = 30;
                     
-                    // Opción 1: Desde final directamente
+                    // Opción 1: Desde final directamente (entrada manual)
                     if (final.kwh_p1 !== undefined) {
                         kwh_p1 = parseFloat(final.kwh_p1) || 0;
                         kwh_p2 = parseFloat(final.kwh_p2) || 0;
@@ -2288,7 +2288,7 @@
                         p5 = parseFloat(final.p5) || 0;
                         p6 = parseFloat(final.p6) || 0;
                         dias = parseInt(final.dias) || 30;
-                        console.log('Opción 1: Datos desde final directamente');
+                        console.log('Opción 1: Datos desde final directamente (entrada manual)');
                     }
                     // Opción 2: Desde final.originalData
                     else if (final.originalData) {
@@ -2323,6 +2323,23 @@
                         p6 = parseFloat(bestOffer.p6) || 0;
                         dias = parseInt(bestOffer.dias) || 30;
                         console.log('Opción 3: Datos desde bestOffer');
+                    }
+                    // Opción 4: Desde QR (nombres alternativos: consumo_punta, consumo_llano, consumo_valle)
+                    else if (final.consumo_punta !== undefined || final.consumo_llano !== undefined || final.consumo_valle !== undefined) {
+                        kwh_p1 = parseFloat(final.consumo_punta) || 0;
+                        kwh_p2 = parseFloat(final.consumo_llano) || 0;
+                        kwh_p3 = parseFloat(final.consumo_valle) || 0;
+                        kwh_p4 = 0; // QR 2.0TD solo tiene 3 periodos
+                        kwh_p5 = 0;
+                        kwh_p6 = 0;
+                        p1 = parseFloat(final.potencia_p1_kw) || parseFloat(final.p_potencia_1) || 0;
+                        p2 = parseFloat(final.potencia_p2_kw) || parseFloat(final.p_potencia_2) || 0;
+                        p3 = 0;
+                        p4 = 0;
+                        p5 = 0;
+                        p6 = 0;
+                        dias = parseInt(final.dias_facturados) || parseInt(final.dias) || 30;
+                        console.log('Opción 4: Datos desde QR (consumo_punta, consumo_llano, consumo_valle)');
                     }
                     
                     const tariff = final.tariffType || currentTariffType || '2.0TD';
