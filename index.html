@@ -2372,10 +2372,62 @@
                         return;
                     }
                     
-                    let drkCost = bestOffer ? parseFloat(bestOffer.annual_cost || 0) : 0;
-                    let powercupCost = final.indexedResult ? parseFloat(final.indexedResult.annual_cost || 0) : 0;
+                    // CRÍTICO: Buscar los costes en múltiples ubicaciones
+                    console.log('=== Buscando costes ===');
+                    console.log('bestOffer:', bestOffer);
+                    console.log('final.indexedResult:', final.indexedResult);
+                    console.log('final.aggregatedData:', final.aggregatedData);
+                    console.log('final.bestOffer:', final.bestOffer);
                     
-                    console.log('DRK cost:', drkCost, 'PowerCup cost:', powercupCost);
+                    let drkCost = 0;
+                    let powercupCost = 0;
+                    
+                    // Opción 1: Desde bestOffer.annual_cost
+                    if (bestOffer && bestOffer.annual_cost) {
+                        drkCost = parseFloat(bestOffer.annual_cost);
+                        console.log('DRK cost desde bestOffer.annual_cost:', drkCost);
+                    }
+                    // Opción 2: Desde final.bestOffer
+                    else if (final.bestOffer && final.bestOffer.annual_cost) {
+                        drkCost = parseFloat(final.bestOffer.annual_cost);
+                        console.log('DRK cost desde final.bestOffer.annual_cost:', drkCost);
+                    }
+                    // Opción 3: Desde final.aggregatedData
+                    else if (final.aggregatedData && final.aggregatedData.total_anual_drk) {
+                        drkCost = parseFloat(final.aggregatedData.total_anual_drk);
+                        console.log('DRK cost desde aggregatedData.total_anual_drk:', drkCost);
+                    }
+                    // Opción 4: Calcular desde bestOffer.total_cost_period
+                    else if (bestOffer && bestOffer.total_cost_period) {
+                        drkCost = parseFloat(bestOffer.total_cost_period) * 12;
+                        console.log('DRK cost calculado desde total_cost_period * 12:', drkCost);
+                    }
+                    
+                    // PowerCup desde indexedResult
+                    if (final.indexedResult && final.indexedResult.annual_cost) {
+                        powercupCost = parseFloat(final.indexedResult.annual_cost);
+                        console.log('PowerCup cost desde indexedResult.annual_cost:', powercupCost);
+                    }
+                    // Opción 2: Desde aggregatedData
+                    else if (final.aggregatedData && final.aggregatedData.total_anual_powercup) {
+                        powercupCost = parseFloat(final.aggregatedData.total_anual_powercup);
+                        console.log('PowerCup cost desde aggregatedData.total_anual_powercup:', powercupCost);
+                    }
+                    // Opción 3: Calcular desde indexedResult.total_cost_period
+                    else if (final.indexedResult && final.indexedResult.total_cost_period) {
+                        powercupCost = parseFloat(final.indexedResult.total_cost_period) * 12;
+                        console.log('PowerCup cost calculado desde total_cost_period * 12:', powercupCost);
+                    }
+                    
+                    console.log('Costes finales - DRK:', drkCost, 'PowerCup:', powercupCost);
+                    
+                    if (drkCost === 0 && powercupCost === 0) {
+                        console.error('⚠️ ADVERTENCIA: Ambos costes son 0');
+                        console.error('bestOffer completo:', JSON.stringify(bestOffer, null, 2));
+                        console.error('final.indexedResult completo:', JSON.stringify(final.indexedResult, null, 2));
+                        alert('Error: No se pudieron capturar los costes. Por favor, revisa la consola (F12) y envía un pantallazo.');
+                        return;
+                    }
                     
                     const results = {
                         drk: {
@@ -11339,6 +11391,13 @@
             console.log('Tariff:', tariff);
             console.log('Data:', data);
             console.log('Results:', results);
+            console.log('Results.drk.total_anual:', results.drk.total_anual);
+            console.log('Results.powercup.total_anual:', results.powercup.total_anual);
+            
+            if (results.drk.total_anual === 0 && results.powercup.total_anual === 0) {
+                console.error('⚠️⚠️⚠️ PROBLEMA: Ambos costes son 0 al añadir suministro');
+                console.error('Results completo:', JSON.stringify(results, null, 2));
+            }
             
             // Calcular descripción según el tipo
             let description = '';
@@ -11368,6 +11427,7 @@
             };
             
             console.log('Suministro a añadir:', supply);
+            console.log('Verificación - DRK:', supply.results.drk.total_anual, 'PowerCup:', supply.results.powercup.total_anual);
             
             // Añadir al array
             dualSupplies.push(supply);
@@ -11379,7 +11439,9 @@
             
             // Mostrar mensaje de confirmación
             setTimeout(() => {
-                alert(`✅ Suministro añadido correctamente\n\nTipo: ${type === 'electricidad' ? 'Electricidad' : 'Gas'}\nTarifa: ${tariff}\n${description}\n\nTotal: ${dualSupplies.length} suministro(s)`);
+                const drkCost = supply.results.drk.total_anual;
+                const pcCost = supply.results.powercup.total_anual;
+                alert(`✅ Suministro añadido correctamente\n\nTipo: ${type === 'electricidad' ? 'Electricidad' : 'Gas'}\nTarifa: ${tariff}\n${description}\n\nDRK anual: ${drkCost.toFixed(2)} €\nPowerCup anual: ${pcCost.toFixed(2)} €\n\nTotal: ${dualSupplies.length} suministro(s)`);
             }, 100);
         };
         
