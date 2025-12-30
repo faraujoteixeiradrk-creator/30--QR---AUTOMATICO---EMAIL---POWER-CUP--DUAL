@@ -871,9 +871,16 @@
                                 <span class="text-slate-600">DRK (anual):</span>
                                 <span class="font-bold text-drk-600" id="dual-confirm-drk">-</span>
                             </div>
-                            <div class="flex justify-between">
+                            <div class="flex justify-between mb-2">
                                 <span class="text-slate-600">Power Cup (anual):</span>
                                 <span class="font-bold text-powercup-600" id="dual-confirm-powercup">-</span>
+                            </div>
+                            <!-- NUEVO: Mostrar ahorro anual -->
+                            <div class="mt-3 pt-3 border-t-2 border-green-200 bg-green-50 rounded-lg p-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-green-700 font-semibold">TU AHORRO ANUAL ESTIMADO:</span>
+                                    <span class="font-black text-2xl text-green-600" id="dual-confirm-savings">-</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -8908,6 +8915,7 @@
             let kwh_p1 = 0, kwh_p2 = 0, kwh_p3 = 0, kwh_p4 = 0, kwh_p5 = 0, kwh_p6 = 0;
             let p1 = 0, p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0;
             let dias = 30;
+            let originalBillAnnual = 0;
             
             // Opción 1: Desde result directamente
             if (result.kwh_p1 !== undefined) {
@@ -8935,11 +8943,24 @@
                 dias = parseInt(result.dias_facturados) || parseInt(result.dias) || 30;
             }
             
+            // Capturar factura actual del cliente
+            if (result.originalBillAnnual) {
+                originalBillAnnual = parseFloat(result.originalBillAnnual);
+            } else if (result.factura_actual_anual) {
+                originalBillAnnual = parseFloat(result.factura_actual_anual);
+            } else if (result.importe_total) {
+                // Desde QR: calcular anualizado
+                const diasFacturados = dias || 30;
+                const factorAnual = 365 / diasFacturados;
+                originalBillAnnual = parseFloat(result.importe_total) * factorAnual;
+            }
+            
             return {
                 tariff: result.tariffType || currentTariffType || '2.0TD',
                 kwh_p1, kwh_p2, kwh_p3, kwh_p4, kwh_p5, kwh_p6,
                 p1, p2, p3, p4, p5, p6,
-                dias
+                dias,
+                originalBillAnnual
             };
         }
         
@@ -10943,18 +10964,28 @@
         function backToDualManager() {
             // IMPORTANTE: NO desactivar dualMode aquí - debe permanecer activo
             // Solo se desactiva cuando sales completamente del DUAL
-            console.log('Volviendo al gestor DUAL - manteniendo dualMode activo');
+            console.log('=== backToDualManager - Volviendo al gestor DUAL ===');
+            console.log('- dualMode sigue activo:', window.dualMode);
+            console.log('- Total suministros en lista:', dualSupplies.length);
             
             hideAllScreens();
             document.getElementById('screen-dual').classList.add('active');
             // Ocultar el modo de comparación cuando estamos en DUAL
             document.getElementById('modo-comparacion-section').style.display = 'none';
             updateDualSuppliesList();
+            
+            console.log('=== Gestor DUAL mostrado correctamente ===');
         }
         
         // Función: Añadir suministro
         function dualAddSupply() {
             console.log('=== dualAddSupply - Iniciando nuevo suministro ===');
+            console.log('Estado ANTES de limpiar:');
+            console.log('- dualTempSupply:', dualTempSupply);
+            console.log('- lastComparisonResult:', lastComparisonResult);
+            console.log('- lastIndexedResult:', lastIndexedResult);
+            console.log('- availableOffers:', availableOffers.length);
+            console.log('- dualMode:', window.dualMode);
             
             // CRÍTICO: Activar modo DUAL
             window.dualMode = true;
@@ -10964,8 +10995,19 @@
             lastComparisonResult = null;
             lastIndexedResult = null;
             availableOffers = [];
+            compareWithIndexed = false;
             
-            console.log('dualMode activado:', window.dualMode);
+            // Limpiar el checkbox de comparación
+            const checkbox = document.getElementById('compare-indexed-checkbox');
+            if (checkbox) {
+                checkbox.checked = false;
+            }
+            
+            console.log('Estado DESPUÉS de limpiar:');
+            console.log('- dualTempSupply:', dualTempSupply);
+            console.log('- lastComparisonResult:', lastComparisonResult);
+            console.log('- dualMode:', window.dualMode);
+            console.log('=== FIN limpieza - estado listo para nuevo suministro ===');
             
             hideAllScreens();
             document.getElementById('screen-dual-add-type').classList.add('active');
@@ -11251,6 +11293,47 @@
             document.getElementById('dual-confirm-days').textContent = data.dias + ' días';
             document.getElementById('dual-confirm-drk').textContent = formatEuro(results.drk.total_anual);
             document.getElementById('dual-confirm-powercup').textContent = formatEuro(results.powercup.total_anual);
+            
+            // NUEVO: Calcular y mostrar el ahorro anual estimado
+            // El mejor coste es el menor entre DRK y PowerCup (o solo DRK si PowerCup es 0)
+            let mejorCoste = results.drk.total_anual;
+            if (results.powercup.total_anual > 0 && results.powercup.total_anual < mejorCoste) {
+                mejorCoste = results.powercup.total_anual;
+            }
+            
+            // Buscar la factura actual del cliente
+            // Puede venir de múltiples lugares según el flujo
+            let facturaActual = 0;
+            
+            if (data.originalBillAnnual) {
+                facturaActual = parseFloat(data.originalBillAnnual);
+            } else if (data.factura_actual_anual) {
+                facturaActual = parseFloat(data.factura_actual_anual);
+            } else if (results.originalBillAnnual) {
+                facturaActual = parseFloat(results.originalBillAnnual);
+            } else if (lastComparisonResult && lastComparisonResult.originalBillAnnual) {
+                facturaActual = parseFloat(lastComparisonResult.originalBillAnnual);
+            }
+            
+            const ahorroAnual = facturaActual - mejorCoste;
+            
+            console.log('Cálculo de ahorro:');
+            console.log('- Factura actual anual:', facturaActual);
+            console.log('- Mejor coste DRK/PowerCup:', mejorCoste);
+            console.log('- Ahorro anual:', ahorroAnual);
+            
+            // Mostrar ahorro (puede ser negativo si no hay ahorro)
+            if (ahorroAnual > 0) {
+                document.getElementById('dual-confirm-savings').textContent = formatEuro(ahorroAnual);
+                document.getElementById('dual-confirm-savings').classList.remove('text-red-600');
+                document.getElementById('dual-confirm-savings').classList.add('text-green-600');
+            } else if (ahorroAnual < 0) {
+                document.getElementById('dual-confirm-savings').textContent = formatEuro(Math.abs(ahorroAnual)) + ' más';
+                document.getElementById('dual-confirm-savings').classList.remove('text-green-600');
+                document.getElementById('dual-confirm-savings').classList.add('text-red-600');
+            } else {
+                document.getElementById('dual-confirm-savings').textContent = '0,00 €';
+            }
             
             // CRÍTICO: Ocultar TODAS las pantallas y vistas
             hideAllScreens();
