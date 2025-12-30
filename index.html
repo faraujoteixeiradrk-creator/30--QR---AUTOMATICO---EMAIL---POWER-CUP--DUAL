@@ -8885,6 +8885,12 @@
         // --- NUEVO: Modal de Decisión (Mejor vs Elegir) ---
         
         function showOfferDecisionModal() {
+            // ⚡ CRÍTICO: No mostrar el modal si estamos en modo DUAL
+            if (window.dualMode === true) {
+                console.log('⚠️ showOfferDecisionModal() bloqueado - modo DUAL activo');
+                return; // Salir inmediatamente
+            }
+            
             document.getElementById('loading-status').classList.add('hidden');
             document.getElementById('offer-decision-modal').classList.remove('hidden');
             document.getElementById('offer-decision-modal').classList.add('flex');
@@ -11372,10 +11378,23 @@
             if (decisionModal) {
                 decisionModal.classList.remove('flex');
                 decisionModal.classList.add('hidden');
+                decisionModal.style.display = 'none'; // Forzar también con style
+                console.log('Modal de decisión FORZADO a oculto');
             }
             
             // Mostrar pantalla de confirmación DUAL
             document.getElementById('screen-dual-confirm').classList.add('active');
+            
+            // CRÍTICO: Usar setTimeout para asegurar que el modal se oculte DESPUÉS de cualquier código asíncrono
+            setTimeout(() => {
+                const modal = document.getElementById('offer-decision-modal');
+                if (modal) {
+                    modal.classList.remove('flex');
+                    modal.classList.add('hidden');
+                    modal.style.display = 'none';
+                    console.log('Modal ocultado con setTimeout');
+                }
+            }, 50);
             
             console.log('Pantalla de confirmación DUAL mostrada');
         }
