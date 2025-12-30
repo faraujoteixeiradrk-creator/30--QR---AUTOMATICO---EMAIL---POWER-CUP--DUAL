@@ -8923,18 +8923,18 @@
             
             // Actualizar variables globales
             console.log('🔍 ANTES de asignar lastComparisonResult:');
-            console.log('  - bestChosen:', bestChosen);
-            console.log('  - bestChosen.offer:', bestChosen?.offer);
+            console.log('  - bestChosen.offer.name:', bestChosen?.offer?.name);
             console.log('  - bestChosen.totalAnnual:', bestChosen?.totalAnnual);
-            console.log('  - resFijo:', resFijo);
+            console.log('  - resFijo.offer.name:', resFijo?.offer?.name);
+            console.log('  - resFijo.totalAnnual:', resFijo?.totalAnnual);
             
             lastComparisonResult = resFijo || bestChosen;
             
             console.log('✅ DESPUÉS de asignar lastComparisonResult:');
-            console.log('  - lastComparisonResult:', lastComparisonResult);
-            console.log('  - lastComparisonResult.offer:', lastComparisonResult?.offer);
+            console.log('  - lastComparisonResult.offer.name:', lastComparisonResult?.offer?.name);
             console.log('  - lastComparisonResult.totalAnnual:', lastComparisonResult?.totalAnnual);
             console.log('  - lastComparisonResult.tariffType:', lastComparisonResult?.tariffType);
+            console.log('  - lastComparisonResult tiene', Object.keys(lastComparisonResult || {}).length, 'propiedades');
             
             if (hadCheckMarked && resIndexado) {
                 // Mantener comparación dual
@@ -8986,9 +8986,11 @@
         // Función auxiliar: Extraer datos de consumo desde resultado
         function extractDataFromResult(result) {
             console.log('📦 extractDataFromResult INICIO');
-            console.log('  - result:', result);
-            console.log('  - result.kwh_p1:', result.kwh_p1);
-            console.log('  - result.consumo_punta:', result.consumo_punta);
+            console.log('  - result.cups:', result?.cups);
+            console.log('  - result.kwh_p1:', result?.kwh_p1);
+            console.log('  - result.consumo_punta:', result?.consumo_punta);
+            console.log('  - result.totalAnnual:', result?.totalAnnual);
+            console.log('  - result.tariffType:', result?.tariffType);
             
             // Intentar múltiples ubicaciones
             let kwh_p1 = 0, kwh_p2 = 0, kwh_p3 = 0, kwh_p4 = 0, kwh_p5 = 0, kwh_p6 = 0;
@@ -9054,7 +9056,13 @@
                 originalBillAnnual
             };
             
-            console.log('📦 extractDataFromResult RESULTADO:', extracted);
+            console.log('📦 extractDataFromResult RESULTADO:');
+            console.log('  - tariff:', extracted.tariff);
+            console.log('  - kwh_p1:', extracted.kwh_p1, 'kwh_p2:', extracted.kwh_p2, 'kwh_p3:', extracted.kwh_p3);
+            console.log('  - p1:', extracted.p1, 'p2:', extracted.p2);
+            console.log('  - dias:', extracted.dias);
+            console.log('  - originalBillAnnual:', extracted.originalBillAnnual);
+            
             return extracted;
         }
         
@@ -9119,12 +9127,14 @@
             console.log('=================================================');
             
             console.log('🔍 ANTES de closeOfferDecisionModal:');
-            console.log('  - lastComparisonResult:', lastComparisonResult);
+            console.log('  - lastComparisonResult.offer.name:', lastComparisonResult?.offer?.name);
+            console.log('  - lastComparisonResult.totalAnnual:', lastComparisonResult?.totalAnnual);
             
             closeOfferDecisionModal();
             
             console.log('✅ DESPUÉS de closeOfferDecisionModal:');
-            console.log('  - lastComparisonResult:', lastComparisonResult);
+            console.log('  - lastComparisonResult.offer.name:', lastComparisonResult?.offer?.name);
+            console.log('  - lastComparisonResult.totalAnnual:', lastComparisonResult?.totalAnnual);
             
             if (!lastComparisonResult) {
                 console.error('❌ No hay lastComparisonResult');
@@ -9147,11 +9157,11 @@
             console.log('selectBestOptionDirectSingle: Forzando vista SIMPLE (sin comparativa)');
             
             console.log('🔍🔍🔍 ESTADO JUSTO ANTES DEL INTERCEPTOR DUAL:');
-            console.log('  - lastComparisonResult:', lastComparisonResult);
-            console.log('  - lastComparisonResult type:', typeof lastComparisonResult);
-            console.log('  - lastComparisonResult.offer exists:', !!lastComparisonResult?.offer);
+            console.log('  - lastComparisonResult.offer.name:', lastComparisonResult?.offer?.name);
             console.log('  - lastComparisonResult.totalAnnual:', lastComparisonResult?.totalAnnual);
             console.log('  - lastComparisonResult.tariffType:', lastComparisonResult?.tariffType);
+            console.log('  - lastComparisonResult.consumo_punta:', lastComparisonResult?.consumo_punta);
+            console.log('  - lastComparisonResult.cups:', lastComparisonResult?.cups);
             
             // ⚡ INTERCEPTAR MODO DUAL AQUÍ
             if (window.dualMode === true) {
@@ -9160,7 +9170,7 @@
                 try {
                     // Preparar datos para confirmación DUAL
                     console.log('🔍 Extrayendo tariff...');
-                    console.log('lastComparisonResult:', lastComparisonResult);
+                    console.log('lastComparisonResult.offer.name:', lastComparisonResult?.offer?.name);
                     console.log('lastComparisonResult.tariffType:', lastComparisonResult?.tariffType);
                     console.log('currentTariffType:', currentTariffType);
                     
@@ -9169,7 +9179,7 @@
                     
                     console.log('🔍 Llamando extractDataFromResult...');
                     const data = extractDataFromResult(lastComparisonResult);
-                    console.log('✅ Data extraída:', data);
+                    console.log('✅ Data extraída - kwh_p1:', data.kwh_p1, 'dias:', data.dias, 'originalBillAnnual:', data.originalBillAnnual);
                     
                     console.log('🔍 Extrayendo coste DRK...');
                     const drkCost = lastComparisonResult?.totalAnnual || 0;
@@ -9186,12 +9196,16 @@
                         }
                     };
                     
-                    console.log('✅ Results completo:', results);
+                    console.log('✅ Results completo:');
+                    console.log('  - results.drk.total_anual:', results.drk.total_anual);
+                    console.log('  - results.powercup.total_anual:', results.powercup.total_anual);
+                    
                     console.log('🚀 A punto de llamar showDualConfirm con:');
                     console.log('  - type: electricidad');
                     console.log('  - tariff:', tariff);
-                    console.log('  - data:', data);
-                    console.log('  - results:', results);
+                    console.log('  - data.kwh_p1:', data.kwh_p1, 'data.kwh_p2:', data.kwh_p2);
+                    console.log('  - data.dias:', data.dias);
+                    console.log('  - data.originalBillAnnual:', data.originalBillAnnual);
                     
                     showDualConfirm('electricidad', tariff, data, results);
                     
