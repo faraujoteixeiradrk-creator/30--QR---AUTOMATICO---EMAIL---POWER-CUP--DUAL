@@ -2256,7 +2256,7 @@
                 // NUEVO: Si estamos en modo DUAL, saltar el modal y ir directo a confirmación
                 if (window.dualMode === true && !isMultiCupsMode) {
                     console.log('===== Modo DUAL detectado - saltando modal de decisión =====');
-                    console.log('final object:', final);
+                    console.log('final object completo:', JSON.stringify(final, null, 2));
                     console.log('availableOffers:', availableOffers);
                     
                     // Calcular mejor oferta automáticamente
@@ -2268,27 +2268,92 @@
                     
                     console.log('bestOffer selected:', bestOffer);
                     
-                    // Preparar datos para DUAL - USAR final directamente que ya tiene los consumos
+                    // CRÍTICO: Buscar los datos de consumo en múltiples ubicaciones
+                    let kwh_p1 = 0, kwh_p2 = 0, kwh_p3 = 0, kwh_p4 = 0, kwh_p5 = 0, kwh_p6 = 0;
+                    let p1 = 0, p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0;
+                    let dias = 30;
+                    
+                    // Opción 1: Desde final directamente
+                    if (final.kwh_p1 !== undefined) {
+                        kwh_p1 = parseFloat(final.kwh_p1) || 0;
+                        kwh_p2 = parseFloat(final.kwh_p2) || 0;
+                        kwh_p3 = parseFloat(final.kwh_p3) || 0;
+                        kwh_p4 = parseFloat(final.kwh_p4) || 0;
+                        kwh_p5 = parseFloat(final.kwh_p5) || 0;
+                        kwh_p6 = parseFloat(final.kwh_p6) || 0;
+                        p1 = parseFloat(final.p1) || 0;
+                        p2 = parseFloat(final.p2) || 0;
+                        p3 = parseFloat(final.p3) || 0;
+                        p4 = parseFloat(final.p4) || 0;
+                        p5 = parseFloat(final.p5) || 0;
+                        p6 = parseFloat(final.p6) || 0;
+                        dias = parseInt(final.dias) || 30;
+                        console.log('Opción 1: Datos desde final directamente');
+                    }
+                    // Opción 2: Desde final.originalData
+                    else if (final.originalData) {
+                        kwh_p1 = parseFloat(final.originalData.kwh_p1) || 0;
+                        kwh_p2 = parseFloat(final.originalData.kwh_p2) || 0;
+                        kwh_p3 = parseFloat(final.originalData.kwh_p3) || 0;
+                        kwh_p4 = parseFloat(final.originalData.kwh_p4) || 0;
+                        kwh_p5 = parseFloat(final.originalData.kwh_p5) || 0;
+                        kwh_p6 = parseFloat(final.originalData.kwh_p6) || 0;
+                        p1 = parseFloat(final.originalData.p1) || 0;
+                        p2 = parseFloat(final.originalData.p2) || 0;
+                        p3 = parseFloat(final.originalData.p3) || 0;
+                        p4 = parseFloat(final.originalData.p4) || 0;
+                        p5 = parseFloat(final.originalData.p5) || 0;
+                        p6 = parseFloat(final.originalData.p6) || 0;
+                        dias = parseInt(final.originalData.dias) || 30;
+                        console.log('Opción 2: Datos desde final.originalData');
+                    }
+                    // Opción 3: Desde bestOffer
+                    else if (bestOffer && bestOffer.kwh_p1 !== undefined) {
+                        kwh_p1 = parseFloat(bestOffer.kwh_p1) || 0;
+                        kwh_p2 = parseFloat(bestOffer.kwh_p2) || 0;
+                        kwh_p3 = parseFloat(bestOffer.kwh_p3) || 0;
+                        kwh_p4 = parseFloat(bestOffer.kwh_p4) || 0;
+                        kwh_p5 = parseFloat(bestOffer.kwh_p5) || 0;
+                        kwh_p6 = parseFloat(bestOffer.kwh_p6) || 0;
+                        p1 = parseFloat(bestOffer.p1) || 0;
+                        p2 = parseFloat(bestOffer.p2) || 0;
+                        p3 = parseFloat(bestOffer.p3) || 0;
+                        p4 = parseFloat(bestOffer.p4) || 0;
+                        p5 = parseFloat(bestOffer.p5) || 0;
+                        p6 = parseFloat(bestOffer.p6) || 0;
+                        dias = parseInt(bestOffer.dias) || 30;
+                        console.log('Opción 3: Datos desde bestOffer');
+                    }
+                    
                     const tariff = final.tariffType || currentTariffType || '2.0TD';
                     const data = {
                         tariff: tariff,
-                        kwh_p1: parseFloat(final.kwh_p1) || 0,
-                        kwh_p2: parseFloat(final.kwh_p2) || 0,
-                        kwh_p3: parseFloat(final.kwh_p3) || 0,
-                        kwh_p4: parseFloat(final.kwh_p4) || 0,
-                        kwh_p5: parseFloat(final.kwh_p5) || 0,
-                        kwh_p6: parseFloat(final.kwh_p6) || 0,
-                        p1: parseFloat(final.p1) || 0,
-                        p2: parseFloat(final.p2) || 0,
-                        p3: parseFloat(final.p3) || 0,
-                        p4: parseFloat(final.p4) || 0,
-                        p5: parseFloat(final.p5) || 0,
-                        p6: parseFloat(final.p6) || 0,
-                        dias: parseInt(final.dias) || 30
+                        kwh_p1: kwh_p1,
+                        kwh_p2: kwh_p2,
+                        kwh_p3: kwh_p3,
+                        kwh_p4: kwh_p4,
+                        kwh_p5: kwh_p5,
+                        kwh_p6: kwh_p6,
+                        p1: p1,
+                        p2: p2,
+                        p3: p3,
+                        p4: p4,
+                        p5: p5,
+                        p6: p6,
+                        dias: dias
                     };
                     
+                    const totalKwh = kwh_p1 + kwh_p2 + kwh_p3 + kwh_p4 + kwh_p5 + kwh_p6;
                     console.log('Data preparada:', data);
-                    console.log('Total kWh calculado:', (data.kwh_p1 + data.kwh_p2 + data.kwh_p3 + data.kwh_p4 + data.kwh_p5 + data.kwh_p6));
+                    console.log('Total kWh calculado:', totalKwh);
+                    
+                    if (totalKwh === 0) {
+                        console.error('⚠️ ADVERTENCIA: Total kWh es 0. Estructura de final:');
+                        console.error('Keys en final:', Object.keys(final));
+                        console.error('final completo:', final);
+                        alert('Error: No se pudieron capturar los datos de consumo. Por favor, revisa la consola (F12) y envía un pantallazo.');
+                        return;
+                    }
                     
                     let drkCost = bestOffer ? parseFloat(bestOffer.annual_cost || 0) : 0;
                     let powercupCost = final.indexedResult ? parseFloat(final.indexedResult.annual_cost || 0) : 0;
