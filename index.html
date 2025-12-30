@@ -8948,21 +8948,38 @@
                 console.log('⚠️  Sin comparación dual (CHECK no estaba marcado o no hay tarifa del otro tipo)');
             }
             
-            // CRÍTICO: RESTAURAR el contexto preservado
-            if (preservedContext) {
-                lastComparisonResult._multiCupsContext = preservedContext;
-                console.log('✅ Contexto MULTICUPS restaurado en selectBestOptionWithChoice');
-            } else {
-                console.log('⚠️  No había contexto MULTICUPS que restaurar');
-            }
-            
-            // CRÍTICO: Ejecutar según si hay comparación dual o no
-            if (hadCheckMarked && resIndexado) {
-                // Con comparación dual
-                selectBestOptionDirectDual();
-            } else {
-                // Sin comparación dual
-                selectBestOptionDirectSingle();
+            try {
+                console.log('🔍 Intentando restaurar contexto...');
+                // CRÍTICO: RESTAURAR el contexto preservado
+                if (preservedContext) {
+                    lastComparisonResult._multiCupsContext = preservedContext;
+                    console.log('✅ Contexto MULTICUPS restaurado en selectBestOptionWithChoice');
+                } else {
+                    console.log('⚠️  No había contexto MULTICUPS que restaurar');
+                }
+                
+                console.log('🔍 A punto de ejecutar función de continuación...');
+                console.log('  - hadCheckMarked:', hadCheckMarked);
+                console.log('  - resIndexado exists:', !!resIndexado);
+                
+                // CRÍTICO: Ejecutar según si hay comparación dual o no
+                if (hadCheckMarked && resIndexado) {
+                    // Con comparación dual
+                    console.log('✅ Ejecutando selectBestOptionDirectDual...');
+                    selectBestOptionDirectDual();
+                } else {
+                    // Sin comparación dual
+                    console.log('✅ Ejecutando selectBestOptionDirectSingle...');
+                    selectBestOptionDirectSingle();
+                }
+                
+                console.log('✅ Función ejecutada exitosamente');
+            } catch (error) {
+                console.error('❌❌❌ ERROR CRÍTICO en selectBestOptionWithChoice:');
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+                console.error('Error completo:', error);
+                alert('Error crítico: ' + error.message);
             }
         }
         
