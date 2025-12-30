@@ -2255,7 +2255,10 @@
                 
                 // NUEVO: Si estamos en modo DUAL, saltar el modal y ir directo a confirmación
                 if (window.dualMode === true && !isMultiCupsMode) {
-                    console.log('Modo DUAL detectado - saltando modal de decisión');
+                    console.log('===== Modo DUAL detectado - saltando modal de decisión =====');
+                    console.log('final object:', final);
+                    console.log('availableOffers:', availableOffers);
+                    
                     // Calcular mejor oferta automáticamente
                     const bestOffer = availableOffers.length > 0 
                         ? availableOffers.reduce((best, curr) => 
@@ -2263,7 +2266,9 @@
                         )
                         : final.bestOffer;
                     
-                    // Preparar datos para DUAL
+                    console.log('bestOffer selected:', bestOffer);
+                    
+                    // Preparar datos para DUAL - USAR final directamente que ya tiene los consumos
                     const tariff = final.tariffType || currentTariffType || '2.0TD';
                     const data = {
                         tariff: tariff,
@@ -2282,8 +2287,13 @@
                         dias: parseInt(final.dias) || 30
                     };
                     
+                    console.log('Data preparada:', data);
+                    console.log('Total kWh calculado:', (data.kwh_p1 + data.kwh_p2 + data.kwh_p3 + data.kwh_p4 + data.kwh_p5 + data.kwh_p6));
+                    
                     let drkCost = bestOffer ? parseFloat(bestOffer.annual_cost || 0) : 0;
                     let powercupCost = final.indexedResult ? parseFloat(final.indexedResult.annual_cost || 0) : 0;
+                    
+                    console.log('DRK cost:', drkCost, 'PowerCup cost:', powercupCost);
                     
                     const results = {
                         drk: {
@@ -2295,6 +2305,9 @@
                             total_anual: powercupCost
                         }
                     };
+                    
+                    console.log('Results preparados:', results);
+                    console.log('Llamando a showDualConfirm...');
                     
                     showDualConfirm('electricidad', tariff, data, results);
                     return;
@@ -11183,8 +11196,10 @@
                           (parseFloat(data.kwh_p4) || 0) + 
                           (parseFloat(data.kwh_p5) || 0) + 
                           (parseFloat(data.kwh_p6) || 0);
+                console.log('Total kWh electricidad:', totalKwh);
             } else {
                 totalKwh = parseFloat(data.kwh) || 0;
+                console.log('Total kWh gas:', totalKwh);
             }
             
             document.getElementById('dual-confirm-consumption').textContent = totalKwh.toFixed(0) + ' kWh';
@@ -11192,9 +11207,27 @@
             document.getElementById('dual-confirm-drk').textContent = formatEuro(results.drk.total_anual);
             document.getElementById('dual-confirm-powercup').textContent = formatEuro(results.powercup.total_anual);
             
-            // Mostrar pantalla
+            // CRÍTICO: Ocultar TODAS las pantallas y vistas
             hideAllScreens();
+            
+            // Ocultar también las vistas internas de electricidad
+            document.getElementById('landing-view')?.classList.add('hidden');
+            document.getElementById('initial-view')?.classList.add('hidden');
+            document.getElementById('scanner-view')?.classList.add('hidden');
+            document.getElementById('results-view')?.classList.add('hidden');
+            document.getElementById('multicups-saga-view')?.classList.add('hidden');
+            
+            // Ocultar modal de decisión si está abierto
+            const decisionModal = document.getElementById('offer-decision-modal');
+            if (decisionModal) {
+                decisionModal.classList.remove('flex');
+                decisionModal.classList.add('hidden');
+            }
+            
+            // Mostrar pantalla de confirmación DUAL
             document.getElementById('screen-dual-confirm').classList.add('active');
+            
+            console.log('Pantalla de confirmación DUAL mostrada');
         }
         
         // Función: Confirmar y añadir a DUAL
@@ -11733,42 +11766,10 @@
             
             // Mostrar pantalla de resultados
             hideAllScreens();
+            document.getElementById('screen-gas-results').classList.add('active');
             
-            // NUEVO: Si estamos en modo DUAL, mostrar confirmación en lugar de resultados
-            if (window.dualMode === true) {
-                console.log('Modo DUAL detectado en GAS - mostrando confirmación');
-                
-                // Extraer mejor resultado para DUAL
-                const bestResult = results[0]; // Ya están ordenados por ahorro
-                
-                const data = window.gasCalculationParams;
-                const gasResults = {
-                    drk: {
-                        total: bestResult.total,
-                        total_anual: bestResult.total_anual
-                    },
-                    powercup: {
-                        total: 0,
-                        total_anual: 0
-                    }
-                };
-                
-                // Si hay dos resultados, el segundo es PowerCup
-                if (results.length > 1) {
-                    gasResults.powercup = {
-                        total: results[1].total,
-                        total_anual: results[1].total_anual
-                    };
-                }
-                
-                showDualConfirm('gas', currentGasTariff, data, gasResults);
-            } else {
-                // Flujo normal - mostrar resultados
-                document.getElementById('screen-gas-results').classList.add('active');
-                
-                // Detectar modo DUAL y mostrar botón si corresponde
-                if (window.checkDualMode) window.checkDualMode();
-            }
+            // Detectar modo DUAL y mostrar botón si corresponde
+            if (window.checkDualMode) window.checkDualMode();
         }
         
         // Función: Renderizar selector de tarifas con ordenamiento
@@ -12161,6 +12162,59 @@
         
         // Función: Mostrar resultados de GAS
         function showGasResults(results, dias, kwh, totalCliente) {
+            console.log('=== showGasResults ===');
+            console.log('Mode DUAL:', window.dualMode);
+            console.log('Results:', results);
+            console.log('Params:', { dias, kwh, totalCliente });
+            
+            // CRÍTICO: Interceptar DUAL AL PRINCIPIO, antes de procesar HTML
+            if (window.dualMode === true) {
+                console.log('⚡ Modo DUAL detectado en GAS - interceptando ANTES de generar HTML');
+                
+                try {
+                    // Ordenar por mejor ahorro
+                    results.sort((a, b) => b.ahorro_anual - a.ahorro_anual);
+                    
+                    // Extraer mejor resultado para DUAL
+                    const bestResult = results[0];
+                    console.log('Best result:', bestResult);
+                    
+                    const data = window.gasCalculationParams;
+                    console.log('Gas calculation params:', data);
+                    
+                    const gasResults = {
+                        drk: {
+                            total: bestResult.total,
+                            total_anual: bestResult.total_anual
+                        },
+                        powercup: {
+                            total: 0,
+                            total_anual: 0
+                        }
+                    };
+                    
+                    // Si hay dos resultados, el segundo es PowerCup
+                    if (results.length > 1) {
+                        gasResults.powercup = {
+                            total: results[1].total,
+                            total_anual: results[1].total_anual
+                        };
+                    }
+                    
+                    console.log('Gas results preparados:', gasResults);
+                    console.log('Llamando a showDualConfirm...');
+                    
+                    showDualConfirm('gas', currentGasTariff, data, gasResults);
+                    return; // IMPORTANTE: Salir aquí para no procesar el resto
+                } catch (error) {
+                    console.error('Error en modo DUAL para GAS:', error);
+                    alert('Error al procesar el suministro de gas: ' + error.message);
+                    backToDualManager();
+                    return;
+                }
+            }
+            
+            // FLUJO NORMAL (no DUAL) - continuar con el procesamiento normal
             const container = document.getElementById('gas-results-container');
             
             // Ordenar por mejor ahorro
@@ -12313,42 +12367,10 @@
             
             // Mostrar pantalla de resultados
             hideAllScreens();
+            document.getElementById('screen-gas-results').classList.add('active');
             
-            // NUEVO: Si estamos en modo DUAL, mostrar confirmación en lugar de resultados
-            if (window.dualMode === true) {
-                console.log('Modo DUAL detectado en GAS (showGasResults) - mostrando confirmación');
-                
-                // Extraer mejor resultado para DUAL
-                const bestResult = results[0]; // Ya están ordenados por ahorro
-                
-                const data = window.gasCalculationParams;
-                const gasResults = {
-                    drk: window.lastGasDRKResult || {
-                        total: bestResult.total,
-                        total_anual: bestResult.total_anual
-                    },
-                    powercup: window.lastGasPowerCupResult || {
-                        total: 0,
-                        total_anual: 0
-                    }
-                };
-                
-                // Si hay dos resultados, usar los guardados o los calculados
-                if (results.length > 1 && gasResults.powercup.total_anual === 0) {
-                    gasResults.powercup = {
-                        total: results[1].total,
-                        total_anual: results[1].total_anual
-                    };
-                }
-                
-                showDualConfirm('gas', currentGasTariff, data, gasResults);
-            } else {
-                // Flujo normal - mostrar resultados
-                document.getElementById('screen-gas-results').classList.add('active');
-                
-                // Detectar modo DUAL y mostrar botón si corresponde
-                if (window.checkDualMode) window.checkDualMode();
-            }
+            // Detectar modo DUAL y mostrar botón si corresponde (para flujo no-DUAL)
+            if (window.checkDualMode) window.checkDualMode();
         }
         
         // ===== FUNCIONES DE BÚSQUEDA (filtran DOM sin re-renderizar) =====
