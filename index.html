@@ -8936,6 +8936,18 @@
             console.log('  - lastComparisonResult.tariffType:', lastComparisonResult?.tariffType);
             console.log('  - lastComparisonResult tiene', Object.keys(lastComparisonResult || {}).length, 'propiedades');
             
+            console.log('🔍🔍🔍 JUSTO ANTES DEL IF hadCheckMarked');
+            try {
+                console.log('  - hadCheckMarked:', hadCheckMarked);
+                console.log('  - resIndexado exists:', !!resIndexado);
+                console.log('  - typeof hadCheckMarked:', typeof hadCheckMarked);
+                console.log('  - typeof resIndexado:', typeof resIndexado);
+            } catch (e) {
+                console.error('❌ Error al logear variables:', e);
+            }
+            
+            console.log('✅ Logs de variables completados, evaluando if...');
+            
             if (hadCheckMarked && resIndexado) {
                 // Mantener comparación dual
                 lastIndexedResult = resIndexado;
