@@ -1482,9 +1482,9 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-SIMPLE-v8 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-SIMPLE-v8 🔥🔥🔥');
-        console.log('Flujo SIMPLIFICADO: Guardar temporal y volver a inicio');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FINAL-v9 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FINAL-v9 🔥🔥🔥');
+        console.log('Flujo COMPLETO: Guardar → Mostrar contador → Botón CALCULAR → Resultado');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -8997,13 +8997,26 @@
                     console.log('  - Tarifa:', window.dualTempSupply.tariff);
                     console.log('  - Coste anual:', window.dualTempSupply.totalAnnual);
                     
-                    // Volver a la pantalla inicial
-                    console.log('Volviendo a pantalla inicial...');
-                    document.getElementById('initial-view').classList.remove('hidden');
-                    document.getElementById('scanner-view').classList.add('hidden');
-                    document.getElementById('results-view').classList.add('hidden');
+                    // Actualizar UI: mostrar que hay 1 suministro
+                    const countElem = document.getElementById('dual-supplies-count');
+                    if (countElem) countElem.textContent = '1';
                     
-                    console.log('✅ Usuario puede añadir más suministros');
+                    // Activar botón de calcular
+                    const calcBtn = document.getElementById('dual-calculate-btn');
+                    if (calcBtn) {
+                        calcBtn.disabled = false;
+                        calcBtn.classList.remove('bg-slate-600', 'hover:bg-slate-700');
+                        calcBtn.classList.add('bg-drk-600', 'hover:bg-drk-700');
+                        calcBtn.style.background = 'linear-gradient(135deg, #0ea5e9 0%, #84cc16 100%)';
+                    }
+                    
+                    console.log('✅ UI actualizada - 1 suministro guardado');
+                    
+                    // Volver a la pantalla DUAL (no inicial)
+                    console.log('Volviendo a pantalla DUAL...');
+                    showScreen('screen-dual');
+                    
+                    console.log('✅ Usuario puede calcular la comparativa');
                     
                     // Resetear bandera
                     setTimeout(() => {
@@ -11421,6 +11434,47 @@
         
         // Función: Calcular comparativa global
         function dualCalculate() {
+            console.log('===== dualCalculate LLAMADA =====');
+            
+            // Verificar si hay suministro temporal
+            if (window.dualTempSupply) {
+                console.log('✅ Hay suministro temporal, mostrando confirmación DUAL');
+                const supply = window.dualTempSupply;
+                
+                // Preparar datos para showDualConfirm
+                const tariff = supply.tariff || '2.0TD';
+                const data = {
+                    kwh_p1: supply.data.consumo_punta || supply.data.kwh_p1 || 0,
+                    kwh_p2: supply.data.consumo_llano || supply.data.kwh_p2 || 0,
+                    kwh_p3: supply.data.consumo_valle || supply.data.kwh_p3 || 0,
+                    potencia_p1: supply.data.potencia_p1_kw || supply.data.power_p1 || 0,
+                    potencia_p2: supply.data.potencia_p2_kw || supply.data.power_p2 || 0,
+                    dias: supply.data.dias_facturados || supply.data.dias || 30,
+                    cups: supply.cups || ''
+                };
+                
+                const results = {
+                    drk: {
+                        total: supply.totalAnnual / 12,
+                        total_anual: supply.totalAnnual
+                    },
+                    powercup: {
+                        total: 0,
+                        total_anual: 0
+                    }
+                };
+                
+                console.log('Datos preparados:');
+                console.log('  - type:', supply.type);
+                console.log('  - tariff:', tariff);
+                console.log('  - totalAnnual:', supply.totalAnnual);
+                console.log('Llamando showDualConfirm...');
+                
+                showDualConfirm(supply.type, tariff, data, results);
+                return;
+            }
+            
+            // Código original para múltiples suministros
             if (dualSupplies.length === 0) {
                 alert('Debes añadir al menos un suministro');
                 return;
