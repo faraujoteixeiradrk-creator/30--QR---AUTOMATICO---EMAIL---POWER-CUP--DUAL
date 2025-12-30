@@ -1482,9 +1482,9 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FINAL-v9 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FINAL-v9 🔥🔥🔥');
-        console.log('Flujo COMPLETO: Guardar → Mostrar contador → Botón CALCULAR → Resultado');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FIXED-v10 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FIXED-v10 🔥🔥🔥');
+        console.log('BUG CORREGIDO: showScreen → hideAllScreens + classList.add');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -9014,7 +9014,8 @@
                     
                     // Volver a la pantalla DUAL (no inicial)
                     console.log('Volviendo a pantalla DUAL...');
-                    showScreen('screen-dual');
+                    hideAllScreens();
+                    document.getElementById('screen-dual').classList.add('active');
                     
                     console.log('✅ Usuario puede calcular la comparativa');
                     
