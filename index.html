@@ -2253,216 +2253,6 @@
                 // PERO SOLO en modo individual, NO en MultiCups
                 const isMultiCupsMode = currentTariffType === 'MULTICUPS';
                 
-                // ⚡⚡⚡ CRÍTICO: INTERCEPTAR DUAL PRIMERO, ANTES DE CUALQUIER OTRA COSA ⚡⚡⚡
-                if (window.dualMode === true) {
-                    console.log('===== 🔥 MODO DUAL DETECTADO - INTERCEPTANDO ANTES DEL MODAL 🔥 =====');
-                    console.log('isMultiCupsMode:', isMultiCupsMode);
-                    console.log('availableOffers.length:', availableOffers.length);
-                    console.log('final object completo:', JSON.stringify(final, null, 2));
-                    console.log('availableOffers:', availableOffers);
-                    
-                    // Calcular mejor oferta automáticamente
-                    const bestOffer = availableOffers.length > 0 
-                        ? availableOffers.reduce((best, curr) => 
-                            (curr.savings > best.savings) ? curr : best
-                        )
-                        : final.bestOffer;
-                    
-                    console.log('bestOffer selected:', bestOffer);
-                    
-                    // CRÍTICO: Buscar los datos de consumo en múltiples ubicaciones
-                    let kwh_p1 = 0, kwh_p2 = 0, kwh_p3 = 0, kwh_p4 = 0, kwh_p5 = 0, kwh_p6 = 0;
-                    let p1 = 0, p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0;
-                    let dias = 30;
-                    
-                    // Opción 1: Desde final directamente (entrada manual)
-                    if (final.kwh_p1 !== undefined) {
-                        kwh_p1 = parseFloat(final.kwh_p1) || 0;
-                        kwh_p2 = parseFloat(final.kwh_p2) || 0;
-                        kwh_p3 = parseFloat(final.kwh_p3) || 0;
-                        kwh_p4 = parseFloat(final.kwh_p4) || 0;
-                        kwh_p5 = parseFloat(final.kwh_p5) || 0;
-                        kwh_p6 = parseFloat(final.kwh_p6) || 0;
-                        p1 = parseFloat(final.p1) || 0;
-                        p2 = parseFloat(final.p2) || 0;
-                        p3 = parseFloat(final.p3) || 0;
-                        p4 = parseFloat(final.p4) || 0;
-                        p5 = parseFloat(final.p5) || 0;
-                        p6 = parseFloat(final.p6) || 0;
-                        dias = parseInt(final.dias) || 30;
-                        console.log('Opción 1: Datos desde final directamente (entrada manual)');
-                    }
-                    // Opción 2: Desde final.originalData
-                    else if (final.originalData) {
-                        kwh_p1 = parseFloat(final.originalData.kwh_p1) || 0;
-                        kwh_p2 = parseFloat(final.originalData.kwh_p2) || 0;
-                        kwh_p3 = parseFloat(final.originalData.kwh_p3) || 0;
-                        kwh_p4 = parseFloat(final.originalData.kwh_p4) || 0;
-                        kwh_p5 = parseFloat(final.originalData.kwh_p5) || 0;
-                        kwh_p6 = parseFloat(final.originalData.kwh_p6) || 0;
-                        p1 = parseFloat(final.originalData.p1) || 0;
-                        p2 = parseFloat(final.originalData.p2) || 0;
-                        p3 = parseFloat(final.originalData.p3) || 0;
-                        p4 = parseFloat(final.originalData.p4) || 0;
-                        p5 = parseFloat(final.originalData.p5) || 0;
-                        p6 = parseFloat(final.originalData.p6) || 0;
-                        dias = parseInt(final.originalData.dias) || 30;
-                        console.log('Opción 2: Datos desde final.originalData');
-                    }
-                    // Opción 3: Desde bestOffer
-                    else if (bestOffer && bestOffer.kwh_p1 !== undefined) {
-                        kwh_p1 = parseFloat(bestOffer.kwh_p1) || 0;
-                        kwh_p2 = parseFloat(bestOffer.kwh_p2) || 0;
-                        kwh_p3 = parseFloat(bestOffer.kwh_p3) || 0;
-                        kwh_p4 = parseFloat(bestOffer.kwh_p4) || 0;
-                        kwh_p5 = parseFloat(bestOffer.kwh_p5) || 0;
-                        kwh_p6 = parseFloat(bestOffer.kwh_p6) || 0;
-                        p1 = parseFloat(bestOffer.p1) || 0;
-                        p2 = parseFloat(bestOffer.p2) || 0;
-                        p3 = parseFloat(bestOffer.p3) || 0;
-                        p4 = parseFloat(bestOffer.p4) || 0;
-                        p5 = parseFloat(bestOffer.p5) || 0;
-                        p6 = parseFloat(bestOffer.p6) || 0;
-                        dias = parseInt(bestOffer.dias) || 30;
-                        console.log('Opción 3: Datos desde bestOffer');
-                    }
-                    // Opción 4: Desde QR (nombres alternativos: consumo_punta, consumo_llano, consumo_valle)
-                    else if (final.consumo_punta !== undefined || final.consumo_llano !== undefined || final.consumo_valle !== undefined) {
-                        kwh_p1 = parseFloat(final.consumo_punta) || 0;
-                        kwh_p2 = parseFloat(final.consumo_llano) || 0;
-                        kwh_p3 = parseFloat(final.consumo_valle) || 0;
-                        kwh_p4 = 0; // QR 2.0TD solo tiene 3 periodos
-                        kwh_p5 = 0;
-                        kwh_p6 = 0;
-                        p1 = parseFloat(final.potencia_p1_kw) || parseFloat(final.p_potencia_1) || 0;
-                        p2 = parseFloat(final.potencia_p2_kw) || parseFloat(final.p_potencia_2) || 0;
-                        p3 = 0;
-                        p4 = 0;
-                        p5 = 0;
-                        p6 = 0;
-                        dias = parseInt(final.dias_facturados) || parseInt(final.dias) || 30;
-                        console.log('Opción 4: Datos desde QR (consumo_punta, consumo_llano, consumo_valle)');
-                    }
-                    
-                    const tariff = final.tariffType || currentTariffType || '2.0TD';
-                    const data = {
-                        tariff: tariff,
-                        kwh_p1: kwh_p1,
-                        kwh_p2: kwh_p2,
-                        kwh_p3: kwh_p3,
-                        kwh_p4: kwh_p4,
-                        kwh_p5: kwh_p5,
-                        kwh_p6: kwh_p6,
-                        p1: p1,
-                        p2: p2,
-                        p3: p3,
-                        p4: p4,
-                        p5: p5,
-                        p6: p6,
-                        dias: dias
-                    };
-                    
-                    const totalKwh = kwh_p1 + kwh_p2 + kwh_p3 + kwh_p4 + kwh_p5 + kwh_p6;
-                    console.log('Data preparada:', data);
-                    console.log('Total kWh calculado:', totalKwh);
-                    
-                    if (totalKwh === 0) {
-                        console.error('⚠️ ADVERTENCIA: Total kWh es 0. Estructura de final:');
-                        console.error('Keys en final:', Object.keys(final));
-                        console.error('final completo:', final);
-                        alert('Error: No se pudieron capturar los datos de consumo. Por favor, revisa la consola (F12) y envía un pantallazo.');
-                        return;
-                    }
-                    
-                    // CRÍTICO: Buscar los costes en múltiples ubicaciones
-                    console.log('=== Buscando costes ===');
-                    console.log('bestOffer:', bestOffer);
-                    console.log('final.indexedResult:', final.indexedResult);
-                    console.log('final.aggregatedData:', final.aggregatedData);
-                    console.log('final.bestOffer:', final.bestOffer);
-                    
-                    let drkCost = 0;
-                    let powercupCost = 0;
-                    
-                    // Opción 1: Desde bestOffer.totalAnnual (CORRECTO según logs)
-                    if (bestOffer && bestOffer.totalAnnual) {
-                        drkCost = parseFloat(bestOffer.totalAnnual);
-                        console.log('✅ DRK cost desde bestOffer.totalAnnual:', drkCost);
-                    }
-                    // Opción 2: Desde bestOffer.annual_cost
-                    else if (bestOffer && bestOffer.annual_cost) {
-                        drkCost = parseFloat(bestOffer.annual_cost);
-                        console.log('✅ DRK cost desde bestOffer.annual_cost:', drkCost);
-                    }
-                    // Opción 3: Desde final.bestOffer.totalAnnual
-                    else if (final.bestOffer && final.bestOffer.totalAnnual) {
-                        drkCost = parseFloat(final.bestOffer.totalAnnual);
-                        console.log('✅ DRK cost desde final.bestOffer.totalAnnual:', drkCost);
-                    }
-                    // Opción 4: Desde final.aggregatedData
-                    else if (final.aggregatedData && final.aggregatedData.total_anual_drk) {
-                        drkCost = parseFloat(final.aggregatedData.total_anual_drk);
-                        console.log('✅ DRK cost desde aggregatedData.total_anual_drk:', drkCost);
-                    }
-                    // Opción 5: Calcular desde bestOffer.total_cost_period
-                    else if (bestOffer && bestOffer.total_cost_period) {
-                        drkCost = parseFloat(bestOffer.total_cost_period) * 12;
-                        console.log('✅ DRK cost calculado desde total_cost_period * 12:', drkCost);
-                    }
-                    
-                    // PowerCup desde indexedResult (si existe)
-                    if (final.indexedResult && final.indexedResult.totalAnnual) {
-                        powercupCost = parseFloat(final.indexedResult.totalAnnual);
-                        console.log('✅ PowerCup cost desde indexedResult.totalAnnual:', powercupCost);
-                    }
-                    else if (final.indexedResult && final.indexedResult.annual_cost) {
-                        powercupCost = parseFloat(final.indexedResult.annual_cost);
-                        console.log('✅ PowerCup cost desde indexedResult.annual_cost:', powercupCost);
-                    }
-                    // Opción 2: Desde aggregatedData
-                    else if (final.aggregatedData && final.aggregatedData.total_anual_powercup) {
-                        powercupCost = parseFloat(final.aggregatedData.total_anual_powercup);
-                        console.log('✅ PowerCup cost desde aggregatedData.total_anual_powercup:', powercupCost);
-                    }
-                    // Opción 3: Calcular desde indexedResult.total_cost_period
-                    else if (final.indexedResult && final.indexedResult.total_cost_period) {
-                        powercupCost = parseFloat(final.indexedResult.total_cost_period) * 12;
-                        console.log('✅ PowerCup cost calculado desde total_cost_period * 12:', powercupCost);
-                    }
-                    else {
-                        // Si no hay PowerCup, usar 0 (puede ser que solo haya DRK)
-                        powercupCost = 0;
-                        console.log('ℹ️ PowerCup no disponible, usando 0');
-                    }
-                    
-                    console.log('Costes finales - DRK:', drkCost, 'PowerCup:', powercupCost);
-                    
-                    if (drkCost === 0) {
-                        console.error('⚠️ ADVERTENCIA: DRK cost es 0');
-                        console.error('bestOffer completo:', JSON.stringify(bestOffer, null, 2));
-                        console.error('final.bestOffer completo:', JSON.stringify(final.bestOffer, null, 2));
-                        alert('Error: No se pudo capturar el coste DRK. Por favor, revisa la consola (F12) y envía un pantallazo.');
-                        return;
-                    }
-                    
-                    const results = {
-                        drk: {
-                            total: drkCost / 12,
-                            total_anual: drkCost
-                        },
-                        powercup: {
-                            total: powercupCost / 12,
-                            total_anual: powercupCost
-                        }
-                    };
-                    
-                    console.log('Results preparados:', results);
-                    console.log('Llamando a showDualConfirm...');
-                    
-                    showDualConfirm('electricidad', tariff, data, results);
-                    return;
-                }
-                
                 if (!isMultiCupsMode && availableOffers.length > 1) {
                     console.log('Showing decision modal with', availableOffers.length, 'offers');
                     showOfferDecisionModal();
@@ -8885,12 +8675,6 @@
         // --- NUEVO: Modal de Decisión (Mejor vs Elegir) ---
         
         function showOfferDecisionModal() {
-            // ⚡ CRÍTICO: No mostrar el modal si estamos en modo DUAL
-            if (window.dualMode === true) {
-                console.log('⚠️ showOfferDecisionModal() bloqueado - modo DUAL activo');
-                return; // Salir inmediatamente
-            }
-            
             document.getElementById('loading-status').classList.add('hidden');
             document.getElementById('offer-decision-modal').classList.remove('hidden');
             document.getElementById('offer-decision-modal').classList.add('flex');
@@ -9118,6 +8902,47 @@
             }
         }
         
+        // Función auxiliar: Extraer datos de consumo desde resultado
+        function extractDataFromResult(result) {
+            // Intentar múltiples ubicaciones
+            let kwh_p1 = 0, kwh_p2 = 0, kwh_p3 = 0, kwh_p4 = 0, kwh_p5 = 0, kwh_p6 = 0;
+            let p1 = 0, p2 = 0, p3 = 0, p4 = 0, p5 = 0, p6 = 0;
+            let dias = 30;
+            
+            // Opción 1: Desde result directamente
+            if (result.kwh_p1 !== undefined) {
+                kwh_p1 = parseFloat(result.kwh_p1) || 0;
+                kwh_p2 = parseFloat(result.kwh_p2) || 0;
+                kwh_p3 = parseFloat(result.kwh_p3) || 0;
+                kwh_p4 = parseFloat(result.kwh_p4) || 0;
+                kwh_p5 = parseFloat(result.kwh_p5) || 0;
+                kwh_p6 = parseFloat(result.kwh_p6) || 0;
+                p1 = parseFloat(result.p1) || 0;
+                p2 = parseFloat(result.p2) || 0;
+                p3 = parseFloat(result.p3) || 0;
+                p4 = parseFloat(result.p4) || 0;
+                p5 = parseFloat(result.p5) || 0;
+                p6 = parseFloat(result.p6) || 0;
+                dias = parseInt(result.dias) || 30;
+            }
+            // Opción 2: Desde QR (nombres alternativos)
+            else if (result.consumo_punta !== undefined) {
+                kwh_p1 = parseFloat(result.consumo_punta) || 0;
+                kwh_p2 = parseFloat(result.consumo_llano) || 0;
+                kwh_p3 = parseFloat(result.consumo_valle) || 0;
+                p1 = parseFloat(result.potencia_p1_kw) || parseFloat(result.p_potencia_1) || 0;
+                p2 = parseFloat(result.potencia_p2_kw) || parseFloat(result.p_potencia_2) || 0;
+                dias = parseInt(result.dias_facturados) || parseInt(result.dias) || 30;
+            }
+            
+            return {
+                tariff: result.tariffType || currentTariffType || '2.0TD',
+                kwh_p1, kwh_p2, kwh_p3, kwh_p4, kwh_p5, kwh_p6,
+                p1, p2, p3, p4, p5, p6,
+                dias
+            };
+        }
+        
         // Nueva función para ejecutar con COMPARACIÓN DUAL (cuando CHECK estaba marcado)
         function selectBestOptionDirectDual() {
             closeOfferDecisionModal();
@@ -9128,6 +8953,33 @@
             }
             
             console.log('selectBestOptionDirectDual: Mostrando comparación DUAL (FIJO vs INDEXADO)');
+            
+            // ⚡ INTERCEPTAR MODO DUAL AQUÍ
+            if (window.dualMode === true) {
+                console.log('===== 🔥 MODO DUAL - Interceptando en selectBestOptionDirectDual =====');
+                
+                // Preparar datos para confirmación DUAL
+                const tariff = lastComparisonResult.tariffType || currentTariffType || '2.0TD';
+                const data = extractDataFromResult(lastComparisonResult);
+                
+                const drkCost = lastComparisonResult.totalAnnual || 0;
+                const powercupCost = lastIndexedResult.totalAnnual || 0;
+                
+                const results = {
+                    drk: {
+                        total: drkCost / 12,
+                        total_anual: drkCost
+                    },
+                    powercup: {
+                        total: powercupCost / 12,
+                        total_anual: powercupCost
+                    }
+                };
+                
+                console.log('Datos preparados para DUAL:', { tariff, data, results });
+                showDualConfirm('electricidad', tariff, data, results);
+                return;
+            }
             
             // Verificar si estamos en contexto MultiCups
             if (lastComparisonResult._multiCupsContext) {
@@ -9163,6 +9015,32 @@
             }
             
             console.log('selectBestOptionDirectSingle: Forzando vista SIMPLE (sin comparativa)');
+            
+            // ⚡ INTERCEPTAR MODO DUAL AQUÍ
+            if (window.dualMode === true) {
+                console.log('===== 🔥 MODO DUAL - Interceptando en selectBestOptionDirectSingle =====');
+                
+                // Preparar datos para confirmación DUAL
+                const tariff = lastComparisonResult.tariffType || currentTariffType || '2.0TD';
+                const data = extractDataFromResult(lastComparisonResult);
+                
+                const drkCost = lastComparisonResult.totalAnnual || 0;
+                
+                const results = {
+                    drk: {
+                        total: drkCost / 12,
+                        total_anual: drkCost
+                    },
+                    powercup: {
+                        total: 0,
+                        total_anual: 0
+                    }
+                };
+                
+                console.log('Datos preparados para DUAL:', { tariff, data, results });
+                showDualConfirm('electricidad', tariff, data, results);
+                return;
+            }
             
             // Verificar si estamos en contexto MultiCups
             if (lastComparisonResult._multiCupsContext) {
@@ -10084,6 +9962,34 @@
                 }
                 
                 console.log('About to render results UI');
+                
+                // ⚡ INTERCEPTAR MODO DUAL AQUÍ - antes de renderResultsUI
+                if (window.dualMode === true) {
+                    console.log('===== 🔥 MODO DUAL - Interceptando en continueWithSelectedOffer =====');
+                    
+                    // Preparar datos para confirmación DUAL
+                    const tariff = result.tariffType || result.originalTariffType || currentTariffType || '2.0TD';
+                    const data = extractDataFromResult(result);
+                    
+                    const drkCost = result.totalAnnual || 0;
+                    const powercupCost = indexedResult ? (indexedResult.totalAnnual || 0) : 0;
+                    
+                    const results = {
+                        drk: {
+                            total: drkCost / 12,
+                            total_anual: drkCost
+                        },
+                        powercup: {
+                            total: powercupCost / 12,
+                            total_anual: powercupCost
+                        }
+                    };
+                    
+                    console.log('Datos preparados para DUAL desde selección manual:', { tariff, data, results });
+                    showDualConfirm('electricidad', tariff, data, results);
+                    return;
+                }
+                
                 // Mostrar resultados (pasando indexedResult si existe)
                 renderResultsUI(result, indexedResult);
                 
@@ -10828,37 +10734,6 @@
             // Si hay más de 1 oferta, permitir elegir (en cualquier modo)
             if (availableOffers.length > 1) {
                 console.log('MultiCups: Showing decision modal with', availableOffers.length, 'offers');
-                
-                // NUEVO: Si estamos en modo DUAL, saltar el modal y ir directo a confirmación
-                if (window.dualMode === true) {
-                    console.log('Modo DUAL detectado en MultiCups - saltando modal de decisión');
-                    
-                    // Calcular mejor oferta automáticamente
-                    const bestOffer = availableOffers.reduce((best, curr) => 
-                        (curr.savings > best.savings) ? curr : best
-                    );
-                    
-                    // Preparar datos para DUAL desde finalIndividualResult
-                    const tariff = tariffType;
-                    const data = dataForCalc;
-                    
-                    let drkCost = bestOffer ? parseFloat(bestOffer.annual_cost || 0) : 0;
-                    let powercupCost = finalIndividualResult.indexedResult ? parseFloat(finalIndividualResult.indexedResult.annual_cost || 0) : 0;
-                    
-                    const results = {
-                        drk: {
-                            total: drkCost / 12,
-                            total_anual: drkCost
-                        },
-                        powercup: {
-                            total: powercupCost / 12,
-                            total_anual: powercupCost
-                        }
-                    };
-                    
-                    showDualConfirm('electricidad', tariff, data, results);
-                    return;
-                }
                 
                 // Guardar temporalmente el resultado para usarlo después
                 lastComparisonResult = finalIndividualResult;
