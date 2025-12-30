@@ -1482,9 +1482,9 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FINAL-v7 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FINAL-v7 🔥🔥🔥');
-        console.log('Si ves esta versión, el archivo está actualizado correctamente');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-SIMPLE-v8 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-SIMPLE-v8 🔥🔥🔥');
+        console.log('Flujo SIMPLIFICADO: Guardar temporal y volver a inicio');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -8977,51 +8977,33 @@
                 
                 console.log('✅ Contexto procesado');
                 
-                // ⚡⚡⚡ SOLUCIÓN DIRECTA - MODO DUAL ⚡⚡⚡
+                // ⚡⚡⚡ SOLUCIÓN ULTRA SIMPLE - MODO DUAL ⚡⚡⚡
                 if (window.dualMode === true) {
-                    console.log('===== 🔥 MODO DUAL - Llamando directamente a showDualConfirm =====');
+                    console.log('===== 🔥 MODO DUAL - Guardando suministro temporal =====');
                     
-                    // Extraer datos del resultado
-                    const tariff = lastComparisonResult.tariffType || currentTariffType || '2.0TD';
-                    const drkCost = lastComparisonResult.totalAnnual || 0;
-                    
-                    const data = {
-                        kwh_p1: lastComparisonResult.consumo_punta || lastComparisonResult.kwh_p1 || 0,
-                        kwh_p2: lastComparisonResult.consumo_llano || lastComparisonResult.kwh_p2 || 0,
-                        kwh_p3: lastComparisonResult.consumo_valle || lastComparisonResult.kwh_p3 || 0,
-                        potencia_p1: lastComparisonResult.potencia_p1_kw || lastComparisonResult.power_p1 || 0,
-                        potencia_p2: lastComparisonResult.potencia_p2_kw || lastComparisonResult.power_p2 || 0,
-                        dias: lastComparisonResult.dias_facturados || lastComparisonResult.dias || 30,
-                        cups: lastComparisonResult.cups || ''
+                    // Guardar DIRECTAMENTE como suministro temporal
+                    window.dualTempSupply = {
+                        type: 'electricidad',
+                        cups: lastComparisonResult.cups || '',
+                        tariff: lastComparisonResult.tariffType || currentTariffType || '2.0TD',
+                        offer: lastComparisonResult.offer,
+                        totalAnnual: lastComparisonResult.totalAnnual,
+                        originalBillAnnual: lastComparisonResult.originalBillAnnual || (lastComparisonResult.importe_total || 0) * 12,
+                        data: lastComparisonResult
                     };
                     
-                    const results = {
-                        drk: {
-                            total: drkCost / 12,
-                            total_anual: drkCost
-                        },
-                        powercup: {
-                            total: 0,
-                            total_anual: 0
-                        }
-                    };
+                    console.log('✅ Suministro temporal guardado');
+                    console.log('  - CUPS:', window.dualTempSupply.cups);
+                    console.log('  - Tarifa:', window.dualTempSupply.tariff);
+                    console.log('  - Coste anual:', window.dualTempSupply.totalAnnual);
                     
-                    console.log('Datos preparados para DUAL');
-                    console.log('  - tariff:', tariff);
-                    console.log('  - data.kwh_p1:', data.kwh_p1);
-                    console.log('  - results.drk.total_anual:', results.drk.total_anual);
-                    console.log('Llamando showDualConfirm...');
+                    // Volver a la pantalla inicial
+                    console.log('Volviendo a pantalla inicial...');
+                    document.getElementById('initial-view').classList.remove('hidden');
+                    document.getElementById('scanner-view').classList.add('hidden');
+                    document.getElementById('results-view').classList.add('hidden');
                     
-                    try {
-                        showDualConfirm('electricidad', tariff, data, results);
-                        console.log('✅ showDualConfirm ejecutada sin errores');
-                    } catch (e) {
-                        console.error('❌ Error al llamar showDualConfirm:', e);
-                        console.error('Error stack:', e.stack);
-                        alert('Error al mostrar confirmación DUAL: ' + e.message);
-                    }
-                    
-                    console.log('✅ Proceso DUAL completado');
+                    console.log('✅ Usuario puede añadir más suministros');
                     
                     // Resetear bandera
                     setTimeout(() => {
@@ -9029,7 +9011,7 @@
                         console.log('✅ Bandera reseteada');
                     }, 100);
                     
-                    return; // Salir
+                    return; // FIN
                 }
                 
                 console.log('🔍 Ejecutando función apropiada...');
