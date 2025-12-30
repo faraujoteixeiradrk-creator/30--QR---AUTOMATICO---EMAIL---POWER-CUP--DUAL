@@ -8798,7 +8798,13 @@
         
         // NUEVA: Ejecutar VER MEJOR OPCIÓN con la elección de tarifa
         function selectBestOptionWithChoice() {
-            console.log('selectBestOptionWithChoice llamada con elección:', bestOptionTariffChoice);
+            console.log('=================================================');
+            console.log('⚡⚡⚡ selectBestOptionWithChoice LLAMADA ⚡⚡⚡');
+            console.log('Elección:', bestOptionTariffChoice);
+            console.log('dualMode:', window.dualMode);
+            console.log('lastComparisonResult exists:', !!lastComparisonResult);
+            console.log('availableOffers.length:', availableOffers.length);
+            console.log('=================================================');
             
             // Cerrar el selector
             document.getElementById('best-option-tariff-selector')?.classList.add('hidden');
@@ -9057,12 +9063,21 @@
         
         // Nueva función para ejecutar con UNA sola tarifa (sin comparativa)
         function selectBestOptionDirectSingle() {
+            console.log('=================================================');
+            console.log('⚡⚡⚡ selectBestOptionDirectSingle LLAMADA ⚡⚡⚡');
+            console.log('dualMode:', window.dualMode);
+            console.log('lastComparisonResult exists:', !!lastComparisonResult);
+            console.log('=================================================');
+            
             closeOfferDecisionModal();
             
             if (!lastComparisonResult) {
+                console.error('❌ No hay lastComparisonResult');
                 window.showErrorModal('No hay resultado disponible');
                 return;
             }
+            
+            console.log('✅ lastComparisonResult OK, continuando...');
             
             // FORZAR: No mostrar comparativa indexada
             lastIndexedResult = null;
@@ -9185,14 +9200,24 @@
         }
         
         function selectBestOptionDirect() {
+            console.log('=================================================');
+            console.log('⚡⚡⚡ selectBestOptionDirect LLAMADA ⚡⚡⚡');
+            console.log('dualMode:', window.dualMode);
+            console.log('compareWithIndexed:', compareWithIndexed);
+            console.log('lastComparisonResult exists:', !!lastComparisonResult);
+            console.log('=================================================');
+            
             // Cerrar modal de decisión
             closeOfferDecisionModal();
             
             // Usar el resultado que ya estaba calculado (lastComparisonResult)
             if (!lastComparisonResult) {
+                console.error('❌ No hay lastComparisonResult');
                 window.showErrorModal('No hay resultado disponible');
                 return;
             }
+            
+            console.log('✅ lastComparisonResult OK, continuando...');
             
             // ═══════════════════════════════════════════════════════════════
             // ARREGLO: Cuando compareWithIndexed = true, calcular FIJO vs INDEXADO correctamente
