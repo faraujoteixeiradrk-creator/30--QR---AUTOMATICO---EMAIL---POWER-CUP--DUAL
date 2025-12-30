@@ -9002,12 +9002,22 @@
                         }
                     };
                     
-                    console.log('Datos para DUAL:', { tariff, data, results });
+                    console.log('Datos preparados para DUAL');
+                    console.log('  - tariff:', tariff);
+                    console.log('  - data.kwh_p1:', data.kwh_p1);
+                    console.log('  - results.drk.total_anual:', results.drk.total_anual);
                     console.log('Llamando showDualConfirm...');
                     
-                    showDualConfirm('electricidad', tariff, data, results);
+                    try {
+                        showDualConfirm('electricidad', tariff, data, results);
+                        console.log('✅ showDualConfirm ejecutada sin errores');
+                    } catch (e) {
+                        console.error('❌ Error al llamar showDualConfirm:', e);
+                        console.error('Error stack:', e.stack);
+                        alert('Error al mostrar confirmación DUAL: ' + e.message);
+                    }
                     
-                    console.log('✅ showDualConfirm ejecutada');
+                    console.log('✅ Proceso DUAL completado');
                     
                     // Resetear bandera
                     setTimeout(() => {
