@@ -10582,6 +10582,7 @@
         function goToDual() {
             hideAllScreens();
             document.getElementById('screen-dual').classList.add('active');
+            // Ocultar el modo de comparación cuando estamos en DUAL
             document.getElementById('modo-comparacion-section').style.display = 'none';
             updateDualSuppliesList();
         }
@@ -10593,6 +10594,8 @@
             
             hideAllScreens();
             document.getElementById('screen-dual').classList.add('active');
+            // Ocultar el modo de comparación cuando estamos en DUAL
+            document.getElementById('modo-comparacion-section').style.display = 'none';
             updateDualSuppliesList();
         }
         
@@ -10792,83 +10795,166 @@
         
         // Función auxiliar: Añadir suministro desde resultados
         window.dualAddFromResults = function(type, tariff, data, results) {
+            console.log('=== dualAddFromResults ===');
+            console.log('Type:', type);
+            console.log('Tariff:', tariff);
+            console.log('Data:', data);
+            console.log('Results:', results);
+            
+            // Calcular descripción según el tipo
+            let description = '';
+            let totalKwh = 0;
+            
+            if (type === 'electricidad') {
+                totalKwh = (parseFloat(data.kwh_p1) || 0) + 
+                          (parseFloat(data.kwh_p2) || 0) + 
+                          (parseFloat(data.kwh_p3) || 0) + 
+                          (parseFloat(data.kwh_p4) || 0) + 
+                          (parseFloat(data.kwh_p5) || 0) + 
+                          (parseFloat(data.kwh_p6) || 0);
+                description = `${totalKwh.toFixed(0)} kWh, ${data.dias} días`;
+            } else {
+                totalKwh = parseFloat(data.kwh) || 0;
+                description = `${totalKwh.toFixed(0)} kWh, ${data.dias} días`;
+            }
+            
             const supply = {
                 type: type, // 'electricidad' o 'gas'
                 tariff: tariff,
                 data: data,
                 results: results,
-                description: type === 'electricidad' 
-                    ? `${data.kwh_p1 + data.kwh_p2 + (data.kwh_p3 || 0)} kWh, ${data.dias} días`
-                    : `${data.kwh} kWh, ${data.dias} días`,
+                description: description,
+                totalKwh: totalKwh,
                 timestamp: new Date().getTime()
             };
             
+            console.log('Suministro a añadir:', supply);
+            
+            // Añadir al array
             dualSupplies.push(supply);
+            console.log('Total suministros:', dualSupplies.length);
+            console.log('Array completo:', dualSupplies);
             
             // Volver al gestor DUAL
             backToDualManager();
             
-            // Mostrar mensaje
-            alert('✅ Suministro añadido correctamente');
+            // Mostrar mensaje de confirmación
+            setTimeout(() => {
+                alert(`✅ Suministro añadido correctamente\n\nTipo: ${type === 'electricidad' ? 'Electricidad' : 'Gas'}\nTarifa: ${tariff}\n${description}\n\nTotal: ${dualSupplies.length} suministro(s)`);
+            }, 100);
         };
         
         // Función: Añadir resultado actual a DUAL
         window.addCurrentToDual = function() {
-            // Determinar si estamos en electricidad o gas basándonos en las variables globales
+            console.log('=== AÑADIENDO A DUAL ===');
+            console.log('lastComparisonResult:', window.lastComparisonResult);
+            console.log('gasCalculationParams:', window.gasCalculationParams);
+            
             let type, tariff, data, results;
             
-            if (window.lastComparisonResult && window.lastComparisonResult.tariffType) {
+            // Intentar detectar si es electricidad
+            if (window.lastComparisonResult) {
+                const result = window.lastComparisonResult;
+                console.log('Tipo de resultado:', result);
+                
                 // Es electricidad
                 type = 'electricidad';
-                tariff = window.lastComparisonResult.tariffType;
+                tariff = result.tariffType || currentTariffType || '2.0TD';
                 
-                // Construir data y results desde lastComparisonResult
-                const result = window.lastComparisonResult;
+                // Construir data desde lastComparisonResult
                 data = {
                     tariff: tariff,
-                    kwh_p1: result.kwh_p1 || 0,
-                    kwh_p2: result.kwh_p2 || 0,
-                    kwh_p3: result.kwh_p3 || 0,
-                    kwh_p4: result.kwh_p4 || 0,
-                    kwh_p5: result.kwh_p5 || 0,
-                    kwh_p6: result.kwh_p6 || 0,
-                    p1: result.p1 || 0,
-                    p2: result.p2 || 0,
-                    p3: result.p3 || 0,
-                    p4: result.p4 || 0,
-                    p5: result.p5 || 0,
-                    p6: result.p6 || 0,
-                    dias: result.dias || 30
+                    kwh_p1: parseFloat(result.kwh_p1) || 0,
+                    kwh_p2: parseFloat(result.kwh_p2) || 0,
+                    kwh_p3: parseFloat(result.kwh_p3) || 0,
+                    kwh_p4: parseFloat(result.kwh_p4) || 0,
+                    kwh_p5: parseFloat(result.kwh_p5) || 0,
+                    kwh_p6: parseFloat(result.kwh_p6) || 0,
+                    p1: parseFloat(result.p1) || 0,
+                    p2: parseFloat(result.p2) || 0,
+                    p3: parseFloat(result.p3) || 0,
+                    p4: parseFloat(result.p4) || 0,
+                    p5: parseFloat(result.p5) || 0,
+                    p6: parseFloat(result.p6) || 0,
+                    dias: parseInt(result.dias) || 30
                 };
                 
-                // Calcular resultados aproximados (simplificado)
-                const totalKwh = (data.kwh_p1 || 0) + (data.kwh_p2 || 0) + (data.kwh_p3 || 0) + (data.kwh_p4 || 0) + (data.kwh_p5 || 0) + (data.kwh_p6 || 0);
+                console.log('Data construida:', data);
+                
+                // Construir results
+                let drkCost = 0;
+                let powercupCost = 0;
+                
+                // Intentar obtener costos de diferentes fuentes
+                if (result.bestOffer) {
+                    drkCost = parseFloat(result.bestOffer.annual_cost) || parseFloat(result.bestOffer.total_cost_period) * 12 || 0;
+                    console.log('DRK cost from bestOffer:', drkCost);
+                }
+                
+                if (result.indexedResult) {
+                    powercupCost = parseFloat(result.indexedResult.annual_cost) || parseFloat(result.indexedResult.total_cost_period) * 12 || 0;
+                    console.log('PowerCup cost from indexedResult:', powercupCost);
+                }
+                
+                // Si no hay costos, intentar calcular desde aggregatedData
+                if (drkCost === 0 && result.aggregatedData) {
+                    drkCost = parseFloat(result.aggregatedData.total_anual_drk) || 0;
+                    console.log('DRK cost from aggregatedData:', drkCost);
+                }
+                
+                if (powercupCost === 0 && result.aggregatedData) {
+                    powercupCost = parseFloat(result.aggregatedData.total_anual_powercup) || 0;
+                    console.log('PowerCup cost from aggregatedData:', powercupCost);
+                }
+                
+                // Si aún no hay costos, usar offer directamente
+                if (drkCost === 0 && result.offer) {
+                    drkCost = parseFloat(result.offer.annual_cost) || 0;
+                    console.log('DRK cost from offer:', drkCost);
+                }
+                
                 results = {
                     drk: {
-                        total: result.bestOffer ? parseFloat(result.bestOffer.total_cost_period || 0) : 0,
-                        total_anual: result.bestOffer ? parseFloat(result.bestOffer.annual_cost || 0) : 0
+                        total: drkCost / 12,
+                        total_anual: drkCost
                     },
                     powercup: {
-                        total: result.indexedResult ? parseFloat(result.indexedResult.total_cost_period || 0) : 0,
-                        total_anual: result.indexedResult ? parseFloat(result.indexedResult.annual_cost || 0) : 0
+                        total: powercupCost / 12,
+                        total_anual: powercupCost
                     }
                 };
+                
+                console.log('Results construidos:', results);
+                
             } else if (window.gasCalculationParams && window.gasCalculationParams.kwh) {
                 // Es gas
                 type = 'gas';
                 tariff = currentGasTariff;
                 data = window.gasCalculationParams;
                 
+                console.log('Es GAS - data:', data);
+                
                 // Obtener resultados de gas desde las variables globales
                 results = {
                     drk: window.lastGasDRKResult || { total: 0, total_anual: 0 },
                     powercup: window.lastGasPowerCupResult || { total: 0, total_anual: 0 }
                 };
+                
+                console.log('Results de gas:', results);
             } else {
-                alert('No se pudo determinar el tipo de suministro');
+                console.error('No se pudo determinar el tipo de suministro');
+                alert('❌ No se pudo determinar el tipo de suministro. Por favor, calcula primero una comparativa.');
                 return;
             }
             
+            // Validar que tenemos datos válidos
+            if (results.drk.total_anual === 0 && results.powercup.total_anual === 0) {
+                console.error('No hay costos válidos para añadir');
+                alert('❌ No se pudieron obtener los costos. Por favor, calcula primero una comparativa.');
+                return;
+            }
+            
+            console.log('Añadiendo suministro:', { type, tariff, data, results });
             window.dualAddFromResults(type, tariff, data, results);
         };
         
@@ -11696,6 +11782,41 @@
             const comparisonMode = document.querySelector('input[name="comparison_mode"]:checked')?.value || 'drk_only';
             window.gasExportData = { results, dias, kwh, totalCliente, comparisonMode };
             console.log('💾 Guardando gasExportData:', {results: results.map(r => ({name: r.name, ahorro: r.ahorro_anual})), comparisonMode});
+            
+            // NUEVO: Guardar resultados para DUAL
+            // Identificar si hay DRK y PowerCup
+            let drkResult = null;
+            let powercupResult = null;
+            
+            results.forEach(r => {
+                const name = (r.name || '').toUpperCase();
+                if (name.includes('INDEX')) {
+                    powercupResult = r;
+                } else {
+                    drkResult = r;
+                }
+            });
+            
+            // Si no se identificaron correctamente, usar el primer resultado para DRK
+            if (!drkResult && results.length > 0) {
+                drkResult = results[0];
+            }
+            
+            // Guardar en variables globales
+            window.lastGasDRKResult = drkResult ? {
+                total: drkResult.total,
+                total_anual: drkResult.total_anual
+            } : { total: 0, total_anual: 0 };
+            
+            window.lastGasPowerCupResult = powercupResult ? {
+                total: powercupResult.total,
+                total_anual: powercupResult.total_anual
+            } : { total: 0, total_anual: 0 };
+            
+            console.log('💾 Guardando para DUAL:', {
+                drk: window.lastGasDRKResult,
+                powercup: window.lastGasPowerCupResult
+            });
             
             // AGREGAR BOTONES DE EXPORTAR (NUEVO)
             html += `
