@@ -1508,6 +1508,10 @@
         // Variables Escáner
         let scannerRunning = false;
         let stream = null, video = null, canvas = null, canvasCtx = null, animationFrameId = null;
+        
+        // Protección anti-duplicados para compareOffers
+        let lastCompareOffersCall = 0;
+        let lastCompareOffersData = null;
 
         // --- FUNCIONES DE FORMATO ROBUSTAS ---
         const eur = n => new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n || 0);
@@ -2137,6 +2141,20 @@
 
         function compareOffers(data) {
             try {
+                // PROTECCIÓN: Evitar llamadas duplicadas dentro de 500ms con los mismos datos
+                const now = Date.now();
+                const dataStr = JSON.stringify(data);
+                
+                if (now - lastCompareOffersCall < 500 && dataStr === lastCompareOffersData) {
+                    console.warn('⚠️⚠️⚠️ LLAMADA DUPLICADA A compareOffers DETECTADA Y BLOQUEADA ⚠️⚠️⚠️');
+                    console.warn('Tiempo desde última llamada:', now - lastCompareOffersCall, 'ms');
+                    console.warn('Datos idénticos - ignorando llamada duplicada');
+                    return; // Ignorar llamada duplicada
+                }
+                
+                lastCompareOffersCall = now;
+                lastCompareOffersData = dataStr;
+                
                 console.log('=================================================');
                 console.log('⚡⚡⚡ compareOffers LLAMADA ⚡⚡⚡');
                 console.log('Stack trace para identificar origen:');
