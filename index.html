@@ -1482,9 +1482,9 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FIXED-v11 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FIXED-v11 🔥🔥🔥');
-        console.log('BUGS CORREGIDOS: Lista de suministros + Pantallas duplicadas');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-ARRAY-v12 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-ARRAY-v12 🔥🔥🔥');
+        console.log('AHORA USA ARRAY: Los suministros se SUMAN (1, 2, 3...)');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -8979,63 +8979,41 @@
                 
                 // ⚡⚡⚡ SOLUCIÓN ULTRA SIMPLE - MODO DUAL ⚡⚡⚡
                 if (window.dualMode === true) {
-                    console.log('===== 🔥 MODO DUAL - Guardando suministro temporal =====');
+                    console.log('===== 🔥 MODO DUAL - Añadiendo suministro al array =====');
                     
-                    // Guardar DIRECTAMENTE como suministro temporal
-                    window.dualTempSupply = {
+                    // CREAR el objeto de suministro
+                    const newSupply = {
                         type: 'electricidad',
                         cups: lastComparisonResult.cups || '',
                         tariff: lastComparisonResult.tariffType || currentTariffType || '2.0TD',
                         offer: lastComparisonResult.offer,
                         totalAnnual: lastComparisonResult.totalAnnual,
                         originalBillAnnual: lastComparisonResult.originalBillAnnual || (lastComparisonResult.importe_total || 0) * 12,
-                        data: lastComparisonResult
+                        data: lastComparisonResult,
+                        results: {
+                            drk: {
+                                total: lastComparisonResult.totalAnnual / 12,
+                                total_anual: lastComparisonResult.totalAnnual
+                            },
+                            powercup: {
+                                total: 0,
+                                total_anual: 0
+                            }
+                        }
                     };
                     
-                    console.log('✅ Suministro temporal guardado');
-                    console.log('  - CUPS:', window.dualTempSupply.cups);
-                    console.log('  - Tarifa:', window.dualTempSupply.tariff);
-                    console.log('  - Coste anual:', window.dualTempSupply.totalAnnual);
+                    // AÑADIR al array (no sobrescribir)
+                    dualSupplies.push(newSupply);
                     
-                    // Actualizar UI: mostrar que hay 1 suministro
-                    const countElem = document.getElementById('dual-supplies-count');
-                    const containerElem = document.getElementById('dual-supplies-container');
+                    console.log('✅ Suministro añadido al array');
+                    console.log('  - Total suministros:', dualSupplies.length);
+                    console.log('  - CUPS:', newSupply.cups);
+                    console.log('  - Tarifa:', newSupply.tariff);
+                    console.log('  - Coste anual:', newSupply.totalAnnual);
                     
-                    if (countElem) {
-                        countElem.textContent = '1';
-                        console.log('✅ Contador actualizado a 1');
-                    }
-                    
-                    if (containerElem) {
-                        containerElem.innerHTML = `
-                            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3 flex items-center justify-between">
-                                <div class="flex items-center gap-3">
-                                    <span class="text-2xl">⚡</span>
-                                    <div>
-                                        <p class="font-semibold text-sm">${window.dualTempSupply.tariff}</p>
-                                        <p class="text-xs text-slate-500">${window.dualTempSupply.cups}</p>
-                                    </div>
-                                </div>
-                                <div class="text-right">
-                                    <p class="font-bold text-drk-600">${(window.dualTempSupply.totalAnnual / 12).toFixed(2)}€/mes</p>
-                                    <p class="text-xs text-slate-500">${window.dualTempSupply.totalAnnual.toFixed(2)}€/año</p>
-                                </div>
-                            </div>
-                        `;
-                        console.log('✅ Suministro añadido a la lista visual');
-                    }
-                    
-                    // Activar botón de calcular
-                    const calcBtn = document.getElementById('dual-calculate-btn');
-                    if (calcBtn) {
-                        calcBtn.disabled = false;
-                        calcBtn.classList.remove('bg-slate-600', 'hover:bg-slate-700');
-                        calcBtn.classList.add('bg-drk-600', 'hover:bg-drk-700');
-                        calcBtn.style.background = 'linear-gradient(135deg, #0ea5e9 0%, #84cc16 100%)';
-                        console.log('✅ Botón CALCULAR activado');
-                    }
-                    
-                    console.log('✅ UI actualizada - 1 suministro guardado');
+                    // Actualizar UI usando la función existente
+                    updateDualSuppliesList();
+                    console.log('✅ UI actualizada con updateDualSuppliesList()');
                     
                     // CRÍTICO: Ocultar TODAS las pantallas primero
                     console.log('Ocultando todas las pantallas...');
@@ -9045,7 +9023,7 @@
                     console.log('Mostrando pantalla DUAL...');
                     document.getElementById('screen-dual').classList.add('active');
                     
-                    console.log('✅ Usuario puede calcular la comparativa');
+                    console.log('✅ Usuario puede añadir más suministros o calcular');
                     
                     // Resetear bandera
                     setTimeout(() => {
@@ -11475,11 +11453,17 @@
         // Función: Calcular comparativa global
         function dualCalculate() {
             console.log('===== dualCalculate LLAMADA =====');
+            console.log('Suministros en array:', dualSupplies.length);
             
-            // Verificar si hay suministro temporal
-            if (window.dualTempSupply) {
-                console.log('✅ Hay suministro temporal, mostrando confirmación DUAL');
-                const supply = window.dualTempSupply;
+            if (dualSupplies.length === 0) {
+                alert('Debes añadir al menos un suministro');
+                return;
+            }
+            
+            // Si solo hay 1 suministro, mostrar confirmación DUAL simple
+            if (dualSupplies.length === 1) {
+                console.log('✅ Solo 1 suministro, mostrando confirmación DUAL');
+                const supply = dualSupplies[0];
                 
                 // Preparar datos para showDualConfirm
                 const tariff = supply.tariff || '2.0TD';
@@ -11493,7 +11477,7 @@
                     cups: supply.cups || ''
                 };
                 
-                const results = {
+                const results = supply.results || {
                     drk: {
                         total: supply.totalAnnual / 12,
                         total_anual: supply.totalAnnual
@@ -11514,11 +11498,7 @@
                 return;
             }
             
-            // Código original para múltiples suministros
-            if (dualSupplies.length === 0) {
-                alert('Debes añadir al menos un suministro');
-                return;
-            }
+            // Código original para múltiples suministros (2 o más)
             
             // Calcular totales DRK y Power Cup
             let totalDRK = 0;
