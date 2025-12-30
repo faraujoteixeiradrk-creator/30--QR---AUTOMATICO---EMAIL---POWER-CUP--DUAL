@@ -8948,15 +8948,28 @@
                 console.log('⚠️  Sin comparación dual (CHECK no estaba marcado o no hay tarifa del otro tipo)');
             }
             
+            console.log('🚀🚀🚀 A PUNTO DE ENTRAR AL TRY/CATCH');
+            console.log('  - preservedContext defined:', typeof preservedContext !== 'undefined');
+            
             try {
-                console.log('🔍 Intentando restaurar contexto...');
+                console.log('🔍 DENTRO DEL TRY - Intentando restaurar contexto...');
+                console.log('🔍 Evaluando preservedContext...');
+                console.log('🔍 preservedContext type:', typeof preservedContext);
+                console.log('🔍 preservedContext is null:', preservedContext === null);
+                console.log('🔍 preservedContext is undefined:', preservedContext === undefined);
+                console.log('🔍 preservedContext truthy:', !!preservedContext);
+                
                 // CRÍTICO: RESTAURAR el contexto preservado
                 if (preservedContext) {
+                    console.log('✅ preservedContext existe, restaurando...');
                     lastComparisonResult._multiCupsContext = preservedContext;
                     console.log('✅ Contexto MULTICUPS restaurado en selectBestOptionWithChoice');
                 } else {
+                    console.log('⚠️  preservedContext es falsy, no restaurando contexto');
                     console.log('⚠️  No había contexto MULTICUPS que restaurar');
                 }
+                
+                console.log('✅ Contexto restaurado exitosamente');
                 
                 console.log('🔍 A punto de ejecutar función de continuación...');
                 console.log('  - hadCheckMarked:', hadCheckMarked);
