@@ -1922,9 +1922,24 @@
         }
 
         function selectTariffType(type) {
+            console.log('=== selectTariffType EJECUTÁNDOSE ===');
+            console.log('Type:', type);
+            console.log('dualMode:', window.dualMode);
+            
             currentTariffType = type;
             const config = TARIFF_CONFIG[type];
             const qrButtonsContainer = document.getElementById('qr-buttons-container');
+
+            // CRÍTICO: Si estamos en modo DUAL, limpiar TODAS las variables
+            if (window.dualMode === true) {
+                console.log('⚡ MODO DUAL DETECTADO - Limpiando variables anteriores...');
+                lastComparisonResult = null;
+                lastIndexedResult = null;
+                availableOffers = [];
+                manuallySelectedOffer = null;
+                compareWithIndexed = false;
+                console.log('✅ Variables limpiadas correctamente');
+            }
 
             clearManualInputs();  
 
@@ -2122,8 +2137,14 @@
 
         function compareOffers(data) {
             try {
-                console.log('compareOffers called with data:', data);
+                console.log('=================================================');
+                console.log('⚡⚡⚡ compareOffers LLAMADA ⚡⚡⚡');
+                console.log('Stack trace para identificar origen:');
+                console.trace();
+                console.log('Data recibida:', data);
                 console.log('currentTariffType:', currentTariffType);
+                console.log('dualMode activo:', window.dualMode);
+                console.log('=================================================');
                 
                 const tariffType = currentTariffType;  
                 const tariffsToCompare = currentTariffs[tariffType] || [];
@@ -11034,9 +11055,15 @@
         
         // NUEVA: Función para seleccionar tarifa directamente
         function dualSelectTariff(type, tariff) {
-            console.log('=== dualSelectTariff ===');
+            console.log('=================================================');
+            console.log('=== dualSelectTariff LLAMADA ===');
             console.log('Type:', type);
             console.log('Tariff:', tariff);
+            console.log('Estado ANTES:');
+            console.log('- dualMode:', window.dualMode);
+            console.log('- lastComparisonResult:', lastComparisonResult ? 'EXISTS' : 'NULL');
+            console.log('- availableOffers:', availableOffers.length);
+            console.log('=================================================');
             
             dualCurrentType = type;
             window.dualMode = true;
@@ -11044,7 +11071,7 @@
             if (type === 'electricidad') {
                 // Configurar el tipo de tarifa ANTES de cambiar pantallas
                 currentTariffType = tariff;
-                console.log('Tarifa configurada:', currentTariffType);
+                console.log('✅ Tarifa configurada:', currentTariffType);
                 
                 // Ocultar todas las pantallas
                 hideAllScreens();
@@ -11061,10 +11088,13 @@
                 // Mostrar initial-view
                 document.getElementById('initial-view').classList.remove('hidden');
                 
+                console.log('✅ Pantallas configuradas, llamando a selectTariffType...');
+                
                 // IMPORTANTE: Llamar a selectTariffType DESPUÉS de configurar las pantallas
                 setTimeout(() => {
                     selectTariffType(tariff);
-                    console.log('selectTariffType ejecutado para:', tariff);
+                    console.log('✅ selectTariffType ejecutado para:', tariff);
+                }, 50);
                 }, 50);
                 
             } else if (type === 'gas') {
