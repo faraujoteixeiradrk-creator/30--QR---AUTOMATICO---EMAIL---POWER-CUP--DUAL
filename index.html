@@ -2253,6 +2253,53 @@
                 // PERO SOLO en modo individual, NO en MultiCups
                 const isMultiCupsMode = currentTariffType === 'MULTICUPS';
                 
+                // NUEVO: Si estamos en modo DUAL, saltar el modal y ir directo a confirmación
+                if (window.dualMode === true && !isMultiCupsMode) {
+                    console.log('Modo DUAL detectado - saltando modal de decisión');
+                    // Calcular mejor oferta automáticamente
+                    const bestOffer = availableOffers.length > 0 
+                        ? availableOffers.reduce((best, curr) => 
+                            (curr.savings > best.savings) ? curr : best
+                        )
+                        : final.bestOffer;
+                    
+                    // Preparar datos para DUAL
+                    const tariff = final.tariffType || currentTariffType || '2.0TD';
+                    const data = {
+                        tariff: tariff,
+                        kwh_p1: parseFloat(final.kwh_p1) || 0,
+                        kwh_p2: parseFloat(final.kwh_p2) || 0,
+                        kwh_p3: parseFloat(final.kwh_p3) || 0,
+                        kwh_p4: parseFloat(final.kwh_p4) || 0,
+                        kwh_p5: parseFloat(final.kwh_p5) || 0,
+                        kwh_p6: parseFloat(final.kwh_p6) || 0,
+                        p1: parseFloat(final.p1) || 0,
+                        p2: parseFloat(final.p2) || 0,
+                        p3: parseFloat(final.p3) || 0,
+                        p4: parseFloat(final.p4) || 0,
+                        p5: parseFloat(final.p5) || 0,
+                        p6: parseFloat(final.p6) || 0,
+                        dias: parseInt(final.dias) || 30
+                    };
+                    
+                    let drkCost = bestOffer ? parseFloat(bestOffer.annual_cost || 0) : 0;
+                    let powercupCost = final.indexedResult ? parseFloat(final.indexedResult.annual_cost || 0) : 0;
+                    
+                    const results = {
+                        drk: {
+                            total: drkCost / 12,
+                            total_anual: drkCost
+                        },
+                        powercup: {
+                            total: powercupCost / 12,
+                            total_anual: powercupCost
+                        }
+                    };
+                    
+                    showDualConfirm('electricidad', tariff, data, results);
+                    return;
+                }
+                
                 if (!isMultiCupsMode && availableOffers.length > 1) {
                     console.log('Showing decision modal with', availableOffers.length, 'offers');
                     showOfferDecisionModal();
@@ -10612,6 +10659,37 @@
             // Si hay más de 1 oferta, permitir elegir (en cualquier modo)
             if (availableOffers.length > 1) {
                 console.log('MultiCups: Showing decision modal with', availableOffers.length, 'offers');
+                
+                // NUEVO: Si estamos en modo DUAL, saltar el modal y ir directo a confirmación
+                if (window.dualMode === true) {
+                    console.log('Modo DUAL detectado en MultiCups - saltando modal de decisión');
+                    
+                    // Calcular mejor oferta automáticamente
+                    const bestOffer = availableOffers.reduce((best, curr) => 
+                        (curr.savings > best.savings) ? curr : best
+                    );
+                    
+                    // Preparar datos para DUAL desde finalIndividualResult
+                    const tariff = tariffType;
+                    const data = dataForCalc;
+                    
+                    let drkCost = bestOffer ? parseFloat(bestOffer.annual_cost || 0) : 0;
+                    let powercupCost = finalIndividualResult.indexedResult ? parseFloat(finalIndividualResult.indexedResult.annual_cost || 0) : 0;
+                    
+                    const results = {
+                        drk: {
+                            total: drkCost / 12,
+                            total_anual: drkCost
+                        },
+                        powercup: {
+                            total: powercupCost / 12,
+                            total_anual: powercupCost
+                        }
+                    };
+                    
+                    showDualConfirm('electricidad', tariff, data, results);
+                    return;
+                }
                 
                 // Guardar temporalmente el resultado para usarlo después
                 lastComparisonResult = finalIndividualResult;
