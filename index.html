@@ -8973,42 +8973,68 @@
                 
                 console.log('✅ Contexto procesado');
                 
-                console.log('🔍 Ejecutando función apropiada...');
-                
-                // CRÍTICO: Ejecutar según si hay comparación dual o no
-                if (hadCheckMarked && resIndexado) {
-                    // Con comparación dual
-                    console.log('→ Rama: CON comparación dual');
-                    console.log('→ Llamando selectBestOptionDirectDual');
-                    try {
-                        selectBestOptionDirectDual();
-                        console.log('✅ selectBestOptionDirectDual ejecutada');
-                    } catch (e) {
-                        console.error('❌ Error en selectBestOptionDirectDual:', e);
-                    }
-                } else {
-                    // Sin comparación dual
-                    console.log('→ Rama: SIN comparación dual');
-                    console.log('→ A punto de llamar selectBestOptionDirectSingle');
-                    console.log('→ typeof selectBestOptionDirectSingle:', typeof selectBestOptionDirectSingle);
+                try {
+                    console.log('🔍 Ejecutando función apropiada...');
+                    console.log('🔍 Verificando variables antes del if...');
                     
                     try {
-                        console.log('→ Ejecutando selectBestOptionDirectSingle()...');
-                        selectBestOptionDirectSingle();
-                        console.log('✅ selectBestOptionDirectSingle ejecutada');
+                        console.log('  - hadCheckMarked:', hadCheckMarked);
                     } catch (e) {
-                        console.error('❌ Error al llamar selectBestOptionDirectSingle:', e);
-                        console.error('Error stack:', e.stack);
+                        console.error('  ❌ Error al acceder hadCheckMarked:', e.message);
                     }
-                }
-                
-                console.log('✅ Función lanzada');
-                
-                // Resetear bandera después de un pequeño delay para permitir que las funciones terminen
-                setTimeout(() => {
+                    
+                    try {
+                        console.log('  - resIndexado exists:', !!resIndexado);
+                    } catch (e) {
+                        console.error('  ❌ Error al acceder resIndexado:', e.message);
+                    }
+                    
+                    console.log('🔍 Variables verificadas, evaluando if...');
+                    
+                    // CRÍTICO: Ejecutar según si hay comparación dual o no
+                    if (hadCheckMarked && resIndexado) {
+                        // Con comparación dual
+                        console.log('→ Rama: CON comparación dual');
+                        console.log('→ Llamando selectBestOptionDirectDual');
+                        try {
+                            selectBestOptionDirectDual();
+                            console.log('✅ selectBestOptionDirectDual ejecutada');
+                        } catch (e) {
+                            console.error('❌ Error en selectBestOptionDirectDual:', e);
+                        }
+                    } else {
+                        // Sin comparación dual
+                        console.log('→ Rama: SIN comparación dual');
+                        console.log('→ A punto de llamar selectBestOptionDirectSingle');
+                        console.log('→ typeof selectBestOptionDirectSingle:', typeof selectBestOptionDirectSingle);
+                        
+                        try {
+                            console.log('→ Ejecutando selectBestOptionDirectSingle()...');
+                            selectBestOptionDirectSingle();
+                            console.log('✅ selectBestOptionDirectSingle ejecutada');
+                        } catch (e) {
+                            console.error('❌ Error al llamar selectBestOptionDirectSingle:', e);
+                            console.error('Error stack:', e.stack);
+                        }
+                    }
+                    
+                    console.log('✅ Función lanzada');
+                    
+                    // Resetear bandera después de un pequeño delay para permitir que las funciones terminen
+                    setTimeout(() => {
+                        isProcessingBestOption = false;
+                        console.log('✅ Bandera isProcessingBestOption reseteada');
+                    }, 100);
+                } catch (outerError) {
+                    console.error('❌❌❌ ERROR AL EVALUAR IF O EJECUTAR FUNCIONES:');
+                    console.error('Error message:', outerError.message);
+                    console.error('Error stack:', outerError.stack);
+                    console.error('Error completo:', outerError);
+                    alert('Error crítico al ejecutar: ' + outerError.message);
+                    
+                    // Resetear bandera incluso si hay error
                     isProcessingBestOption = false;
-                    console.log('✅ Bandera isProcessingBestOption reseteada');
-                }, 100);
+                }
             } catch (error) {
                 console.error('❌❌❌ ERROR CRÍTICO en selectBestOptionWithChoice:');
                 console.error('Error message:', error.message);
