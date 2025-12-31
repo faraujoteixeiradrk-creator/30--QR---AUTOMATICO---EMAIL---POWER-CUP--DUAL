@@ -1482,11 +1482,11 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-POWERCUP-v26 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-POWERCUP-v26 🔥🔥🔥');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FIX-VER-MEJOR-v27 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FIX-VER-MEJOR-v27 🔥🔥🔥');
+        console.log('✅ VER MEJOR OPCIÓN ahora añade al array DUAL correctamente');
         console.log('✅ POWER CUP MODE implementado con colores VERDES');
         console.log('✅ DRK MODE con colores AZULES');
-        console.log('✅ Detección automática según comparisonMode');
         console.log('📁 BACKUP anterior: BACKUP_QR_full_GAS_V2_DUAL_20251231_010742.html');
         
         // Eliminamos 6.1TD del estado inicial
@@ -9582,6 +9582,69 @@
             // ═══════════════════════════════════════════════════════════════
             // FIN ARREGLO
             // ═══════════════════════════════════════════════════════════════
+            
+            // ⚡⚡⚡ MODO DUAL - INTERCEPTAR ANTES DE MULTICUPS ⚡⚡⚡
+            if (window.dualMode === true) {
+                console.log('===== 🔥 MODO DUAL DETECTADO EN selectBestOptionDirect =====');
+                
+                // CREAR el objeto de suministro CON DESGLOSE COMPLETO
+                const newSupply = {
+                    type: 'electricidad',
+                    cups: lastComparisonResult.cups || '',
+                    tariff: lastComparisonResult.tariffType || currentTariffType || '2.0TD',
+                    offer: lastComparisonResult.offer,
+                    totalAnnual: lastComparisonResult.totalAnnual,
+                    originalBillAnnual: lastComparisonResult.originalBillAnnual || (lastComparisonResult.importe_total || 0) * 12,
+                    data: lastComparisonResult,
+                    // Añadir desglose completo de electricidad
+                    electricityBreakdown: {
+                        energyCosts: lastComparisonResult.energyCosts || [],
+                        powerCosts: lastComparisonResult.powerCosts || [],
+                        subEnergy: lastComparisonResult.subEnergyNet || 0,
+                        subPower: lastComparisonResult.subPower || 0,
+                        subBase: lastComparisonResult.subBase || 0,
+                        costIE: lastComparisonResult.costIE || 0,
+                        baseImp: lastComparisonResult.baseImp || 0,
+                        costIVA: lastComparisonResult.costIVA || 0,
+                        totalPeriod: lastComparisonResult.totalPeriod || 0,
+                        totalAnnual: lastComparisonResult.totalAnnual || 0,
+                        ahorro_mensual: (lastComparisonResult.originalBillPeriod || 0) - (lastComparisonResult.totalPeriod || 0),
+                        ahorro_anual: (lastComparisonResult.originalBillAnnual || 0) - (lastComparisonResult.totalAnnual || 0),
+                        dias: lastComparisonResult.dias_facturados || 30
+                    },
+                    results: {
+                        drk: {
+                            total: lastComparisonResult.totalAnnual / 12,
+                            total_anual: lastComparisonResult.totalAnnual
+                        },
+                        powercup: {
+                            total: lastIndexedResult ? (lastIndexedResult.totalAnnual / 12) : 0,
+                            total_anual: lastIndexedResult ? lastIndexedResult.totalAnnual : 0
+                        }
+                    }
+                };
+                
+                // AÑADIR al array
+                dualSupplies.push(newSupply);
+                
+                console.log('✅ Suministro añadido al array DUAL desde VER MEJOR OPCIÓN');
+                console.log('  - Total suministros:', dualSupplies.length);
+                console.log('  - CUPS:', newSupply.cups);
+                console.log('  - Tarifa:', newSupply.tariff);
+                console.log('  - Coste anual:', newSupply.totalAnnual);
+                
+                // Actualizar UI usando la función existente
+                updateDualSuppliesList();
+                console.log('✅ UI actualizada con updateDualSuppliesList()');
+                
+                // CRÍTICO: Volver a pantalla DUAL
+                hideAllScreens();
+                document.getElementById('screen-dual').classList.add('active');
+                
+                console.log('✅ Vuelto a pantalla DUAL');
+                return;  // SALIR DE LA FUNCIÓN
+            }
+            // ⚡⚡⚡ FIN MODO DUAL ⚡⚡⚡
             
             // Verificar si estamos en contexto MultiCups
             if (lastComparisonResult._multiCupsContext) {
