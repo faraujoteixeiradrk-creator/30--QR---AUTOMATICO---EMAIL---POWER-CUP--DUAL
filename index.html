@@ -607,14 +607,6 @@
                     <div id="gas-results-container" class="mt-6">
                         <!-- Los resultados se insertarán aquí -->
                     </div>
-                    
-                    <!-- NUEVO: Botón para añadir a DUAL (solo visible en modo DUAL) -->
-                    <div id="gas-dual-button-container" style="display:none;" class="mt-6">
-                        <button onclick="addCurrentGasToDual()" class="w-full text-white font-bold py-4 px-6 rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3" style="background: linear-gradient(135deg, #0ea5e9 0%, #84cc16 100%);">
-                            <span class="text-2xl">⚡🔥</span>
-                            <span>AÑADIR A DUAL</span>
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -1482,12 +1474,12 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FIX-VER-MEJOR-v27 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FIX-VER-MEJOR-v27 🔥🔥🔥');
-        console.log('✅ VER MEJOR OPCIÓN ahora añade al array DUAL correctamente');
-        console.log('✅ POWER CUP MODE implementado con colores VERDES');
-        console.log('✅ DRK MODE con colores AZULES');
-        console.log('📁 BACKUP anterior: BACKUP_QR_full_GAS_V2_DUAL_20251231_010742.html');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-GAS-CLEAN-v28 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-GAS-CLEAN-v28 🔥🔥🔥');
+        console.log('✅ ELIMINADO botón AÑADIR A DUAL de resultados GAS (ya no es necesario)');
+        console.log('✅ VER MEJOR OPCIÓN funciona en DUAL');
+        console.log('✅ POWER CUP MODE (verde) + DRK MODE (azul)');
+        console.log('📁 BACKUP: BACKUP_QR_full_GAS_V2_DUAL_20251231_010742.html');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
