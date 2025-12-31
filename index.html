@@ -1599,12 +1599,11 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-DEBUG-PRECIOS-v43 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-DEBUG-PRECIOS-v43 🔥🔥🔥');
-        console.log('✅ MODAL: Solicita datos del comercial y cliente');
-        console.log('✅ GAS: Campo CUPS + precios en offer');
-        console.log('✅ DEBUG: Logs añadidos para ver powerCosts/energyCosts');
-        console.log('🔧 Por favor, genera el PDF y comparte los logs de la consola');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-PRECIOS-ARRAYS-v44 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-PRECIOS-ARRAYS-v44 🔥🔥🔥');
+        console.log('✅ FIX: Precios extraídos de powerCosts y energyCosts arrays');
+        console.log('✅ Ahora offer.p1_power_price y offer.p1_price deben tener valores');
+        console.log('✅ Los precios deberían aparecer correctamente en el PDF');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -9102,11 +9101,23 @@
                     console.log('===== 🔥 MODO DUAL - Añadiendo suministro al array =====');
                     
                     // CREAR el objeto de suministro CON DESGLOSE COMPLETO
+                    // CREAR el objeto de suministro CON DESGLOSE COMPLETO
                     const newSupply = {
                         type: 'electricidad',
                         cups: lastComparisonResult.cups || '',
                         tariff: lastComparisonResult.tariffType || currentTariffType || '2.0TD',
-                        offer: lastComparisonResult.offer,
+                        offer: {
+                            ...lastComparisonResult.offer,
+                            // Extraer precios de los arrays powerCosts y energyCosts
+                            p1_power_price: lastComparisonResult.powerCosts?.[0]?.price_euro_kw_day,
+                            p2_power_price: lastComparisonResult.powerCosts?.[1]?.price_euro_kw_day,
+                            p1_price: lastComparisonResult.energyCosts?.[0]?.price_euro_kwh,
+                            p2_price: lastComparisonResult.energyCosts?.[1]?.price_euro_kwh,
+                            p3_price: lastComparisonResult.energyCosts?.[2]?.price_euro_kwh,
+                            p4_price: lastComparisonResult.energyCosts?.[3]?.price_euro_kwh,
+                            p5_price: lastComparisonResult.energyCosts?.[4]?.price_euro_kwh,
+                            p6_price: lastComparisonResult.energyCosts?.[5]?.price_euro_kwh
+                        },
                         totalAnnual: lastComparisonResult.totalAnnual,
                         originalBillAnnual: lastComparisonResult.originalBillAnnual || (lastComparisonResult.importe_total || 0) * 12,
                         data: lastComparisonResult,
@@ -10438,7 +10449,18 @@
                         type: 'electricidad',
                         cups: result.cups || '',
                         tariff: result.tariffType || result.originalTariffType || currentTariffType || '2.0TD',
-                        offer: result.offer,
+                        offer: {
+                            ...result.offer,
+                            // Extraer precios de los arrays powerCosts y energyCosts
+                            p1_power_price: result.powerCosts?.[0]?.price_euro_kw_day,
+                            p2_power_price: result.powerCosts?.[1]?.price_euro_kw_day,
+                            p1_price: result.energyCosts?.[0]?.price_euro_kwh,
+                            p2_price: result.energyCosts?.[1]?.price_euro_kwh,
+                            p3_price: result.energyCosts?.[2]?.price_euro_kwh,
+                            p4_price: result.energyCosts?.[3]?.price_euro_kwh,
+                            p5_price: result.energyCosts?.[4]?.price_euro_kwh,
+                            p6_price: result.energyCosts?.[5]?.price_euro_kwh
+                        },
                         totalAnnual: result.totalAnnual,
                         originalBillAnnual: result.originalBillAnnual || (result.importe_total || 0) * 12,
                         data: result,
