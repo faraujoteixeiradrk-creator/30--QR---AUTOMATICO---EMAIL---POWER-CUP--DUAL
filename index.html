@@ -1599,13 +1599,12 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-CLIENT-DATA-v42 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-CLIENT-DATA-v42 🔥🔥🔥');
-        console.log('✅ MODAL: Solicita datos del comercial y cliente antes de generar PDF');
-        console.log('✅ GAS: Campo CUPS añadido en formulario');
-        console.log('✅ PDF: Usa nombre del cliente y código comercial capturados');
-        console.log('✅ PDF: CUPS de GAS se incluye cuando se proporciona');
-        console.log('✅ Formato completo como las comparativas individuales');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-DEBUG-PRECIOS-v43 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-DEBUG-PRECIOS-v43 🔥🔥🔥');
+        console.log('✅ MODAL: Solicita datos del comercial y cliente');
+        console.log('✅ GAS: Campo CUPS + precios en offer');
+        console.log('✅ DEBUG: Logs añadidos para ver powerCosts/energyCosts');
+        console.log('🔧 Por favor, genera el PDF y comparte los logs de la consola');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -12038,12 +12037,32 @@
         
         // Función: Generar PDF DUAL
         function dualGeneratePDF(comercialCode = 'D=00', clientName = '[NOMBRE COMPLETO CLIENTE]', clientPhone = '', clientEmail = '') {
-            console.log('📄 Generando PDF DUAL completo...');
+            console.log('📄 Generando PDF DUAL con datos capturados:');
+            console.log('  - comercialCode:', comercialCode);
+            console.log('  - clientName:', clientName);
             
             if (!dualSupplies || dualSupplies.length === 0) {
                 alert('No hay suministros para generar la propuesta.');
                 return;
             }
+            
+            // DEBUG: Imprimir cada suministro para ver su estructura
+            console.log('🔍 DEBUG - Contenido de dualSupplies:');
+            dualSupplies.forEach((s, i) => {
+                console.log(`  [${i+1}] Tipo:`, s.type);
+                console.log(`  [${i+1}] CUPS:`, s.cups);
+                console.log(`  [${i+1}] Tarifa:`, s.tariff);
+                if (s.type === 'electricidad') {
+                    console.log(`  [${i+1}] electricityBreakdown.powerCosts:`, s.electricityBreakdown?.powerCosts);
+                    console.log(`  [${i+1}] electricityBreakdown.energyCosts:`, s.electricityBreakdown?.energyCosts);
+                    console.log(`  [${i+1}] offer.p1_power_price:`, s.offer?.p1_power_price);
+                    console.log(`  [${i+1}] offer.p1_price:`, s.offer?.p1_price);
+                } else if (s.type === 'gas') {
+                    console.log(`  [${i+1}] gasBreakdown:`, s.gasBreakdown);
+                    console.log(`  [${i+1}] offer.p_fijo_diario:`, s.offer?.p_fijo_diario);
+                    console.log(`  [${i+1}] offer.p1_price:`, s.offer?.p1_price);
+                }
+            });
             
             const results = window.dualGlobalResults;
             if (!results) {
@@ -13486,7 +13505,10 @@
                         offer: {
                             name: bestResult.name || 'DRK',
                             description: bestResult.descripcion || bestResult.name || 'DRK Gas',  // ✅ DESCRIPTION
-                            isDrk: true
+                            isDrk: true,
+                            // Añadir precios para mostrar en PDF
+                            p_fijo_diario: parseFloat(bestResult.p_fijo_diario) || 0,
+                            p1_price: parseFloat(bestResult.p1_price) || 0
                         },
                         totalAnnual: totalAnual,
                         originalBillAnnual: originalBillAnnual,
