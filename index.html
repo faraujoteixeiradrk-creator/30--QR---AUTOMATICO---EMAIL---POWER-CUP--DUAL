@@ -1482,11 +1482,11 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-COMPLETO-v24 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-COMPLETO-v24 🔥🔥🔥');
-        console.log('✅ ELECTRICIDAD con desglose completo');
-        console.log('✅ GAS con valores corregidos (total_fijo, total_energia)');
-        console.log('✅ Muestra DESCRIPTION en lugar de NAME');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-SEPARADO-v25 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-SEPARADO-v25 🔥🔥🔥');
+        console.log('✅ Imp. hidrocarburos CORREGIDO (sin S)');
+        console.log('✅ Tarjetas SEPARADAS: Electricidad (azul) + Gas (naranja)');
+        console.log('📁 BACKUP creado: BACKUP_QR_full_GAS_V2_DUAL_XXXXXX.html');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -11623,6 +11623,23 @@
             // Calcular ahorro
             const totalSavings = totalOriginalBill - totalDRK;
             
+            // NUEVO: Calcular totales separados por tipo
+            let totalElectricidad = 0;
+            let totalGas = 0;
+            let countElectricidad = 0;
+            let countGas = 0;
+            
+            dualSupplies.forEach(supply => {
+                const cost = supply.results.drk.total_anual || 0;
+                if (supply.type === 'electricidad') {
+                    totalElectricidad += cost;
+                    countElectricidad++;
+                } else if (supply.type === 'gas') {
+                    totalGas += cost;
+                    countGas++;
+                }
+            });
+            
             // Guardar resultados globales
             window.dualGlobalResults = {
                 totalDRK,
@@ -11631,7 +11648,12 @@
                 totalSavings,
                 diff: totalPowerCup - totalDRK,
                 supplies: dualSupplies.length,
-                avgDays: Math.round(totalDaysWeighted / dualSupplies.length)
+                avgDays: Math.round(totalDaysWeighted / dualSupplies.length),
+                // NUEVO: Totales por tipo
+                totalElectricidad,
+                totalGas,
+                countElectricidad,
+                countGas
             };
             
             // Mostrar resultados
@@ -11776,8 +11798,45 @@
                     </div>
                 </div>
                 
-                <!-- Tarjeta DRK -->
+                <!-- TARJETAS SEPARADAS POR TIPO -->
+                
+                <!-- Tarjeta ELECTRICIDAD Total (AZUL) -->
+                ${results.countElectricidad > 0 ? `
                 <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: 2px solid #5BA3F5;">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-2xl font-bold text-white">⚡ Electricidad Total</h3>
+                        <div class="bg-white bg-opacity-20 p-3 rounded-xl">
+                            <span class="text-2xl">⚡</span>
+                        </div>
+                    </div>
+                    <div class="bg-white bg-opacity-10 rounded-xl p-4">
+                        <p class="text-sm text-white opacity-90 mb-2">Total anual proyectado:</p>
+                        <p class="text-4xl font-bold text-white">${formatEuro(results.totalElectricidad)}</p>
+                        <p class="text-sm text-white opacity-80 mt-2">${results.countElectricidad} ${results.countElectricidad === 1 ? 'suministro' : 'suministros'}</p>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Tarjeta GAS Total (NARANJA/ROJO) -->
+                ${results.countGas > 0 ? `
+                <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); border: 2px solid #FF8C52;">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-2xl font-bold text-white">🔥 Gas Total</h3>
+                        <div class="bg-white bg-opacity-20 p-3 rounded-xl">
+                            <span class="text-2xl">🔥</span>
+                        </div>
+                    </div>
+                    <div class="bg-white bg-opacity-10 rounded-xl p-4">
+                        <p class="text-sm text-white opacity-90 mb-2">Total anual proyectado:</p>
+                        <p class="text-4xl font-bold text-white">${formatEuro(results.totalGas)}</p>
+                        <p class="text-sm text-white opacity-80 mt-2">${results.countGas} ${results.countGas === 1 ? 'suministro' : 'suministros'}</p>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Tarjeta DRK TOTAL (si hay ambos tipos) -->
+                ${results.countElectricidad > 0 && results.countGas > 0 ? `
+                <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #4A90E2 0%, #FF6B35 100%); border: 2px solid #5BA3F5;">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold text-white">DRK Total</h3>
                         <div class="bg-white bg-opacity-20 p-3 rounded-xl">
@@ -11790,6 +11849,7 @@
                         <p class="text-sm text-white opacity-80 mt-2">${results.supplies} suministros combinados</p>
                     </div>
                 </div>
+                ` : ''}
                 
                 <!-- NUEVO: Tarjeta de AHORRO TOTAL (mismo color) -->
                 <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: 2px solid #5BA3F5;">
@@ -12982,7 +13042,7 @@
                     console.log('Valores parseados:');
                     console.log('  - total_fijo:', parseGasValue(bestResult.total_fijo));
                     console.log('  - total_energia:', parseGasValue(bestResult.total_energia));
-                    console.log('  - impuesto_hidrocarburos:', parseGasValue(bestResult.impuesto_hidrocarburos));
+                    console.log('  - impuesto_hidrocarburo (sin S):', parseGasValue(bestResult.impuesto_hidrocarburo));
                     
                     // CREAR el objeto de suministro para GAS (con DESGLOSE COMPLETO)
                     const newSupply = {
@@ -13001,7 +13061,7 @@
                             termino_fijo: parseGasValue(bestResult.total_fijo),      // ✅ CORREGIDO: total_fijo
                             termino_fijo_diario: parseFloat(bestResult.p_fijo_diario) || 0,
                             energia: parseGasValue(bestResult.total_energia),         // ✅ CORREGIDO: total_energia
-                            impuesto_hidrocarburos: parseGasValue(bestResult.impuesto_hidrocarburos), // ✅
+                            impuesto_hidrocarburos: parseGasValue(bestResult.impuesto_hidrocarburo), // ✅ SIN 'S'
                             subtotal: parseGasValue(bestResult.subtotal),
                             iva: parseGasValue(bestResult.iva),
                             total: parseGasValue(bestResult.total),
