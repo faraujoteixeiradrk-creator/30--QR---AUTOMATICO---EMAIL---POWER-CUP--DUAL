@@ -1474,11 +1474,12 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-NO-AUTOPRINT-v36 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-NO-AUTOPRINT-v36 🔥🔥🔥');
-        console.log('✅ Generador PDF: Abre vista previa SIN diálogo de impresión automático');
-        console.log('✅ Usuario puede ver el documento antes de guardar');
-        console.log('✅ Para guardar: Ctrl+P en la nueva ventana');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FORMAT-PROF-v37 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FORMAT-PROF-v37 🔥🔥🔥');
+        console.log('✅ PDF DUAL: Formato profesional como comparativas individuales');
+        console.log('✅ Banner con logo circular + textura de rayas');
+        console.log('✅ Recuadro con borde para información del cliente');
+        console.log('✅ Diseño con tables HTML (como GAS/Electricidad individuales)');
         console.log('📁 BACKUP: BACKUP_QR_full_GAS_V2_DUAL_20251231_010742.html');
         
         // Eliminamos 6.1TD del estado inicial
@@ -12028,288 +12029,211 @@
         
         // Función: Generar PDF DUAL
         function dualGeneratePDF() {
-            console.log('🔥🔥🔥 INICIO dualGeneratePDF() 🔥🔥🔥');
+            console.log('🔥 Generando PDF DUAL con formato profesional');
             
             try {
-                console.log('1️⃣ Verificando dualSupplies...');
-                console.log('   - dualSupplies:', dualSupplies);
-                console.log('   - length:', dualSupplies ? dualSupplies.length : 'undefined');
-                
                 if (!dualSupplies || dualSupplies.length === 0) {
-                    alert('No hay suministros para generar la propuesta. Añade al menos un suministro.');
+                    alert('No hay suministros para generar la propuesta.');
                     return;
                 }
                 
-                console.log('2️⃣ Obteniendo dualGlobalResults...');
                 const results = window.dualGlobalResults;
-                console.log('   - results:', results);
-                
                 if (!results) {
-                    alert('No hay resultados calculados. Por favor, calcula la comparativa primero.');
+                    alert('No hay resultados calculados.');
                     return;
                 }
                 
-                console.log('3️⃣ Detectando modo...');
                 const isPowerCup = results.comparisonMode === 'overall_best';
                 const brandName = isPowerCup ? 'POWER CUP' : 'DRK';
-                const brandColor = isPowerCup ? '#22c55e' : '#4A90E2';
-                console.log('   - brandName:', brandName);
-                console.log('   - isPowerCup:', isPowerCup);
+                const primaryColor = isPowerCup ? '#4d7c0f' : '#3b5875';
+                const accentColor = isPowerCup ? '#84cc16' : '#4a90e2';
                 
-                console.log('4️⃣ Calculando totales...');
-                // Calcular totales
                 const totalSavings = results.totalSavings || 0;
                 const totalOriginalBill = results.totalOriginalBill || 0;
                 const totalNew = isPowerCup ? results.totalPowerCup : results.totalDRK;
-                const monthlyOriginal = totalOriginalBill / 12;
-                const monthlyNew = totalNew / 12;
-                console.log('   - totalSavings:', totalSavings);
-                console.log('   - totalNew:', totalNew);
                 
-                console.log('5️⃣ Generando tabla de resumen...');
-                // Generar filas de la tabla de resumen
-                let tableRows = '';
-                dualSupplies.forEach((s, i) => {
+                const eur = n => new Intl.NumberFormat('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(n || 0) + ' €';
+                
+                // Generar filas de tabla
+                const tableRows = dualSupplies.map((s, i) => {
                     const icon = s.type === 'electricidad' ? '⚡' : '🔥';
                     const cupsShort = (s.cups || '').substring(0, 20) + '...';
                     const ahorro = (s.originalBillAnnual || 0) - (s.results?.drk?.total_anual || 0);
-                    
-                    tableRows += `
+                    return `
                         <tr>
-                            <td><strong>[${i+1}]</strong></td>
-                            <td><span class="supply-icon">${icon}</span> ${s.type === 'electricidad' ? 'Elec.' : 'Gas'}</td>
-                            <td style="font-size: 10px;">${cupsShort}</td>
-                            <td>${s.tariff || 'N/A'}</td>
-                            <td>${s.electricityBreakdown?.dias || s.gasBreakdown?.dias || 30}</td>
-                            <td style="text-align: right; font-weight: bold; color: #22c55e;">${ahorro.toFixed(2).replace('.', ',')} €</td>
+                            <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px;"><strong>[${i+1}]</strong></td>
+                            <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px;"><span style="font-size: 18px; margin-right: 5px;">${icon}</span> ${s.type === 'electricidad' ? 'Elec.' : 'Gas'}</td>
+                            <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 10px;">${cupsShort}</td>
+                            <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px;">${s.tariff || 'N/A'}</td>
+                            <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px;">${s.electricityBreakdown?.dias || s.gasBreakdown?.dias || 30}</td>
+                            <td style="padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; text-align: right; font-weight: bold; color: #22c55e;">${eur(ahorro)}</td>
                         </tr>
                     `;
-                });
-                console.log('   - tableRows generadas:', tableRows.length, 'chars');
+                }).join('');
                 
-                console.log('6️⃣ Generando desgloses detallados...');
-                // Generar desgloses detallados
-                let breakdownsHTML = '';
-                dualSupplies.forEach((s, i) => {
-                if (s.type === 'electricidad' && s.electricityBreakdown) {
-                    const eb = s.electricityBreakdown;
-                    breakdownsHTML += `
-                        <div class="breakdown-elec">
-                            <div class="breakdown-header">[${i+1}] ${s.cups || 'N/A'}<br>Tipo: ${s.tariff} | Días: ${eb.dias} | Cups: [${i+1}]</div>
-                            
-                            <div class="breakdown-section">
-                                <div class="breakdown-section-title">TARIFA APLICADA:</div>
-                                <div class="breakdown-item">
-                                    <span>${s.offer?.description || s.offer?.name || 'Tarifa'}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="breakdown-section">
-                                <div class="breakdown-section-title">POTENCIA</div>
-                                ${(eb.powerCosts || []).map(pc => `
-                                    <div class="breakdown-item">
-                                        <span>P${pc.period || '?'} (${pc.power_kw || 0} kW x ${eb.dias} x ${pc.price_euro_kw_day || 0})</span>
-                                        <span>${(pc.cost_euros || 0).toFixed(2)} €</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                            
-                            <div class="breakdown-section">
-                                <div class="breakdown-section-title">ENERGÍA</div>
-                                ${(eb.energyCosts || []).map(ec => `
-                                    <div class="breakdown-item">
-                                        <span>E${ec.period || '?'} (${ec.kwh || 0} kWh x ${ec.price_euro_kwh || 0})</span>
-                                        <span>${(ec.cost_euros || 0).toFixed(2)} €</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                            
-                            <div class="breakdown-total">
-                                <div class="breakdown-item">
-                                    <span class="breakdown-total-label">TOTAL (${eb.dias} DÍAS)</span>
-                                    <span class="breakdown-total-label">${(eb.totalPeriod || 0).toFixed(2)} €</span>
-                                </div>
-                            </div>
-                            
-                            <div class="breakdown-savings">
-                                AHORRO: ${(eb.ahorro_anual || 0).toFixed(2)} €
-                            </div>
-                        </div>
-                    `;
-                } else if (s.type === 'gas' && s.gasBreakdown) {
-                    const gb = s.gasBreakdown;
-                    breakdownsHTML += `
-                        <div class="breakdown-gas">
-                            <div class="breakdown-header">[${i+1}] ${s.cups || 'N/A'}<br>Tipo: ${s.tariff} | Días: ${gb.dias} | Cups: [${i+1}]</div>
-                            
-                            <div class="breakdown-section">
-                                <div class="breakdown-section-title">TARIFA APLICADA:</div>
-                                <div class="breakdown-item">
-                                    <span>${s.offer?.description || s.offer?.name || 'Tarifa Gas'}</span>
-                                </div>
-                            </div>
-                            
-                            <div class="breakdown-section">
-                                <div class="breakdown-section-title">DESGLOSE</div>
-                                <div class="breakdown-item">
-                                    <span>Término fijo (${gb.dias || 30} días)</span>
-                                    <span>${(gb.termino_fijo || 0).toFixed(2)} €</span>
-                                </div>
-                                <div class="breakdown-item">
-                                    <span>Energía (${gb.kwh || 0} kWh)</span>
-                                    <span>${(gb.energia || 0).toFixed(2)} €</span>
-                                </div>
-                                <div class="breakdown-item">
-                                    <span>Imp. hidrocarburos</span>
-                                    <span>${(gb.impuesto_hidrocarburos || 0).toFixed(2)} €</span>
-                                </div>
-                                <div class="breakdown-item">
-                                    <span>IVA (21%)</span>
-                                    <span>${(gb.iva || 0).toFixed(2)} €</span>
-                                </div>
-                            </div>
-                            
-                            <div class="breakdown-total">
-                                <div class="breakdown-item">
-                                    <span class="breakdown-total-label">TOTAL MENSUAL</span>
-                                    <span class="breakdown-total-label">${(gb.total || 0).toFixed(2)} €</span>
-                                </div>
-                            </div>
-                            
-                            <div class="breakdown-savings">
-                                AHORRO: ${(gb.ahorro_anual || 0).toFixed(2)} €
-                            </div>
-                        </div>
-                    `;
-                }
-            });
-            
-            // Plantilla HTML completa
-            const htmlContent = `<!DOCTYPE html>
+                const htmlContent = `<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Propuesta ${brandName} - Cliente</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; padding: 20px; line-height: 1.6; }
-        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
-        
-        .header { background: linear-gradient(135deg, #7a8a9e 0%, #596875 100%); padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; color: white; }
-        .header-left { display: flex; align-items: center; gap: 15px; }
-        .logo-circle { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #4CAF50 0%, #2196F3 50%, #FFC107 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        .logo-circle-inner { width: 50px; height: 50px; border-radius: 50%; background: white; }
-        .logo { font-size: 32px; font-weight: 900; letter-spacing: 2px; line-height: 1; }
-        .logo-subtitle { font-size: 11px; opacity: 0.9; line-height: 1.3; }
-        .header-right { text-align: right; }
-        .label-line { font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
-        
-        .section { padding: 30px; }
-        .section-header { background: #22c55e; color: white; padding: 10px 20px; font-weight: bold; font-size: 13px; text-transform: uppercase; margin: 0 -30px 20px -30px; }
-        
-        .client-box { background: white; border: 3px solid #64748b; border-radius: 12px; padding: 20px; margin-bottom: 25px; }
-        .client-box-header { font-size: 14px; font-weight: bold; color: #475569; margin-bottom: 12px; text-transform: uppercase; }
-        
-        .savings-amount { font-size: 42px; font-weight: 900; color: #22c55e; text-align: center; margin: 20px 0; }
-        
-        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; }
-        thead { background: #f1f5f9; }
-        th { padding: 10px 8px; text-align: left; font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase; }
-        td { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
-        
-        .breakdown-elec { background: linear-gradient(135deg, #607d8b 0%, #546e7a 100%); color: white; padding: 18px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; }
-        .breakdown-gas { background: linear-gradient(135deg, #D84A3B 0%, #C23B2F 100%); color: white; padding: 18px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; }
-        .breakdown-header { font-size: 12px; font-weight: bold; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); }
-        .breakdown-section { margin-bottom: 12px; }
-        .breakdown-section-title { font-size: 10px; font-weight: bold; text-transform: uppercase; opacity: 0.8; margin-bottom: 6px; }
-        .breakdown-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; }
-        .breakdown-total { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin-top: 8px; }
-        .breakdown-savings { background: #22c55e; padding: 10px; border-radius: 4px; text-align: center; margin-top: 8px; font-weight: bold; font-size: 12px; }
-        
-        @media print { body { background: white; padding: 0; } .container { box-shadow: none; } }
-    </style>
+    <title>Propuesta ${brandName}</title>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <div class="header-left">
-                <div class="logo-circle"><div class="logo-circle-inner"></div></div>
-                <div>
-                    <div class="logo">${brandName}<br>ENERGÍA</div>
-                    <div class="logo-subtitle">Liderando el ahorro y la<br>eficiencia energética</div>
-                </div>
-            </div>
-            <div class="header-right">
-                <div class="label-line">ESTUDIO DE AHORRO</div>
-                <div class="label-line">COMPARATIVA</div>
-                <div class="label-line">PROFESIONAL</div>
-            </div>
-        </div>
+<body style="margin: 0; padding: 20px; font-family: Arial, sans-serif; background-color: #f5f5f5;">
+    <div style="max-width: 800px; margin: 0 auto; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
         
-        <div class="section">
-            <div class="section-header">ESTUDIO DE AHORRO</div>
-            
-            <div class="client-box">
-                <div class="client-box-header">COMPARATIVA PROFESIONAL - ${brandName}</div>
-                <div><strong>CLIENTE:</strong> [NOMBRE COMPLETO CLIENTE]<br><strong>CUPS TOTALES:</strong> ${dualSupplies.length}</div>
-            </div>
-            
-            <div class="savings-amount">${totalSavings.toFixed(2).replace('.', ',')} €</div>
-            <p style="text-align: center; color: #64748b; margin-bottom: 20px;">Ahorro anual estimado</p>
-        </div>
+        <!-- HEADER CON LOGO -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="background: linear-gradient(135deg, #7a8a9e 0%, #596875 100%); background-image: repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 4px), linear-gradient(135deg, #7a8a9e 0%, #596875 100%);">
+            <tr>
+                <td style="padding: 30px 40px; vertical-align: middle;">
+                    <table cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td style="padding-right: 15px; vertical-align: middle;">
+                                <div style="width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #4CAF50 0%, #2196F3 50%, #FFC107 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                                    <div style="width: 50px; height: 50px; border-radius: 50%; background: white;"></div>
+                                </div>
+                            </td>
+                            <td style="vertical-align: middle;">
+                                <h1 style="margin: 0; font-size: 32px; font-weight: 900; letter-spacing: 2px; color: white; line-height: 1;">${brandName}<br>ENERGÍA</h1>
+                                <p style="margin: 5px 0 0 0; font-size: 11px; color: white; opacity: 0.9; line-height: 1.3;">Liderando el ahorro y la<br>eficiencia energética</p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td style="padding: 30px 40px; text-align: right; vertical-align: middle;">
+                    <p style="margin: 0; font-size: 13px; font-weight: 600; color: white; letter-spacing: 0.5px;">ESTUDIO DE AHORRO</p>
+                    <p style="margin: 2px 0 0 0; font-size: 13px; font-weight: 600; color: white; opacity: 0.8; letter-spacing: 0.5px;">COMPARATIVA</p>
+                    <p style="margin: 2px 0 0 0; font-size: 12px; font-weight: 600; color: white; letter-spacing: 0.5px;">PROFESIONAL</p>
+                </td>
+            </tr>
+        </table>
         
-        <div class="section">
-            <div class="section-header">RESUMEN DE ${dualSupplies.length} SUMINISTROS</div>
-            <table>
-                <thead>
-                    <tr><th>Nº</th><th>TIPO</th><th>CUPS</th><th>TARIFA</th><th>DÍAS</th><th style="text-align: right;">AHORRO</th></tr>
-                </thead>
-                <tbody>${tableRows}</tbody>
+        <!-- BANDA VERDE -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #22c55e;">
+            <tr>
+                <td style="padding: 10px 40px;">
+                    <h2 style="margin: 0; font-size: 13px; font-weight: bold; color: white; text-transform: uppercase; letter-spacing: 0.5px;">ESTUDIO DE AHORRO</h2>
+                </td>
+            </tr>
+        </table>
+        
+        <!-- RECUADRO INFO CLIENTE -->
+        <div style="margin: 30px 40px; padding: 20px; border: 3px solid #64748b; border-radius: 12px; background: white;">
+            <h3 style="margin: 0 0 12px 0; font-size: 14px; font-weight: bold; color: #475569; text-transform: uppercase; letter-spacing: 0.5px;">COMPARATIVA PROFESIONAL - ${brandName}</h3>
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td style="vertical-align: top;">
+                        <p style="margin: 0 0 4px 0; font-size: 12px; color: #64748b; line-height: 1.8;"><strong>CLIENTE:</strong> [NOMBRE COMPLETO CLIENTE]</p>
+                        <p style="margin: 0; font-size: 12px; color: #64748b; line-height: 1.8;"><strong>CUPS TOTALES:</strong> ${dualSupplies.length}</p>
+                    </td>
+                    <td style="text-align: right; vertical-align: top;">
+                        <p style="margin: 0; font-size: 11px; color: #64748b;"><strong>COMERCIAL:</strong> D=00</p>
+                    </td>
+                </tr>
             </table>
         </div>
         
-        <div class="section">
-            <div class="section-header">DESGLOSE DETALLADO POR SUMINISTRO</div>
-            ${breakdownsHTML}
+        <!-- MEJOR OPCIÓN -->
+        <div style="margin: 0 40px 30px 40px; padding: 20px; background: linear-gradient(135deg, #546e7a 0%, #455a64 100%); border-radius: 8px; text-align: center;">
+            <p style="margin: 0 0 8px 0; font-size: 12px; color: white; opacity: 0.9;">LA MEJOR OPCIÓN PARA TI ES</p>
+            <h2 style="margin: 0; font-size: 28px; font-weight: 900; color: white; letter-spacing: 2px;">${brandName}</h2>
+            <p style="margin: 8px 0 0 0; font-size: 12px; color: white; opacity: 0.8;">Múltiples suministros</p>
         </div>
         
-        <div class="section">
-            <div style="background: #ef4444; color: white; padding: 20px; border-radius: 8px; text-align: center; font-weight: bold;">
-                TU AHORRO ANUAL ESTIMADO ES:<br>
-                <div style="font-size: 32px; margin-top: 10px;">${totalSavings.toFixed(2).replace('.', ',')} €/AÑO</div>
+        <!-- AHORRO ANUAL -->
+        <div style="margin: 0 40px 20px 40px; text-align: center;">
+            <p style="margin: 0 0 8px 0; font-size: 13px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Tu ahorro anual estimado</p>
+            <h1 style="margin: 0; font-size: 42px; font-weight: 900; color: #22c55e;">${eur(totalSavings)}</h1>
+        </div>
+        
+        <!-- COMPARATIVA COSTES -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin: 20px 0;">
+            <tr>
+                <td style="width: 48%; padding: 0 20px 0 40px;">
+                    <div style="padding: 15px; background: #f8fafc; border-radius: 6px;">
+                        <p style="margin: 0 0 5px 0; font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 600; text-align: center;">Tu factura actual</p>
+                        <p style="margin: 0; font-size: 16px; font-weight: bold; color: #ef4444; text-decoration: line-through; text-align: center;">${eur(totalOriginalBill / 12)}/mes</p>
+                        <p style="margin: 3px 0 0 0; font-size: 11px; color: #94a3b8; text-align: center;">${eur(totalOriginalBill)}/año</p>
+                    </div>
+                </td>
+                <td style="width: 4%;"></td>
+                <td style="width: 48%; padding: 0 40px 0 20px;">
+                    <div style="padding: 15px; background: #f8fafc; border-radius: 6px;">
+                        <p style="margin: 0 0 5px 0; font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: 600; text-align: center;">Tu nuevo coste ${brandName}</p>
+                        <p style="margin: 0; font-size: 16px; font-weight: bold; color: #22c55e; text-align: center;">${eur(totalNew / 12)}/mes</p>
+                        <p style="margin: 3px 0 0 0; font-size: 11px; color: #94a3b8; text-align: center;">${eur(totalNew)}/año</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        
+        <!-- RESUMEN TABLA -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #22c55e; margin-top: 30px;">
+            <tr>
+                <td style="padding: 10px 40px;">
+                    <h2 style="margin: 0; font-size: 13px; font-weight: bold; color: white; text-transform: uppercase; letter-spacing: 0.5px;">RESUMEN DE ${dualSupplies.length} SUMINISTROS</h2>
+                </td>
+            </tr>
+        </table>
+        
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+            <thead>
+                <tr style="background-color: #f1f5f9;">
+                    <th style="padding: 10px 8px; text-align: left; font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase; border-bottom: 2px solid #e2e8f0;">Nº</th>
+                    <th style="padding: 10px 8px; text-align: left; font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase; border-bottom: 2px solid #e2e8f0;">TIPO</th>
+                    <th style="padding: 10px 8px; text-align: left; font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase; border-bottom: 2px solid #e2e8f0;">CUPS</th>
+                    <th style="padding: 10px 8px; text-align: left; font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase; border-bottom: 2px solid #e2e8f0;">TARIFA</th>
+                    <th style="padding: 10px 8px; text-align: left; font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase; border-bottom: 2px solid #e2e8f0;">DÍAS</th>
+                    <th style="padding: 10px 8px; text-align: right; font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase; border-bottom: 2px solid #e2e8f0;">AHORRO</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows}
+            </tbody>
+        </table>
+        
+        <!-- AHORRO FINAL -->
+        <div style="margin: 30px 40px 40px 40px; padding: 18px; background: #ef4444; color: white; border-radius: 6px; text-align: center;">
+            <p style="margin: 0; font-size: 14px; font-weight: bold;">TU AHORRO ANUAL ESTIMADO ES:</p>
+            <p style="margin: 5px 0 0 0; font-size: 28px; font-weight: bold;">${eur(totalSavings)}/AÑO</p>
+        </div>
+        
+        <!-- FORMALIZACIÓN -->
+        <div style="margin: 0 40px 40px 40px; padding: 18px; background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 6px;">
+            <h3 style="margin: 0 0 12px 0; font-size: 13px; font-weight: bold; color: #334155; text-transform: uppercase;">Para formalizar este contrato:</h3>
+            <p style="margin: 0 0 10px 0; font-size: 12px; color: #64748b;">Necesitas facilitar documentación de los ${dualSupplies.length} CUPS:</p>
+            <ul style="margin: 8px 0 0 20px; padding: 0; list-style: disc;">
+                <li style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Foto del DNI/NIE (anverso y reverso)</li>
+                <li style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Última factura (menos de 3 meses)</li>
+                <li style="font-size: 12px; color: #64748b; margin-bottom: 4px;">Número de contacto</li>
+                <li style="font-size: 12px; color: #64748b;">Número de cuenta bancaria (IBAN)</li>
+            </ul>
+            <div style="margin-top: 12px; padding: 12px; background: #546e7a; color: white; text-align: center; border-radius: 4px; font-size: 12px;">
+                Envía la documentación al contacto:<br><strong>ZLODXS ✉</strong>
             </div>
         </div>
+        
     </div>
 </body>
 </html>`;
                 
-                console.log('7️⃣ HTML generado:', htmlContent.length, 'chars');
-                console.log('8️⃣ Abriendo nueva ventana...');
-                console.log('   ℹ️ La ventana se abrirá SIN diálogo de impresión automático');
-                console.log('   ℹ️ Para guardar como PDF: Ctrl+P en la nueva ventana');
-                
-                // Abrir en nueva ventana
                 const newWindow = window.open('', '_blank');
-                
                 if (!newWindow) {
-                    alert('⚠️ No se pudo abrir la ventana. Verifica que no esté bloqueada por el navegador.');
-                    console.error('❌ window.open bloqueado');
+                    alert('⚠️ No se pudo abrir la ventana. Verifica que no esté bloqueada.');
                     return;
                 }
                 
-                console.log('9️⃣ Escribiendo contenido...');
                 newWindow.document.write(htmlContent);
                 newWindow.document.close();
                 
-                console.log('✅✅✅ Propuesta abierta en nueva ventana');
-                console.log('   👉 Para guardar como PDF: Ctrl+P en la nueva ventana');
+                console.log('✅ Propuesta PDF generada exitosamente');
                 
             } catch (error) {
-                console.error('❌❌❌ ERROR EN dualGeneratePDF:', error);
-                console.error('   Stack:', error.stack);
+                console.error('❌ ERROR EN dualGeneratePDF:', error);
                 alert('Error al generar PDF: ' + error.message);
             }
+        }
+
+        
         }
         
         // NUEVO: Funciones para pantalla de confirmación
