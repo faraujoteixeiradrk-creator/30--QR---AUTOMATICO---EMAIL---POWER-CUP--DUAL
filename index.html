@@ -1482,9 +1482,9 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-UNIFIED-v17 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-UNIFIED-v17 🔥🔥🔥');
-        console.log('✅ Colores AZUL unificados (sky-500 to blue-600)');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-ELEGIR-v18 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-ELEGIR-v18 🔥🔥🔥');
+        console.log('✅ ELEGIR ENTRE RESULTADOS ahora añade al array DUAL correctamente');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -10293,31 +10293,81 @@
                 
                 console.log('About to render results UI');
                 
-                // ⚡ INTERCEPTAR MODO DUAL AQUÍ - antes de renderResultsUI
+                // ⚡⚡⚡ MODO DUAL - AÑADIR AL ARRAY ⚡⚡⚡
                 if (window.dualMode === true) {
-                    console.log('===== 🔥 MODO DUAL - Interceptando en continueWithSelectedOffer =====');
+                    console.log('===== 🔥 MODO DUAL - Añadiendo suministro desde ELEGIR ENTRE RESULTADOS =====');
                     
-                    // Preparar datos para confirmación DUAL
-                    const tariff = result.tariffType || result.originalTariffType || currentTariffType || '2.0TD';
-                    const data = extractDataFromResult(result);
-                    
-                    const drkCost = result.totalAnnual || 0;
-                    const powercupCost = indexedResult ? (indexedResult.totalAnnual || 0) : 0;
-                    
-                    const results = {
-                        drk: {
-                            total: drkCost / 12,
-                            total_anual: drkCost
-                        },
-                        powercup: {
-                            total: powercupCost / 12,
-                            total_anual: powercupCost
+                    // CREAR el objeto de suministro (igual que en selectBestOptionWithChoice)
+                    const newSupply = {
+                        type: 'electricidad',
+                        cups: result.cups || '',
+                        tariff: result.tariffType || result.originalTariffType || currentTariffType || '2.0TD',
+                        offer: result.offer,
+                        totalAnnual: result.totalAnnual,
+                        originalBillAnnual: result.originalBillAnnual || (result.importe_total || 0) * 12,
+                        data: result,
+                        results: {
+                            drk: {
+                                total: result.totalAnnual / 12,
+                                total_anual: result.totalAnnual
+                            },
+                            powercup: {
+                                total: indexedResult ? (indexedResult.totalAnnual / 12) : 0,
+                                total_anual: indexedResult ? indexedResult.totalAnnual : 0
+                            }
                         }
                     };
                     
-                    console.log('Datos preparados para DUAL desde selección manual:', { tariff, data, results });
-                    showDualConfirm('electricidad', tariff, data, results);
-                    return;
+                    // AÑADIR al array
+                    dualSupplies.push(newSupply);
+                    
+                    console.log('✅ Suministro añadido al array desde selección manual');
+                    console.log('  - Total suministros:', dualSupplies.length);
+                    console.log('  - CUPS:', newSupply.cups);
+                    console.log('  - Tarifa:', newSupply.tariff);
+                    console.log('  - Coste anual:', newSupply.totalAnnual);
+                    
+                    // Actualizar UI usando la función existente
+                    updateDualSuppliesList();
+                    console.log('✅ UI actualizada con updateDualSuppliesList()');
+                    
+                    // CRÍTICO: Cerrar todos los modales
+                    const offerModal = document.getElementById('offer-decision-modal');
+                    if (offerModal) {
+                        offerModal.classList.add('hidden');
+                        offerModal.classList.remove('flex');
+                    }
+                    
+                    const selectionModal = document.getElementById('offer-selection-modal');
+                    if (selectionModal) {
+                        selectionModal.classList.add('hidden');
+                        selectionModal.classList.remove('flex');
+                    }
+                    
+                    const tariffSelector = document.getElementById('best-option-tariff-selector');
+                    if (tariffSelector) {
+                        tariffSelector.classList.add('hidden');
+                    }
+                    
+                    // Ocultar TODAS las pantallas
+                    console.log('Ocultando todas las pantallas...');
+                    hideAllScreens();
+                    
+                    // Volver a la pantalla DUAL
+                    console.log('Mostrando pantalla DUAL...');
+                    document.getElementById('screen-dual').classList.add('active');
+                    
+                    console.log('✅ Usuario puede añadir más suministros o calcular');
+                    
+                    // Resetear bandera si existe
+                    if (typeof isProcessingBestOption !== 'undefined') {
+                        setTimeout(() => {
+                            isProcessingBestOption = false;
+                            console.log('✅ Bandera reseteada');
+                        }, 100);
+                    }
+                    
+                    return; // FIN
                 }
                 
                 // Mostrar resultados (pasando indexedResult si existe)
