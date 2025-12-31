@@ -1474,11 +1474,11 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FIX-UNDEFINED-v35 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FIX-UNDEFINED-v35 🔥🔥🔥');
-        console.log('✅ FIX: Valores undefined manejados con || 0');
-        console.log('✅ Generador de PDF protegido contra datos incompletos');
-        console.log('✅ Try-catch para capturar errores');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-NO-AUTOPRINT-v36 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-NO-AUTOPRINT-v36 🔥🔥🔥');
+        console.log('✅ Generador PDF: Abre vista previa SIN diálogo de impresión automático');
+        console.log('✅ Usuario puede ver el documento antes de guardar');
+        console.log('✅ Para guardar: Ctrl+P en la nueva ventana');
         console.log('📁 BACKUP: BACKUP_QR_full_GAS_V2_DUAL_20251231_010742.html');
         
         // Eliminamos 6.1TD del estado inicial
@@ -12281,18 +12281,13 @@
             </div>
         </div>
     </div>
-    
-    <script>
-        // Auto-abrir diálogo de impresión
-        setTimeout(function() {
-            window.print();
-        }, 500);
-    <\/script>
 </body>
 </html>`;
                 
                 console.log('7️⃣ HTML generado:', htmlContent.length, 'chars');
                 console.log('8️⃣ Abriendo nueva ventana...');
+                console.log('   ℹ️ La ventana se abrirá SIN diálogo de impresión automático');
+                console.log('   ℹ️ Para guardar como PDF: Ctrl+P en la nueva ventana');
                 
                 // Abrir en nueva ventana
                 const newWindow = window.open('', '_blank');
@@ -12307,7 +12302,8 @@
                 newWindow.document.write(htmlContent);
                 newWindow.document.close();
                 
-                console.log('✅✅✅ Propuesta generada y abierta en nueva ventana');
+                console.log('✅✅✅ Propuesta abierta en nueva ventana');
+                console.log('   👉 Para guardar como PDF: Ctrl+P en la nueva ventana');
                 
             } catch (error) {
                 console.error('❌❌❌ ERROR EN dualGeneratePDF:', error);
