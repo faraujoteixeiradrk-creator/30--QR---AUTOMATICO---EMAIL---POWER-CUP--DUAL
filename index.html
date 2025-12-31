@@ -1474,11 +1474,11 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-DEBUG-PDF-v34 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-DEBUG-PDF-v34 🔥🔥🔥');
-        console.log('✅ LOGS DE DEPURACIÓN añadidos en dualGeneratePDF');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FIX-UNDEFINED-v35 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FIX-UNDEFINED-v35 🔥🔥🔥');
+        console.log('✅ FIX: Valores undefined manejados con || 0');
+        console.log('✅ Generador de PDF protegido contra datos incompletos');
         console.log('✅ Try-catch para capturar errores');
-        console.log('✅ Verificación de ventanas bloqueadas');
         console.log('📁 BACKUP: BACKUP_QR_full_GAS_V2_DUAL_20251231_010742.html');
         
         // Eliminamos 6.1TD del estado inicial
@@ -12072,7 +12072,7 @@
                 dualSupplies.forEach((s, i) => {
                     const icon = s.type === 'electricidad' ? '⚡' : '🔥';
                     const cupsShort = (s.cups || '').substring(0, 20) + '...';
-                    const ahorro = s.originalBillAnnual - s.results.drk.total_anual;
+                    const ahorro = (s.originalBillAnnual || 0) - (s.results?.drk?.total_anual || 0);
                     
                     tableRows += `
                         <tr>
@@ -12108,8 +12108,8 @@
                                 <div class="breakdown-section-title">POTENCIA</div>
                                 ${(eb.powerCosts || []).map(pc => `
                                     <div class="breakdown-item">
-                                        <span>P${pc.period} (${pc.power_kw} kW x ${eb.dias} x ${pc.price_euro_kw_day})</span>
-                                        <span>${pc.cost_euros.toFixed(2)} €</span>
+                                        <span>P${pc.period || '?'} (${pc.power_kw || 0} kW x ${eb.dias} x ${pc.price_euro_kw_day || 0})</span>
+                                        <span>${(pc.cost_euros || 0).toFixed(2)} €</span>
                                     </div>
                                 `).join('')}
                             </div>
@@ -12118,8 +12118,8 @@
                                 <div class="breakdown-section-title">ENERGÍA</div>
                                 ${(eb.energyCosts || []).map(ec => `
                                     <div class="breakdown-item">
-                                        <span>E${ec.period} (${ec.kwh} kWh x ${ec.price_euro_kwh})</span>
-                                        <span>${ec.cost_euros.toFixed(2)} €</span>
+                                        <span>E${ec.period || '?'} (${ec.kwh || 0} kWh x ${ec.price_euro_kwh || 0})</span>
+                                        <span>${(ec.cost_euros || 0).toFixed(2)} €</span>
                                     </div>
                                 `).join('')}
                             </div>
@@ -12127,12 +12127,12 @@
                             <div class="breakdown-total">
                                 <div class="breakdown-item">
                                     <span class="breakdown-total-label">TOTAL (${eb.dias} DÍAS)</span>
-                                    <span class="breakdown-total-label">${eb.totalPeriod.toFixed(2)} €</span>
+                                    <span class="breakdown-total-label">${(eb.totalPeriod || 0).toFixed(2)} €</span>
                                 </div>
                             </div>
                             
                             <div class="breakdown-savings">
-                                AHORRO: ${eb.ahorro_anual.toFixed(2)} €
+                                AHORRO: ${(eb.ahorro_anual || 0).toFixed(2)} €
                             </div>
                         </div>
                     `;
@@ -12152,32 +12152,32 @@
                             <div class="breakdown-section">
                                 <div class="breakdown-section-title">DESGLOSE</div>
                                 <div class="breakdown-item">
-                                    <span>Término fijo (${gb.dias} días)</span>
-                                    <span>${gb.termino_fijo.toFixed(2)} €</span>
+                                    <span>Término fijo (${gb.dias || 30} días)</span>
+                                    <span>${(gb.termino_fijo || 0).toFixed(2)} €</span>
                                 </div>
                                 <div class="breakdown-item">
-                                    <span>Energía (${gb.kwh} kWh)</span>
-                                    <span>${gb.energia.toFixed(2)} €</span>
+                                    <span>Energía (${gb.kwh || 0} kWh)</span>
+                                    <span>${(gb.energia || 0).toFixed(2)} €</span>
                                 </div>
                                 <div class="breakdown-item">
                                     <span>Imp. hidrocarburos</span>
-                                    <span>${gb.impuesto_hidrocarburos.toFixed(2)} €</span>
+                                    <span>${(gb.impuesto_hidrocarburos || 0).toFixed(2)} €</span>
                                 </div>
                                 <div class="breakdown-item">
                                     <span>IVA (21%)</span>
-                                    <span>${gb.iva.toFixed(2)} €</span>
+                                    <span>${(gb.iva || 0).toFixed(2)} €</span>
                                 </div>
                             </div>
                             
                             <div class="breakdown-total">
                                 <div class="breakdown-item">
                                     <span class="breakdown-total-label">TOTAL MENSUAL</span>
-                                    <span class="breakdown-total-label">${gb.total.toFixed(2)} €</span>
+                                    <span class="breakdown-total-label">${(gb.total || 0).toFixed(2)} €</span>
                                 </div>
                             </div>
                             
                             <div class="breakdown-savings">
-                                AHORRO: ${gb.ahorro_anual.toFixed(2)} €
+                                AHORRO: ${(gb.ahorro_anual || 0).toFixed(2)} €
                             </div>
                         </div>
                     `;
