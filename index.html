@@ -12292,22 +12292,24 @@
             </tr>
         </table>
         
-        <!-- BANDA VERDE -->
-        <div style="background:#22c55e;color:white;padding:10px 35px">
-            <h2 style="margin:0;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px">ESTUDIO DE AHORRO</h2>
+        <!-- BANDA VERDE + INFO CLIENTE (DISEÑO PROFESIONAL) -->
+        <div style="background:#4caf50;color:white;padding:10px 35px;border-radius:12px 12px 0 0;margin:0">
+            <h2 style="margin:0;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px">ESTUDIO DE AHORRO</h2>
         </div>
         
         <!-- RECUADRO INFO CLIENTE -->
-        <div style="margin:25px 35px;padding:18px;border:3px solid #64748b;border-radius:10px">
-            <h3 style="margin:0 0 10px 0;font-size:13px;font-weight:bold;color:#546e7a;text-transform:uppercase">COMPARATIVA PROFESIONAL - ${brandName}</h3>
+        <div style="margin:0 35px 25px 35px;padding:20px;border:2px solid #64748b;border-top:none;border-radius:0 0 12px 12px;background:white">
+            <h3 style="margin:0 0 12px 0;font-size:14px;font-weight:bold;color:#64748b;text-transform:uppercase">COMPARATIVA PROFESIONAL - ${brandName}</h3>
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="vertical-align:top">
-                        <p style="margin:0 0 3px 0;font-size:11px;color:#64748b;line-height:1.6"><strong>CLIENTE:</strong> ${clientName}</p>
-                        <p style="margin:0;font-size:11px;color:#64748b;line-height:1.6"><strong>CUPS TOTALES:</strong> ${dualSupplies.length}</p>
+                    <td style="vertical-align:top;width:60%">
+                        <p style="margin:0 0 5px 0;font-size:11px;color:#505050;line-height:1.6"><strong>CLIENTE:</strong> ${clientName}</p>
+                        <p style="margin:0;font-size:11px;color:#505050;line-height:1.6"><strong>CUPS:</strong> ${dualSupplies[0].cups.substring(0,20)}...</p>
                     </td>
-                    <td style="text-align:right;vertical-align:top">
-                        <p style="margin:0;font-size:10px;color:#64748b"><strong>COMERCIAL:</strong> ${comercialCode}</p>
+                    <td style="text-align:right;vertical-align:top;width:40%">
+                        <div style="display:inline-block;background:#f0f5f8;padding:6px 12px;border-radius:6px">
+                            <p style="margin:0;font-size:10px;color:#64748b;font-weight:bold">COMERCIAL: ${comercialCode}</p>
+                        </div>
                     </td>
                 </tr>
             </table>
@@ -13836,6 +13838,15 @@
                 return;
             }
             
+            // Pedir datos del cliente y comercial
+            const comercialCode = prompt('CÓDIGO COMERCIAL (Obligatorio):', 'D=00');
+            if (!comercialCode || comercialCode.trim() === '') {
+                alert('El código comercial es obligatorio');
+                return;
+            }
+            
+            const clientName = prompt('NOMBRE DEL CLIENTE:', '[NOMBRE COMPLETO CLIENTE]') || '[NOMBRE COMPLETO CLIENTE]';
+            
             const { results, dias, kwh, totalCliente, comparisonMode } = window.gasExportData;
             
             try {
@@ -13851,15 +13862,15 @@
                     const resFijo = results.find(r => !r.name.toUpperCase().includes('INDEX'));
                     
                     if (isPowerCup) {
-                        await generateGasPDF_Dual_PowerCup(resFijo, resIndexed, dias, kwh, totalCliente);
+                        await generateGasPDF_Dual_PowerCup(resFijo, resIndexed, dias, kwh, totalCliente, clientName, comercialCode);
                     } else {
-                        await generateGasPDF_Dual(resFijo, resIndexed, dias, kwh, totalCliente);
+                        await generateGasPDF_Dual(resFijo, resIndexed, dias, kwh, totalCliente, clientName, comercialCode);
                     }
                 } else {
                     if (isPowerCup) {
-                        await generateGasPDF_Simple_PowerCup(results[0], dias, kwh, totalCliente);
+                        await generateGasPDF_Simple_PowerCup(results[0], dias, kwh, totalCliente, clientName, comercialCode);
                     } else {
-                        await generateGasPDF_Simple(results[0], dias, kwh, totalCliente);
+                        await generateGasPDF_Simple(results[0], dias, kwh, totalCliente, clientName, comercialCode);
                     }
                 }
             } catch (error) {
@@ -14684,7 +14695,7 @@
 
         
         // PDF INDIVIDUAL
-        async function generateGasPDF_Simple(bestResult, dias, kwh, totalCliente) {
+        async function generateGasPDF_Simple(bestResult, dias, kwh, totalCliente, clientName = '[NOMBRE COMPLETO CLIENTE]', comercialCode = 'D=00') {
             window.showMessageModal("⏳ Generando PDF... Por favor espere.");
             
             const { jsPDF } = window.jspdf;
@@ -14778,7 +14789,7 @@
             
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
-            doc.text('CLIENTE: [NOMBRE COMPLETO CLIENTE]', margin + 5, yPos + 13);
+            doc.text('CLIENTE: ' + clientName, margin + 5, yPos + 13);
             doc.text('TARIFA: ' + currentGasTariff, margin + 5, yPos + 18);
             
             doc.setFont('helvetica', 'bold');
@@ -15079,7 +15090,7 @@
         }
         
         // PDF DUAL
-        async function generateGasPDF_Dual(resFijo, resIndexed, dias, kwh, totalCliente) {
+        async function generateGasPDF_Dual(resFijo, resIndexed, dias, kwh, totalCliente, clientName = '[NOMBRE COMPLETO CLIENTE]', comercialCode = 'D=00') {
             window.showMessageModal("⏳ Generando PDF comparativo...");
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
@@ -15141,22 +15152,45 @@
             doc.setFontSize(9);
             doc.text('PROFESIONAL', pageWidth - 12, 28, { align: 'right' });
             
-            // TÍTULO Y INFO CLIENTE
-            y = 52;
-            doc.setTextColor(40, 50, 60);
+            // === INFORMACIÓN DEL CLIENTE (DISEÑO PROFESIONAL) ===
+            y = 50;
+            
+            // Barra superior verde
+            doc.setFillColor(76, 175, 80); // Verde
+            doc.roundedRect(12, y, 186, 8, 3, 3, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(14);
-            doc.text('COMPARATIVA PROFESIONAL - DRK', 12, y);
+            doc.text('ESTUDIO DE AHORRO', 17, y + 5.5);
             
-            y += 9;
+            // Caja blanca con borde
+            doc.setFillColor(255, 255, 255);
+            doc.setDrawColor(107, 125, 142);
+            doc.setLineWidth(1);
+            doc.roundedRect(12, y + 8, 186, 20, 3, 3, 'FD');
+            
+            // Título principal
+            doc.setTextColor(107, 125, 142);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('COMPARATIVA PROFESIONAL - DRK', 17, y + 14);
+            
+            // Info del cliente
+            doc.setTextColor(80, 80, 80);
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
-            doc.setTextColor(100, 110, 120);
-            doc.text('CLIENTE: [NOMBRE COMPLETO CLIENTE]', 12, y);
-            y += 5;
-            doc.text('CUPS TOTALES: 1', 12, y);
+            doc.text(`CLIENTE: ${clientName}`, 17, y + 20);
+            doc.text(`CUPS: ${dualSupplies.length > 1 ? dualSupplies[0].cups.substring(0,20) + '...' : dualSupplies[0].cups}`, 17, y + 25);
             
-            y += 15;
+            // Comercial en caja destacada (derecha)
+            doc.setFillColor(240, 245, 248);
+            doc.roundedRect(pageWidth - 12 - 45, y + 17, 45, 8, 2, 2, 'F');
+            doc.setTextColor(107, 125, 142);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.text(`COMERCIAL: ${comercialCode}`, pageWidth - 12 - 43, y + 22.5);
+            
+            y += 35;
             
             // CAJA GRIS "LA MEJOR OPCIÓN"
             doc.setFillColor(107, 125, 142);
@@ -15609,7 +15643,7 @@
         // ============================================
         
         // PDF INDIVIDUAL POWER CUP
-        async function generateGasPDF_Simple_PowerCup(bestResult, dias, kwh, totalCliente) {
+        async function generateGasPDF_Simple_PowerCup(bestResult, dias, kwh, totalCliente, clientName = '[NOMBRE COMPLETO CLIENTE]', comercialCode = 'D=00') {
             window.showMessageModal("⏳ Generando PDF POWER CUP...");
             
             const { jsPDF } = window.jspdf;
@@ -15722,7 +15756,7 @@
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(100, 110, 100);
-            doc.text('CLIENTE: [NOMBRE COMPLETO CLIENTE]', 25, y);
+            doc.text('CLIENTE: ' + clientName + '', 25, y);
             
             y += 5;
             doc.text('CUPS: ES0021000020679723GY', 25, y);
@@ -15730,7 +15764,7 @@
             // Texto "COMERCIAL: <cz" en la esquina derecha
             doc.setTextColor(130, 140, 130);
             doc.setFontSize(8);
-            doc.text('COMERCIAL: <cz', 185, y, { align: 'right' });
+            doc.text('COMERCIAL: ' + comercialCode + '', 185, y, { align: 'right' });
             
             y += 15;
             
@@ -15942,7 +15976,7 @@
         }
         
         // PDF DUAL POWER CUP
-        async function generateGasPDF_Dual_PowerCup(resFijo, resIndexed, dias, kwh, totalCliente) {
+        async function generateGasPDF_Dual_PowerCup(resFijo, resIndexed, dias, kwh, totalCliente, clientName = '[NOMBRE COMPLETO CLIENTE]', comercialCode = 'D=00') {
             window.showMessageModal("⏳ Generando PDF comparativo POWER CUP...");
             const { jsPDF} = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
@@ -16053,7 +16087,7 @@
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(100, 110, 100);
-            doc.text('CLIENTE: [NOMBRE COMPLETO CLIENTE]', 25, y);
+            doc.text('CLIENTE: ' + clientName + '', 25, y);
             
             y += 5;
             doc.text('CUPS: ES0021000020679723GY', 25, y);
@@ -16061,7 +16095,7 @@
             // Texto "COMERCIAL: <cz" en la esquina derecha
             doc.setTextColor(130, 140, 130);
             doc.setFontSize(8);
-            doc.text('COMERCIAL: <cz', 185, y, { align: 'right' });
+            doc.text('COMERCIAL: ' + comercialCode + '', 185, y, { align: 'right' });
             
             y += 15;
             
