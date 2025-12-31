@@ -1482,9 +1482,9 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FINAL-v13 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FINAL-v13 🔥🔥🔥');
-        console.log('BUGS CORREGIDOS: Lista muestra CUPS + Precio / Cierra modales correctamente');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-AHORRO-v14 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-AHORRO-v14 🔥🔥🔥');
+        console.log('✅ AHORRO visible en comparativa / ❌ X roja eliminada');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -11446,15 +11446,10 @@
                                 <p class="text-xs text-slate-500">${displayInfo}</p>
                             </div>
                         </div>
-                        <div class="text-right mr-2">
+                        <div class="text-right">
                             <p class="text-sm font-bold text-blue-600">${monthlyPrice}€/mes</p>
                             <p class="text-xs text-slate-500">${annualPrice}€/año</p>
                         </div>
-                        <button onclick="dualRemoveSupply(${index})" class="text-red-500 hover:text-red-700 p-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                            </svg>
-                        </button>
                     </div>
                 `;
                 }).join('');
@@ -11529,6 +11524,7 @@
             let totalDRK = 0;
             let totalPowerCup = 0;
             let totalDaysWeighted = 0;
+            let totalOriginalBill = 0; // NUEVO: Total factura actual
             
             dualSupplies.forEach(supply => {
                 if (supply.results) {
@@ -11536,12 +11532,19 @@
                     totalPowerCup += supply.results.powercup.total_anual || 0;
                     totalDaysWeighted += supply.data.dias || 30;
                 }
+                // Sumar factura original
+                totalOriginalBill += supply.originalBillAnnual || 0;
             });
+            
+            // Calcular ahorro
+            const totalSavings = totalOriginalBill - totalDRK;
             
             // Guardar resultados globales
             window.dualGlobalResults = {
                 totalDRK,
                 totalPowerCup,
+                totalOriginalBill,
+                totalSavings,
                 diff: totalPowerCup - totalDRK,
                 supplies: dualSupplies.length,
                 avgDays: Math.round(totalDaysWeighted / dualSupplies.length)
@@ -11590,6 +11593,29 @@
                         <p class="text-sm text-drk-100 mb-2">Total anual proyectado:</p>
                         <p class="text-4xl font-bold">${formatEuro(results.totalDRK)}</p>
                         <p class="text-sm text-drk-200 mt-2">${results.supplies} suministros combinados</p>
+                    </div>
+                </div>
+                
+                <!-- NUEVO: Tarjeta de AHORRO TOTAL -->
+                <div class="bg-gradient-to-br from-green-500 to-green-700 text-white rounded-2xl shadow-2xl p-6 border-2 border-green-400 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-2xl font-bold">💰 Ahorro Total</h3>
+                        <div class="bg-white bg-opacity-20 p-3 rounded-xl">
+                            <span class="text-2xl">📊</span>
+                        </div>
+                    </div>
+                    <div class="bg-white bg-opacity-10 rounded-xl p-4 mb-3">
+                        <p class="text-sm text-green-100 mb-2">Factura actual total:</p>
+                        <p class="text-2xl font-bold">${formatEuro(results.totalOriginalBill)}</p>
+                    </div>
+                    <div class="bg-white bg-opacity-10 rounded-xl p-4 mb-3">
+                        <p class="text-sm text-green-100 mb-2">Con DRK pagarías:</p>
+                        <p class="text-2xl font-bold">${formatEuro(results.totalDRK)}</p>
+                    </div>
+                    <div class="bg-green-600 rounded-xl p-4 border-2 border-white border-opacity-30">
+                        <p class="text-sm text-green-100 mb-2">🎉 Ahorro anual generado:</p>
+                        <p class="text-4xl font-bold">${formatEuro(results.totalSavings)}</p>
+                        <p class="text-sm text-green-100 mt-2">${(results.totalSavings / 12).toFixed(2).replace('.', ',')} € al mes</p>
                     </div>
                 </div>
                 
