@@ -9109,14 +9109,15 @@
                         offer: {
                             ...lastComparisonResult.offer,
                             // Extraer precios de los arrays powerCosts y energyCosts
-                            p1_power_price: lastComparisonResult.powerCosts?.[0]?.price_euro_kw_day,
-                            p2_power_price: lastComparisonResult.powerCosts?.[1]?.price_euro_kw_day,
-                            p1_price: lastComparisonResult.energyCosts?.[0]?.price_euro_kwh,
-                            p2_price: lastComparisonResult.energyCosts?.[1]?.price_euro_kwh,
-                            p3_price: lastComparisonResult.energyCosts?.[2]?.price_euro_kwh,
-                            p4_price: lastComparisonResult.energyCosts?.[3]?.price_euro_kwh,
-                            p5_price: lastComparisonResult.energyCosts?.[4]?.price_euro_kwh,
-                            p6_price: lastComparisonResult.energyCosts?.[5]?.price_euro_kwh
+                            // CORREGIDO: Usar los nombres de propiedades correctos: priceDay y price
+                            p1_power_price: lastComparisonResult.powerCosts?.[0]?.priceDay || lastComparisonResult.powerCosts?.[0]?.price_euro_kw_day,
+                            p2_power_price: lastComparisonResult.powerCosts?.[1]?.priceDay || lastComparisonResult.powerCosts?.[1]?.price_euro_kw_day,
+                            p1_price: lastComparisonResult.energyCosts?.[0]?.price || lastComparisonResult.energyCosts?.[0]?.price_euro_kwh,
+                            p2_price: lastComparisonResult.energyCosts?.[1]?.price || lastComparisonResult.energyCosts?.[1]?.price_euro_kwh,
+                            p3_price: lastComparisonResult.energyCosts?.[2]?.price || lastComparisonResult.energyCosts?.[2]?.price_euro_kwh,
+                            p4_price: lastComparisonResult.energyCosts?.[3]?.price || lastComparisonResult.energyCosts?.[3]?.price_euro_kwh,
+                            p5_price: lastComparisonResult.energyCosts?.[4]?.price || lastComparisonResult.energyCosts?.[4]?.price_euro_kwh,
+                            p6_price: lastComparisonResult.energyCosts?.[5]?.price || lastComparisonResult.energyCosts?.[5]?.price_euro_kwh
                         },
                         totalAnnual: lastComparisonResult.totalAnnual,
                         originalBillAnnual: lastComparisonResult.originalBillAnnual || (lastComparisonResult.importe_total || 0) * 12,
@@ -10452,14 +10453,15 @@
                         offer: {
                             ...result.offer,
                             // Extraer precios de los arrays powerCosts y energyCosts
-                            p1_power_price: result.powerCosts?.[0]?.price_euro_kw_day,
-                            p2_power_price: result.powerCosts?.[1]?.price_euro_kw_day,
-                            p1_price: result.energyCosts?.[0]?.price_euro_kwh,
-                            p2_price: result.energyCosts?.[1]?.price_euro_kwh,
-                            p3_price: result.energyCosts?.[2]?.price_euro_kwh,
-                            p4_price: result.energyCosts?.[3]?.price_euro_kwh,
-                            p5_price: result.energyCosts?.[4]?.price_euro_kwh,
-                            p6_price: result.energyCosts?.[5]?.price_euro_kwh
+                            // CORREGIDO: Usar los nombres de propiedades correctos: priceDay y price
+                            p1_power_price: result.powerCosts?.[0]?.priceDay || result.powerCosts?.[0]?.price_euro_kw_day,
+                            p2_power_price: result.powerCosts?.[1]?.priceDay || result.powerCosts?.[1]?.price_euro_kw_day,
+                            p1_price: result.energyCosts?.[0]?.price || result.energyCosts?.[0]?.price_euro_kwh,
+                            p2_price: result.energyCosts?.[1]?.price || result.energyCosts?.[1]?.price_euro_kwh,
+                            p3_price: result.energyCosts?.[2]?.price || result.energyCosts?.[2]?.price_euro_kwh,
+                            p4_price: result.energyCosts?.[3]?.price || result.energyCosts?.[3]?.price_euro_kwh,
+                            p5_price: result.energyCosts?.[4]?.price || result.energyCosts?.[4]?.price_euro_kwh,
+                            p6_price: result.energyCosts?.[5]?.price || result.energyCosts?.[5]?.price_euro_kwh
                         },
                         totalAnnual: result.totalAnnual,
                         originalBillAnnual: result.originalBillAnnual || (result.importe_total || 0) * 12,
@@ -12165,7 +12167,8 @@
                                 <div style="background:${accentColor};color:white;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:12px;font-weight:bold">POTENCIA</div>
                                 ${(eb.powerCosts||[]).map((pc, idx) => {
                                     const priceKey = idx === 0 ? 'p1_power_price' : 'p2_power_price';
-                                    const precio = s.offer?.[priceKey] || pc.price_euro_kw_day || 0;
+                                    // CORREGIDO: Usar priceDay como fallback además de price_euro_kw_day
+                                    const precio = s.offer?.[priceKey] || pc.priceDay || pc.price_euro_kw_day || 0;
                                     return `
                                     <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
                                         <span>P${pc.period||'?'} (${pc.power_kw||0} kW x ${eb.dias} x ${precio.toFixed(6)})</span>
@@ -12176,7 +12179,8 @@
                                 <div style="background:${accentColor};color:white;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:12px;font-weight:bold">ENERGÍA</div>
                                 ${(eb.energyCosts||[]).map((ec, idx) => {
                                     const priceKey = `p${idx+1}_price`;
-                                    const precio = s.offer?.[priceKey] || ec.price_euro_kwh || 0;
+                                    // CORREGIDO: Usar price como fallback además de price_euro_kwh
+                                    const precio = s.offer?.[priceKey] || ec.price || ec.price_euro_kwh || 0;
                                     return `
                                     <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
                                         <span>E${ec.period||'?'} (${ec.kwh||0} kWh x ${precio.toFixed(6)})</span>
