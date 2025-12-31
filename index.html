@@ -1474,11 +1474,11 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-GAS-ROJO-v30 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-GAS-ROJO-v30 🔥🔥🔥');
-        console.log('✅ Color GAS cambiado de NARANJA a ROJO (#D84A3B)');
-        console.log('✅ Nombres completos: "Comercializadora - Tarifa"');
-        console.log('✅ Power Cup (verde) + DRK (azul) + GAS (rojo)');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-PDF-GENERATOR-v31 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-PDF-GENERATOR-v31 🔥🔥🔥');
+        console.log('✅ Generador de PDF IMPLEMENTADO - Genera propuesta desde DUAL');
+        console.log('✅ Color GAS: ROJO (#D84A3B)');
+        console.log('✅ Nombres completos de tarifas');
         console.log('📁 BACKUP: BACKUP_QR_full_GAS_V2_DUAL_20251231_010742.html');
         
         // Eliminamos 6.1TD del estado inicial
@@ -12028,8 +12028,253 @@
         
         // Función: Generar PDF DUAL
         function dualGeneratePDF() {
-            alert('Generando PDF global... (función en desarrollo)');
-            // Aquí se implementaría la generación del PDF combinado
+            console.log('🔥 Generando propuesta PDF con datos DUAL...');
+            
+            if (!dualSupplies || dualSupplies.length === 0) {
+                alert('No hay suministros para generar la propuesta. Añade al menos un suministro.');
+                return;
+            }
+            
+            const results = window.dualGlobalResults;
+            const isPowerCup = results.comparisonMode === 'overall_best';
+            const brandName = isPowerCup ? 'POWER CUP' : 'DRK';
+            const brandColor = isPowerCup ? '#22c55e' : '#4A90E2';
+            
+            // Calcular totales
+            const totalSavings = results.totalSavings || 0;
+            const totalOriginalBill = results.totalOriginalBill || 0;
+            const totalNew = isPowerCup ? results.totalPowerCup : results.totalDRK;
+            const monthlyOriginal = totalOriginalBill / 12;
+            const monthlyNew = totalNew / 12;
+            
+            // Generar filas de la tabla de resumen
+            let tableRows = '';
+            dualSupplies.forEach((s, i) => {
+                const icon = s.type === 'electricidad' ? '⚡' : '🔥';
+                const cupsShort = (s.cups || '').substring(0, 20) + '...';
+                const ahorro = s.originalBillAnnual - s.results.drk.total_anual;
+                
+                tableRows += `
+                    <tr>
+                        <td><strong>[${i+1}]</strong></td>
+                        <td><span class="supply-icon">${icon}</span> ${s.type === 'electricidad' ? 'Elec.' : 'Gas'}</td>
+                        <td style="font-size: 10px;">${cupsShort}</td>
+                        <td>${s.tariff || 'N/A'}</td>
+                        <td>${s.electricityBreakdown?.dias || s.gasBreakdown?.dias || 30}</td>
+                        <td style="text-align: right; font-weight: bold; color: #22c55e;">${ahorro.toFixed(2).replace('.', ',')} €</td>
+                    </tr>
+                `;
+            });
+            
+            // Generar desgloses detallados
+            let breakdownsHTML = '';
+            dualSupplies.forEach((s, i) => {
+                if (s.type === 'electricidad' && s.electricityBreakdown) {
+                    const eb = s.electricityBreakdown;
+                    breakdownsHTML += `
+                        <div class="breakdown-elec">
+                            <div class="breakdown-header">[${i+1}] ${s.cups || 'N/A'}<br>Tipo: ${s.tariff} | Días: ${eb.dias} | Cups: [${i+1}]</div>
+                            
+                            <div class="breakdown-section">
+                                <div class="breakdown-section-title">TARIFA APLICADA:</div>
+                                <div class="breakdown-item">
+                                    <span>${s.offer?.description || s.offer?.name || 'Tarifa'}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="breakdown-section">
+                                <div class="breakdown-section-title">POTENCIA</div>
+                                ${(eb.powerCosts || []).map(pc => `
+                                    <div class="breakdown-item">
+                                        <span>P${pc.period} (${pc.power_kw} kW x ${eb.dias} x ${pc.price_euro_kw_day})</span>
+                                        <span>${pc.cost_euros.toFixed(2)} €</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="breakdown-section">
+                                <div class="breakdown-section-title">ENERGÍA</div>
+                                ${(eb.energyCosts || []).map(ec => `
+                                    <div class="breakdown-item">
+                                        <span>E${ec.period} (${ec.kwh} kWh x ${ec.price_euro_kwh})</span>
+                                        <span>${ec.cost_euros.toFixed(2)} €</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="breakdown-total">
+                                <div class="breakdown-item">
+                                    <span class="breakdown-total-label">TOTAL (${eb.dias} DÍAS)</span>
+                                    <span class="breakdown-total-label">${eb.totalPeriod.toFixed(2)} €</span>
+                                </div>
+                            </div>
+                            
+                            <div class="breakdown-savings">
+                                AHORRO: ${eb.ahorro_anual.toFixed(2)} €
+                            </div>
+                        </div>
+                    `;
+                } else if (s.type === 'gas' && s.gasBreakdown) {
+                    const gb = s.gasBreakdown;
+                    breakdownsHTML += `
+                        <div class="breakdown-gas">
+                            <div class="breakdown-header">[${i+1}] ${s.cups || 'N/A'}<br>Tipo: ${s.tariff} | Días: ${gb.dias} | Cups: [${i+1}]</div>
+                            
+                            <div class="breakdown-section">
+                                <div class="breakdown-section-title">TARIFA APLICADA:</div>
+                                <div class="breakdown-item">
+                                    <span>${s.offer?.description || s.offer?.name || 'Tarifa Gas'}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="breakdown-section">
+                                <div class="breakdown-section-title">DESGLOSE</div>
+                                <div class="breakdown-item">
+                                    <span>Término fijo (${gb.dias} días)</span>
+                                    <span>${gb.termino_fijo.toFixed(2)} €</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span>Energía (${gb.kwh} kWh)</span>
+                                    <span>${gb.energia.toFixed(2)} €</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span>Imp. hidrocarburos</span>
+                                    <span>${gb.impuesto_hidrocarburos.toFixed(2)} €</span>
+                                </div>
+                                <div class="breakdown-item">
+                                    <span>IVA (21%)</span>
+                                    <span>${gb.iva.toFixed(2)} €</span>
+                                </div>
+                            </div>
+                            
+                            <div class="breakdown-total">
+                                <div class="breakdown-item">
+                                    <span class="breakdown-total-label">TOTAL MENSUAL</span>
+                                    <span class="breakdown-total-label">${gb.total.toFixed(2)} €</span>
+                                </div>
+                            </div>
+                            
+                            <div class="breakdown-savings">
+                                AHORRO: ${gb.ahorro_anual.toFixed(2)} €
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            
+            // Plantilla HTML completa
+            const htmlContent = `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propuesta ${brandName} - Cliente</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f5f7fa; padding: 20px; line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }
+        
+        .header { background: linear-gradient(135deg, #7a8a9e 0%, #596875 100%); padding: 30px 40px; display: flex; justify-content: space-between; align-items: center; color: white; }
+        .header-left { display: flex; align-items: center; gap: 15px; }
+        .logo-circle { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(135deg, #4CAF50 0%, #2196F3 50%, #FFC107 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        .logo-circle-inner { width: 50px; height: 50px; border-radius: 50%; background: white; }
+        .logo { font-size: 32px; font-weight: 900; letter-spacing: 2px; line-height: 1; }
+        .logo-subtitle { font-size: 11px; opacity: 0.9; line-height: 1.3; }
+        .header-right { text-align: right; }
+        .label-line { font-size: 13px; font-weight: 600; letter-spacing: 0.5px; }
+        
+        .section { padding: 30px; }
+        .section-header { background: #22c55e; color: white; padding: 10px 20px; font-weight: bold; font-size: 13px; text-transform: uppercase; margin: 0 -30px 20px -30px; }
+        
+        .client-box { background: white; border: 3px solid #64748b; border-radius: 12px; padding: 20px; margin-bottom: 25px; }
+        .client-box-header { font-size: 14px; font-weight: bold; color: #475569; margin-bottom: 12px; text-transform: uppercase; }
+        
+        .savings-amount { font-size: 42px; font-weight: 900; color: #22c55e; text-align: center; margin: 20px 0; }
+        
+        table { width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 12px; }
+        thead { background: #f1f5f9; }
+        th { padding: 10px 8px; text-align: left; font-size: 10px; font-weight: bold; color: #475569; text-transform: uppercase; }
+        td { padding: 10px 8px; border-bottom: 1px solid #e2e8f0; font-size: 11px; }
+        
+        .breakdown-elec { background: linear-gradient(135deg, #607d8b 0%, #546e7a 100%); color: white; padding: 18px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; }
+        .breakdown-gas { background: linear-gradient(135deg, #D84A3B 0%, #C23B2F 100%); color: white; padding: 18px; border-radius: 6px; margin-bottom: 15px; font-size: 12px; }
+        .breakdown-header { font-size: 12px; font-weight: bold; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid rgba(255,255,255,0.2); }
+        .breakdown-section { margin-bottom: 12px; }
+        .breakdown-section-title { font-size: 10px; font-weight: bold; text-transform: uppercase; opacity: 0.8; margin-bottom: 6px; }
+        .breakdown-item { display: flex; justify-content: space-between; padding: 6px 0; font-size: 11px; }
+        .breakdown-total { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 4px; margin-top: 8px; }
+        .breakdown-savings { background: #22c55e; padding: 10px; border-radius: 4px; text-align: center; margin-top: 8px; font-weight: bold; font-size: 12px; }
+        
+        @media print { body { background: white; padding: 0; } .container { box-shadow: none; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="header-left">
+                <div class="logo-circle"><div class="logo-circle-inner"></div></div>
+                <div>
+                    <div class="logo">${brandName}<br>ENERGÍA</div>
+                    <div class="logo-subtitle">Liderando el ahorro y la<br>eficiencia energética</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="label-line">ESTUDIO DE AHORRO</div>
+                <div class="label-line">COMPARATIVA</div>
+                <div class="label-line">PROFESIONAL</div>
+            </div>
+        </div>
+        
+        <div class="section">
+            <div class="section-header">ESTUDIO DE AHORRO</div>
+            
+            <div class="client-box">
+                <div class="client-box-header">COMPARATIVA PROFESIONAL - ${brandName}</div>
+                <div><strong>CLIENTE:</strong> [NOMBRE COMPLETO CLIENTE]<br><strong>CUPS TOTALES:</strong> ${dualSupplies.length}</div>
+            </div>
+            
+            <div class="savings-amount">${totalSavings.toFixed(2).replace('.', ',')} €</div>
+            <p style="text-align: center; color: #64748b; margin-bottom: 20px;">Ahorro anual estimado</p>
+        </div>
+        
+        <div class="section">
+            <div class="section-header">RESUMEN DE ${dualSupplies.length} SUMINISTROS</div>
+            <table>
+                <thead>
+                    <tr><th>Nº</th><th>TIPO</th><th>CUPS</th><th>TARIFA</th><th>DÍAS</th><th style="text-align: right;">AHORRO</th></tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+            </table>
+        </div>
+        
+        <div class="section">
+            <div class="section-header">DESGLOSE DETALLADO POR SUMINISTRO</div>
+            ${breakdownsHTML}
+        </div>
+        
+        <div class="section">
+            <div style="background: #ef4444; color: white; padding: 20px; border-radius: 8px; text-align: center; font-weight: bold;">
+                TU AHORRO ANUAL ESTIMADO ES:<br>
+                <div style="font-size: 32px; margin-top: 10px;">${totalSavings.toFixed(2).replace('.', ',')} €/AÑO</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Auto-abrir diálogo de impresión
+        setTimeout(() => {
+            window.print();
+        }, 500);
+    </script>
+</body>
+</html>`;
+            
+            // Abrir en nueva ventana
+            const newWindow = window.open('', '_blank');
+            newWindow.document.write(htmlContent);
+            newWindow.document.close();
+            
+            console.log('✅ Propuesta generada y abierta en nueva ventana');
         }
         
         // NUEVO: Funciones para pantalla de confirmación
