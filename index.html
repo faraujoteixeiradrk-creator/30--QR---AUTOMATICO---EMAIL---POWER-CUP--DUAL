@@ -1482,11 +1482,11 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-PRECIOS-ELEC-v40 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-PRECIOS-ELEC-v40 🔥🔥🔥');
-        console.log('✅ PDF DUAL: PRECIOS APLICADOS de electricidad CORREGIDOS');
-        console.log('✅ Ahora muestra P1, P2 (potencia) y E1-E6 (energía)');
-        console.log('✅ Obtiene precios desde s.offer correctamente');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-PRECIOS-CALC-v41 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-PRECIOS-CALC-v41 🔥🔥🔥');
+        console.log('✅ PDF DUAL: Precios en CÁLCULOS corregidos');
+        console.log('✅ Ahora usa s.offer para precios en fórmulas de POTENCIA y ENERGÍA');
+        console.log('✅ Ya no muestra "x 0.000000" en los cálculos');
         console.log('✅ Formato completo como las comparativas individuales');
         
         // Eliminamos 6.1TD del estado inicial
@@ -11932,20 +11932,26 @@
                                 </div>
                                 
                                 <div style="background:${accentColor};color:white;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:12px;font-weight:bold">POTENCIA</div>
-                                ${(eb.powerCosts||[]).map(pc => `
+                                ${(eb.powerCosts||[]).map((pc, idx) => {
+                                    const priceKey = idx === 0 ? 'p1_power_price' : 'p2_power_price';
+                                    const precio = s.offer?.[priceKey] || pc.price_euro_kw_day || 0;
+                                    return `
                                     <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
-                                        <span>P${pc.period||'?'} (${pc.power_kw||0} kW x ${eb.dias} x ${(pc.price_euro_kw_day||0).toFixed(6)})</span>
+                                        <span>P${pc.period||'?'} (${pc.power_kw||0} kW x ${eb.dias} x ${precio.toFixed(6)})</span>
                                         <span style="font-weight:bold">${(pc.cost_euros||0).toFixed(2)} €</span>
                                     </div>
-                                `).join('')}
+                                `;}).join('')}
                                 
                                 <div style="background:${accentColor};color:white;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:12px;font-weight:bold">ENERGÍA</div>
-                                ${(eb.energyCosts||[]).map(ec => `
+                                ${(eb.energyCosts||[]).map((ec, idx) => {
+                                    const priceKey = `p${idx+1}_price`;
+                                    const precio = s.offer?.[priceKey] || ec.price_euro_kwh || 0;
+                                    return `
                                     <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
-                                        <span>E${ec.period||'?'} (${ec.kwh||0} kWh x ${(ec.price_euro_kwh||0).toFixed(6)})</span>
+                                        <span>E${ec.period||'?'} (${ec.kwh||0} kWh x ${precio.toFixed(6)})</span>
                                         <span style="font-weight:bold">${(ec.cost_euros||0).toFixed(2)} €</span>
                                     </div>
-                                `).join('')}
+                                `;}).join('')}
                                 
                                 <div style="background:#e2e8f0;padding:10px;margin-top:10px;border-radius:4px;display:flex;justify-content:space-between;font-weight:bold">
                                     <span>TOTAL (${eb.dias} DÍAS)</span>
