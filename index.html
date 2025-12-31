@@ -1482,17 +1482,12 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-PDF-COMPLETO-v39 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-PDF-COMPLETO-v39 🔥🔥🔥');
-        console.log('✅ PDF DUAL: Formato completo como las comparativas individuales');
-        console.log('✅ Banner con logo circular + textura de rayas');
-        console.log('✅ Recuadro con borde para info cliente');
-        console.log('✅ Caja gris "La mejor opción"');
-        console.log('✅ Comparativa lado a lado');
-        console.log('✅ Tabla de suministros');
-        console.log('✅ Desgloses detallados por suministro');
-        console.log('✅ Caja roja final con ahorro');
-        console.log('✅ Sección de formalización');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-PRECIOS-ELEC-v40 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-PRECIOS-ELEC-v40 🔥🔥🔥');
+        console.log('✅ PDF DUAL: PRECIOS APLICADOS de electricidad CORREGIDOS');
+        console.log('✅ Ahora muestra P1, P2 (potencia) y E1-E6 (energía)');
+        console.log('✅ Obtiene precios desde s.offer correctamente');
+        console.log('✅ Formato completo como las comparativas individuales');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -11918,11 +11913,21 @@
                                     <div style="font-weight:bold;color:${accentColor};margin-bottom:5px;font-size:12px">PRECIOS APLICADOS:</div>
                                     <div style="font-size:11px;color:#64748b">
                                         <strong>POTENCIA:</strong><br>
-                                        ${(eb.powerCosts||[]).map(pc => `P${pc.period||'?'}: ${(pc.price_euro_kw_day||0).toFixed(6)} €/kW/día`).join('<br>')}
+                                        ${s.offer ? [
+                                            s.offer.p1_power_price ? `P1: ${s.offer.p1_power_price.toFixed(6)} €/kW/día` : null,
+                                            s.offer.p2_power_price ? `P2: ${s.offer.p2_power_price.toFixed(6)} €/kW/día` : null
+                                        ].filter(Boolean).join('<br>') : 'N/A'}
                                     </div>
                                     <div style="font-size:11px;color:#64748b;margin-top:8px">
                                         <strong>ENERGÍA:</strong><br>
-                                        ${(eb.energyCosts||[]).map(ec => `E${ec.period||'?'}: ${(ec.price_euro_kwh||0).toFixed(6)} €/kWh`).join('<br>')}
+                                        ${s.offer ? [
+                                            s.offer.p1_price ? `E1: ${s.offer.p1_price.toFixed(6)} €/kWh` : null,
+                                            s.offer.p2_price ? `E2: ${s.offer.p2_price.toFixed(6)} €/kWh` : null,
+                                            s.offer.p3_price ? `E3: ${s.offer.p3_price.toFixed(6)} €/kWh` : null,
+                                            s.offer.p4_price ? `E4: ${s.offer.p4_price.toFixed(6)} €/kWh` : null,
+                                            s.offer.p5_price ? `E5: ${s.offer.p5_price.toFixed(6)} €/kWh` : null,
+                                            s.offer.p6_price ? `E6: ${s.offer.p6_price.toFixed(6)} €/kWh` : null
+                                        ].filter(Boolean).join('<br>') : 'N/A'}
                                     </div>
                                 </div>
                                 
