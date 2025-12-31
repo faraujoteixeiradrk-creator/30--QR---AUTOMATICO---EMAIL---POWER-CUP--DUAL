@@ -16065,42 +16065,43 @@
             // Banner verde "ESTUDIO DE AHORRO"
             y = 63;
             doc.setFillColor(76, 175, 80);
-            doc.roundedRect(20, y, 170, 12, 4, 4, 'F');
+            doc.roundedRect(20, y, 170, 8, 3, 3, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
-            doc.text('ESTUDIO DE AHORRO', 105, y + 8, { align: 'center' });
-            
-            // Recuadro con borde verde oliva para info del cliente
-            y += 18;
-            doc.setDrawColor(119, 132, 109);
-            doc.setLineWidth(2);
-            doc.roundedRect(20, y, 170, 25, 3, 3, 'D');
-            
-            doc.setFillColor(255, 255, 255);
-            doc.roundedRect(20, y, 170, 25, 3, 3, 'F');
+            doc.setFontSize(9);
+            doc.text('ESTUDIO DE AHORRO', 25, y + 5.5);
             
             y += 8;
-            doc.setTextColor(70, 80, 70);
+            
+            // Caja blanca con borde para info del cliente
+            doc.setFillColor(255, 255, 255);
+            doc.setDrawColor(119, 132, 109);
+            doc.setLineWidth(1);
+            doc.roundedRect(20, y, 170, 20, 3, 3, 'FD');
+            
+            // Título principal
+            doc.setTextColor(119, 132, 109);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(13);
-            doc.text('COMPARATIVA PROFESIONAL - POWER CUP', 25, y);
+            doc.setFontSize(12);
+            doc.text('COMPARATIVA PROFESIONAL - POWER CUP', 25, y + 6);
             
-            y += 7;
+            // Info del cliente
+            doc.setTextColor(80, 80, 80);
             doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.text('CLIENTE: ' + clientName, 25, y + 12);
+            doc.text('CUPS: ES0021000020679723GY', 25, y + 17);
+            
+            // Comercial en caja destacada (derecha)
+            doc.setFillColor(240, 245, 240);
+            doc.roundedRect(pageWidth - 20 - 45, y + 9, 45, 8, 2, 2, 'F');
+            doc.setTextColor(119, 132, 109);
+            doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
-            doc.setTextColor(100, 110, 100);
-            doc.text('CLIENTE: ' + clientName + '', 25, y);
+            doc.text('COMERCIAL: ' + comercialCode, pageWidth - 20 - 43, y + 14.5);
             
-            y += 5;
-            doc.text('CUPS: ES0021000020679723GY', 25, y);
+            y += 25;
             
-            // Texto "COMERCIAL: <cz" en la esquina derecha
-            doc.setTextColor(130, 140, 130);
-            doc.setFontSize(8);
-            doc.text('COMERCIAL: ' + comercialCode + '', 185, y, { align: 'right' });
-            
-            y += 15;
             
             // Caja verde oliva "LA MEJOR OPCIÓN" (más grande)
             doc.setFillColor(119, 132, 109);
