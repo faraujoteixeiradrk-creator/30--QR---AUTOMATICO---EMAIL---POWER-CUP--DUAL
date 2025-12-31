@@ -1482,11 +1482,17 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-SIMPLE-PDF-v38 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-SIMPLE-PDF-v38 🔥🔥🔥');
-        console.log('✅ PDF DUAL: Implementación simple y funcional');
-        console.log('✅ Restaurado desde v24 + PDF implementado');
-        console.log('✅ Todos los botones deben funcionar');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-PDF-COMPLETO-v39 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-PDF-COMPLETO-v39 🔥🔥🔥');
+        console.log('✅ PDF DUAL: Formato completo como las comparativas individuales');
+        console.log('✅ Banner con logo circular + textura de rayas');
+        console.log('✅ Recuadro con borde para info cliente');
+        console.log('✅ Caja gris "La mejor opción"');
+        console.log('✅ Comparativa lado a lado');
+        console.log('✅ Tabla de suministros');
+        console.log('✅ Desgloses detallados por suministro');
+        console.log('✅ Caja roja final con ahorro');
+        console.log('✅ Sección de formalización');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -11859,7 +11865,7 @@
         
         // Función: Generar PDF DUAL
         function dualGeneratePDF() {
-            console.log('Generando PDF DUAL...');
+            console.log('📄 Generando PDF DUAL completo...');
             
             if (!dualSupplies || dualSupplies.length === 0) {
                 alert('No hay suministros para generar la propuesta.');
@@ -11874,38 +11880,290 @@
             
             const isPowerCup = results.comparisonMode === 'overall_best';
             const brandName = isPowerCup ? 'POWER CUP' : 'DRK';
+            const primaryColor = isPowerCup ? '#4d7c0f' : '#546e7a';
+            const accentColor = isPowerCup ? '#84cc16' : '#607d8b';
+            
             const totalSavings = results.totalSavings || 0;
             const totalOriginalBill = results.totalOriginalBill || 0;
             const totalNew = isPowerCup ? results.totalPowerCup : results.totalDRK;
             
             const eur = n => new Intl.NumberFormat('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(n || 0) + ' €';
             
+            // Generar tabla de suministros
+            const tableRows = dualSupplies.map((s, i) => {
+                const ahorro = (s.originalBillAnnual||0) - (s.results?.drk?.total_anual||0);
+                return `
+                    <tr>
+                        <td style="padding:10px 15px;border-bottom:1px solid #e2e8f0;background:white;text-align:center"><strong>[${i+1}]</strong></td>
+                        <td style="padding:10px 15px;border-bottom:1px solid #e2e8f0;background:white;font-size:10px">${(s.cups||'N/A').substring(0,20)}...</td>
+                        <td style="padding:10px 15px;border-bottom:1px solid #e2e8f0;background:white;text-align:center">${s.tariff||'N/A'}</td>
+                        <td style="padding:10px 15px;border-bottom:1px solid #e2e8f0;background:white;text-align:center">${s.electricityBreakdown?.dias || s.gasBreakdown?.dias || 30}</td>
+                        <td style="padding:10px 15px;border-bottom:1px solid #e2e8f0;background:white;text-align:right;font-weight:bold;color:#22c55e">${eur(ahorro)}</td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Generar desgloses detallados
+            const desgloses = dualSupplies.map((s, i) => {
+                if (s.type === 'electricidad' && s.electricityBreakdown) {
+                    const eb = s.electricityBreakdown;
+                    return `
+                        <div style="margin-bottom:20px">
+                            <div style="background:${accentColor};color:white;padding:12px 20px;border-radius:8px 8px 0 0;font-weight:bold;font-size:13px">
+                                [${i+1}] ${(s.cups||'N/A').substring(0,30)}...
+                                <div style="font-size:11px;opacity:0.9;margin-top:3px">Tipo: ${s.tariff} | Días: ${eb.dias} días | CUPS: [${i+1}]</div>
+                            </div>
+                            <div style="background:#f8fafc;padding:15px 20px;border:1px solid #e2e8f0;border-top:none">
+                                <div style="margin-bottom:12px">
+                                    <div style="font-weight:bold;color:${accentColor};margin-bottom:5px;font-size:12px">PRECIOS APLICADOS:</div>
+                                    <div style="font-size:11px;color:#64748b">
+                                        <strong>POTENCIA:</strong><br>
+                                        ${(eb.powerCosts||[]).map(pc => `P${pc.period||'?'}: ${(pc.price_euro_kw_day||0).toFixed(6)} €/kW/día`).join('<br>')}
+                                    </div>
+                                    <div style="font-size:11px;color:#64748b;margin-top:8px">
+                                        <strong>ENERGÍA:</strong><br>
+                                        ${(eb.energyCosts||[]).map(ec => `E${ec.period||'?'}: ${(ec.price_euro_kwh||0).toFixed(6)} €/kWh`).join('<br>')}
+                                    </div>
+                                </div>
+                                
+                                <div style="background:${accentColor};color:white;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:12px;font-weight:bold">POTENCIA</div>
+                                ${(eb.powerCosts||[]).map(pc => `
+                                    <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
+                                        <span>P${pc.period||'?'} (${pc.power_kw||0} kW x ${eb.dias} x ${(pc.price_euro_kw_day||0).toFixed(6)})</span>
+                                        <span style="font-weight:bold">${(pc.cost_euros||0).toFixed(2)} €</span>
+                                    </div>
+                                `).join('')}
+                                
+                                <div style="background:${accentColor};color:white;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:12px;font-weight:bold">ENERGÍA</div>
+                                ${(eb.energyCosts||[]).map(ec => `
+                                    <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
+                                        <span>E${ec.period||'?'} (${ec.kwh||0} kWh x ${(ec.price_euro_kwh||0).toFixed(6)})</span>
+                                        <span style="font-weight:bold">${(ec.cost_euros||0).toFixed(2)} €</span>
+                                    </div>
+                                `).join('')}
+                                
+                                <div style="background:#e2e8f0;padding:10px;margin-top:10px;border-radius:4px;display:flex;justify-content:space-between;font-weight:bold">
+                                    <span>TOTAL (${eb.dias} DÍAS)</span>
+                                    <span>${(eb.totalPeriod||0).toFixed(2)} €</span>
+                                </div>
+                                
+                                <div style="background:#ef4444;color:white;padding:10px;margin-top:10px;border-radius:4px;text-align:center;font-weight:bold">
+                                    AHORRO: ${(eb.ahorro_anual||0).toFixed(2)} €
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                } else if (s.type === 'gas' && s.gasBreakdown) {
+                    const gb = s.gasBreakdown;
+                    return `
+                        <div style="margin-bottom:20px">
+                            <div style="background:${accentColor};color:white;padding:12px 20px;border-radius:8px 8px 0 0;font-weight:bold;font-size:13px">
+                                [${i+1}] ${(s.cups||'N/A').substring(0,30)}...
+                                <div style="font-size:11px;opacity:0.9;margin-top:3px">Tipo: ${s.tariff} | Días: ${gb.dias} días | CUPS: [${i+1}]</div>
+                            </div>
+                            <div style="background:#f8fafc;padding:15px 20px;border:1px solid #e2e8f0;border-top:none">
+                                <div style="margin-bottom:12px">
+                                    <div style="font-weight:bold;color:${accentColor};margin-bottom:5px;font-size:12px">PRECIOS APLICADOS:</div>
+                                    <div style="font-size:11px;color:#64748b">
+                                        <strong>POTENCIA:</strong> Precio fijo: ${((s.offer?.p_fijo_diario||0)/365).toFixed(6)} €/día<br>
+                                        <strong>ENERGÍA:</strong> ${(s.offer?.p1_price||0).toFixed(6)} €/kWh
+                                    </div>
+                                </div>
+                                
+                                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:11px">
+                                    <span>Término fijo (${gb.dias||30} días)</span>
+                                    <span style="font-weight:bold">${(gb.termino_fijo||0).toFixed(2)} €</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:11px">
+                                    <span>Energía (${gb.kwh||0} kWh)</span>
+                                    <span style="font-weight:bold">${(gb.energia||0).toFixed(2)} €</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:11px">
+                                    <span>Imp. hidrocarburos</span>
+                                    <span style="font-weight:bold">${(gb.impuesto_hidrocarburos||0).toFixed(2)} €</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:11px">
+                                    <span>IVA (21%)</span>
+                                    <span style="font-weight:bold">${(gb.iva||0).toFixed(2)} €</span>
+                                </div>
+                                
+                                <div style="background:#e2e8f0;padding:10px;margin-top:10px;border-radius:4px;display:flex;justify-content:space-between;font-weight:bold">
+                                    <span>TOTAL (${gb.dias} DÍAS)</span>
+                                    <span>${(gb.total||0).toFixed(2)} €</span>
+                                </div>
+                                
+                                <div style="background:#ef4444;color:white;padding:10px;margin-top:10px;border-radius:4px;text-align:center;font-weight:bold">
+                                    AHORRO: ${(gb.ahorro_anual||0).toFixed(2)} €
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                return '';
+            }).join('');
+            
             const html = `<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Propuesta ${brandName}</title></head>
-<body style="font-family:Arial;margin:20px;background:#f5f5f5">
-<div style="max-width:800px;margin:0 auto;background:white;padding:20px;box-shadow:0 4px 20px rgba(0,0,0,0.1)">
-<h1 style="color:#3b5875;text-align:center">${brandName} ENERGÍA</h1>
-<h2 style="color:#22c55e;text-align:center">Tu ahorro anual: ${eur(totalSavings)}</h2>
-<table style="width:100%;border-collapse:collapse;margin:20px 0">
-<tr><td style="padding:10px;border:1px solid #ddd"><strong>Factura actual:</strong></td><td style="text-align:right;padding:10px;border:1px solid #ddd">${eur(totalOriginalBill)}/año</td></tr>
-<tr><td style="padding:10px;border:1px solid #ddd"><strong>Nuevo coste ${brandName}:</strong></td><td style="text-align:right;padding:10px;border:1px solid #ddd;color:#22c55e">${eur(totalNew)}/año</td></tr>
-<tr><td style="padding:10px;border:1px solid #ddd"><strong>Ahorro:</strong></td><td style="text-align:right;padding:10px;border:1px solid #ddd;color:#22c55e;font-weight:bold">${eur(totalSavings)}/año</td></tr>
-</table>
-<h3>Suministros (${dualSupplies.length}):</h3>
-<table style="width:100%;border-collapse:collapse">
-<tr style="background:#f5f5f5"><th style="padding:8px;border:1px solid #ddd;text-align:left">Tipo</th><th style="padding:8px;border:1px solid #ddd;text-align:left">CUPS</th><th style="padding:8px;border:1px solid #ddd;text-align:right">Ahorro</th></tr>
-${dualSupplies.map((s,i) => {
-const ahorro = (s.originalBillAnnual||0) - (s.results?.drk?.total_anual||0);
-return `<tr><td style="padding:8px;border:1px solid #ddd">${s.type}</td><td style="padding:8px;border:1px solid #ddd;font-size:11px">${(s.cups||'').substring(0,20)}...</td><td style="padding:8px;border:1px solid #ddd;text-align:right;color:#22c55e">${eur(ahorro)}</td></tr>`;
-}).join('')}
-</table>
-<p style="text-align:center;margin-top:30px;font-size:12px;color:#666">Para guardar como PDF: Ctrl+P</p>
-</div></body></html>`;
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propuesta ${brandName}</title>
+</head>
+<body style="margin:0;padding:20px;font-family:Arial,sans-serif;background-color:#f5f5f5">
+    <div style="max-width:800px;margin:0 auto;background:white;box-shadow:0 4px 20px rgba(0,0,0,0.1)">
+        
+        <!-- BANNER CON LOGO -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#7a8a9e 0%,#596875 100%);background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 4px),linear-gradient(135deg,#7a8a9e 0%,#596875 100%)">
+            <tr>
+                <td style="padding:25px 35px;vertical-align:middle">
+                    <table cellpadding="0" cellspacing="0">
+                        <tr>
+                            <td style="padding-right:15px;vertical-align:middle">
+                                <svg width="60" height="60" viewBox="0 0 60 60">
+                                    <circle cx="30" cy="30" r="30" fill="url(#grad1)"/>
+                                    <circle cx="30" cy="30" r="25" fill="white"/>
+                                    <defs>
+                                        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                            <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
+                                            <stop offset="50%" style="stop-color:#2196F3;stop-opacity:1" />
+                                            <stop offset="100%" style="stop-color:#FFC107;stop-opacity:1" />
+                                        </linearGradient>
+                                    </defs>
+                                </svg>
+                            </td>
+                            <td style="vertical-align:middle">
+                                <h1 style="margin:0;font-size:28px;font-weight:900;letter-spacing:1px;color:white;line-height:1.1">${brandName}<br><span style="font-size:24px">ENERGÍA</span></h1>
+                                <p style="margin:3px 0 0 0;font-size:10px;color:white;opacity:0.9;line-height:1.2">Liderando el ahorro y la<br>eficiencia energética.</p>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td style="padding:25px 35px;text-align:right;vertical-align:middle">
+                    <p style="margin:0;font-size:11px;font-weight:700;color:white;letter-spacing:0.5px">ESTUDIO DE AHORRO</p>
+                    <p style="margin:1px 0 0 0;font-size:11px;font-weight:700;color:white;opacity:0.9;letter-spacing:0.5px">COMPARATIVA</p>
+                    <p style="margin:1px 0 0 0;font-size:11px;font-weight:700;color:white;letter-spacing:0.5px">PROFESIONAL</p>
+                </td>
+            </tr>
+        </table>
+        
+        <!-- BANDA VERDE -->
+        <div style="background:#22c55e;color:white;padding:10px 35px">
+            <h2 style="margin:0;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px">ESTUDIO DE AHORRO</h2>
+        </div>
+        
+        <!-- RECUADRO INFO CLIENTE -->
+        <div style="margin:25px 35px;padding:18px;border:3px solid #64748b;border-radius:10px">
+            <h3 style="margin:0 0 10px 0;font-size:13px;font-weight:bold;color:#546e7a;text-transform:uppercase">COMPARATIVA PROFESIONAL - ${brandName}</h3>
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td style="vertical-align:top">
+                        <p style="margin:0 0 3px 0;font-size:11px;color:#64748b;line-height:1.6"><strong>CLIENTE:</strong> [NOMBRE COMPLETO CLIENTE]</p>
+                        <p style="margin:0;font-size:11px;color:#64748b;line-height:1.6"><strong>CUPS TOTALES:</strong> ${dualSupplies.length}</p>
+                    </td>
+                    <td style="text-align:right;vertical-align:top">
+                        <p style="margin:0;font-size:10px;color:#64748b"><strong>COMERCIAL:</strong> zdcdsx</p>
+                    </td>
+                </tr>
+            </table>
+        </div>
+        
+        <!-- CAJA GRIS: LA MEJOR OPCIÓN -->
+        <div style="margin:0 35px 25px 35px;padding:18px;background:linear-gradient(135deg,${primaryColor} 0%,${accentColor} 100%);border-radius:8px;text-align:center">
+            <p style="margin:0 0 6px 0;font-size:11px;color:white;opacity:0.95;font-weight:600">LA MEJOR OPCIÓN PARA TI ES</p>
+            <h2 style="margin:0;font-size:26px;font-weight:900;color:white;letter-spacing:2px">${brandName}</h2>
+            <p style="margin:6px 0 0 0;font-size:10px;color:white;opacity:0.85">Obtén el mejor ahorro consolidado con ${brandName} Energía</p>
+        </div>
+        
+        <!-- AHORRO ANUAL -->
+        <div style="margin:0 35px 15px 35px;text-align:center">
+            <p style="margin:0 0 6px 0;font-size:12px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Tu ahorro anual estimado</p>
+            <h1 style="margin:0;font-size:40px;font-weight:900;color:#22c55e">${eur(totalSavings)}</h1>
+        </div>
+        
+        <!-- COMPARATIVA LADO A LADO -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="margin:15px 0">
+            <tr>
+                <td style="width:48%;padding:0 18px 0 35px">
+                    <div style="padding:14px;background:#fef2f2;border-radius:6px;border:1px solid #fecaca">
+                        <p style="margin:0 0 4px 0;font-size:9px;color:#991b1b;text-transform:uppercase;font-weight:700;text-align:center">Tu factura actual</p>
+                        <p style="margin:0;font-size:15px;font-weight:bold;color:#dc2626;text-decoration:line-through;text-align:center">${eur(totalOriginalBill/12)}/mes</p>
+                        <p style="margin:2px 0 0 0;font-size:10px;color:#991b1b;text-align:center">Total Periodo (Variable)</p>
+                        <p style="margin:4px 0 0 0;font-size:13px;font-weight:bold;color:#dc2626;text-decoration:line-through;text-align:center">${eur(totalOriginalBill)}/año</p>
+                    </div>
+                </td>
+                <td style="width:4%;"></td>
+                <td style="width:48%;padding:0 35px 0 18px">
+                    <div style="padding:14px;background:#f0f9ff;border-radius:6px;border:1px solid #bfdbfe">
+                        <p style="margin:0 0 4px 0;font-size:9px;color:#1e40af;text-transform:uppercase;font-weight:700;text-align:center">Tu nuevo coste ${brandName}</p>
+                        <p style="margin:0;font-size:15px;font-weight:bold;color:#546e7a;text-align:center">${eur(totalNew/12)}/mes</p>
+                        <p style="margin:2px 0 0 0;font-size:10px;color:#1e40af;text-align:center">Estimado Mensual</p>
+                        <p style="margin:4px 0 0 0;font-size:13px;font-weight:bold;color:#546e7a;text-align:center">${eur(totalNew)}/año</p>
+                    </div>
+                </td>
+            </tr>
+        </table>
+        
+        <!-- BANDA VERDE: RESUMEN -->
+        <div style="background:#22c55e;color:white;padding:10px 35px;margin-top:25px">
+            <h2 style="margin:0;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px">RESUMEN DE ${dualSupplies.length} SUMINISTROS</h2>
+        </div>
+        
+        <!-- TABLA SUMINISTROS -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
+            <thead>
+                <tr style="background:#f1f5f9">
+                    <th style="padding:10px 15px;text-align:center;font-size:10px;font-weight:bold;color:#475569;text-transform:uppercase;border-bottom:2px solid #e2e8f0">Nº</th>
+                    <th style="padding:10px 15px;text-align:left;font-size:10px;font-weight:bold;color:#475569;text-transform:uppercase;border-bottom:2px solid #e2e8f0">CUPS</th>
+                    <th style="padding:10px 15px;text-align:center;font-size:10px;font-weight:bold;color:#475569;text-transform:uppercase;border-bottom:2px solid #e2e8f0">TIPO</th>
+                    <th style="padding:10px 15px;text-align:center;font-size:10px;font-weight:bold;color:#475569;text-transform:uppercase;border-bottom:2px solid #e2e8f0">DÍAS</th>
+                    <th style="padding:10px 15px;text-align:right;font-size:10px;font-weight:bold;color:#475569;text-transform:uppercase;border-bottom:2px solid #e2e8f0">AHORRO</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${tableRows}
+            </tbody>
+        </table>
+        
+        <!-- BANDA VERDE: DESGLOSE DETALLADO -->
+        <div style="background:#22c55e;color:white;padding:10px 35px;margin-top:25px">
+            <h2 style="margin:0;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px">DESGLOSE DETALLADO POR SUMINISTRO</h2>
+        </div>
+        
+        <div style="padding:20px 35px">
+            ${desgloses}
+        </div>
+        
+        <!-- AHORRO FINAL ROJO -->
+        <div style="margin:25px 35px 30px 35px;padding:16px;background:#ef4444;color:white;border-radius:6px;text-align:center">
+            <p style="margin:0;font-size:13px;font-weight:bold">TU AHORRO ANUAL ESTIMADO ES:</p>
+            <p style="margin:4px 0 0 0;font-size:26px;font-weight:bold">${eur(totalSavings)}/AÑO</p>
+        </div>
+        
+        <!-- FORMALIZACIÓN -->
+        <div style="margin:0 35px 35px 35px;padding:18px;background:#546e7a;color:white;border-radius:6px">
+            <h3 style="margin:0 0 10px 0;font-size:12px;font-weight:bold;text-transform:uppercase">Para formalizar este contrato:</h3>
+            <p style="margin:0 0 8px 0;font-size:11px">Responde a este email adjuntando la documentación de los ${dualSupplies.length} CUPS:</p>
+            <ol style="margin:6px 0 0 18px;padding:0;font-size:11px;line-height:1.7">
+                <li>Foto del DNI/NIE (anverso y reverso)</li>
+                <li>Última factura (menos de 3 meses de antigüedad)</li>
+                <li>Autorización de cambio de titular (si aplica)</li>
+                <li>Teléfono de contacto</li>
+                <li>Número de cuenta bancaria (IBAN)</li>
+            </ol>
+            <div style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.2);border-radius:4px;text-align:center;font-size:11px">
+                Envía la documentación al comercial: <strong>zdcdsx</strong>
+            </div>
+        </div>
+        
+    </div>
+</body>
+</html>`;
             
             const w = window.open('','_blank');
-            if(!w){alert('Ventana bloqueada por el navegador');return;}
+            if(!w){alert('⚠️ Ventana bloqueada. Permite ventanas emergentes.');return;}
             w.document.write(html);
             w.document.close();
+            console.log('✅ PDF completo generado');
         }
         
         // NUEVO: Funciones para pantalla de confirmación
