@@ -1482,9 +1482,9 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-AHORRO-v14 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-AHORRO-v14 🔥🔥🔥');
-        console.log('✅ AHORRO visible en comparativa / ❌ X roja eliminada');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-CLEAN-v15 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-CLEAN-v15 🔥🔥🔥');
+        console.log('✅ Power Cup oculto cuando no hay datos (modo DRK)');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -11619,7 +11619,8 @@
                     </div>
                 </div>
                 
-                <!-- Tarjeta Power Cup -->
+                <!-- Tarjeta Power Cup (SOLO si hay datos) -->
+                ${results.totalPowerCup > 0 ? `
                 <div class="bg-gradient-to-br from-powercup-600 to-powercup-800 text-white rounded-2xl shadow-2xl p-6 border-2 border-powercup-500 mb-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold">Power Cup Total</h3>
@@ -11633,10 +11634,12 @@
                         <p class="text-sm text-powercup-200 mt-2">${results.supplies} suministros combinados</p>
                     </div>
                 </div>
+                ` : ''}
                 
-                <!-- Comparativa -->
+                <!-- Comparativa (SOLO si hay datos de Power Cup) -->
+                ${results.totalPowerCup > 0 ? `
                 <div class="bg-white rounded-2xl shadow-lg p-6 border-2 border-slate-200">
-                    <h4 class="text-lg font-bold text-slate-800 mb-4 text-center">Comparativa Global</h4>
+                    <h4 class="text-lg font-bold text-slate-800 mb-4 text-center">Comparativa DRK vs Power Cup</h4>
                     ${results.diff > 0 ? `
                         <div class="bg-green-50 border-2 border-green-500 rounded-xl p-4 text-center">
                             <p class="text-sm text-slate-700 mb-2">Con <strong class="text-drk-700">DRK</strong> ahorras:</p>
@@ -11655,6 +11658,7 @@
                         </div>
                     `}
                 </div>
+                ` : ''}
             `;
         }
         
