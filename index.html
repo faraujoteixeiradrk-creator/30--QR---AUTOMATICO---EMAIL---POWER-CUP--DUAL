@@ -1599,11 +1599,11 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-PRECIOS-ARRAYS-v44 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-PRECIOS-ARRAYS-v44 🔥🔥🔥');
-        console.log('✅ FIX: Precios extraídos de powerCosts y energyCosts arrays');
-        console.log('✅ Ahora offer.p1_power_price y offer.p1_price deben tener valores');
-        console.log('✅ Los precios deberían aparecer correctamente en el PDF');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-DEBUG-ULTRA-v45 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-DEBUG-ULTRA-v45 🔥🔥🔥');
+        console.log('🔍 DEBUG ULTRA: Logs JSON.stringify para ver arrays completos');
+        console.log('🔍 Esto mostrará EXACTAMENTE qué propiedades tienen powerCosts y energyCosts');
+        console.log('📝 Por favor, comparte los logs de powerCosts[0] y energyCosts[0] COMPLETOS');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -12077,6 +12077,18 @@
                 if (s.type === 'electricidad') {
                     console.log(`  [${i+1}] electricityBreakdown.powerCosts:`, s.electricityBreakdown?.powerCosts);
                     console.log(`  [${i+1}] electricityBreakdown.energyCosts:`, s.electricityBreakdown?.energyCosts);
+                    
+                    // NUEVO: Ver el contenido completo de cada elemento del array
+                    if (s.electricityBreakdown?.powerCosts) {
+                        console.log(`  [${i+1}] 🔍 powerCosts[0] COMPLETO:`, JSON.stringify(s.electricityBreakdown.powerCosts[0], null, 2));
+                        console.log(`  [${i+1}] 🔍 powerCosts[1] COMPLETO:`, JSON.stringify(s.electricityBreakdown.powerCosts[1], null, 2));
+                    }
+                    if (s.electricityBreakdown?.energyCosts) {
+                        console.log(`  [${i+1}] 🔍 energyCosts[0] COMPLETO:`, JSON.stringify(s.electricityBreakdown.energyCosts[0], null, 2));
+                        console.log(`  [${i+1}] 🔍 energyCosts[1] COMPLETO:`, JSON.stringify(s.electricityBreakdown.energyCosts[1], null, 2));
+                        console.log(`  [${i+1}] 🔍 energyCosts[2] COMPLETO:`, JSON.stringify(s.electricityBreakdown.energyCosts[2], null, 2));
+                    }
+                    
                     console.log(`  [${i+1}] offer.p1_power_price:`, s.offer?.p1_power_price);
                     console.log(`  [${i+1}] offer.p1_price:`, s.offer?.p1_price);
                 } else if (s.type === 'gas') {
