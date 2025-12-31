@@ -1474,11 +1474,11 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-GAS-CLEAN-v28 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-GAS-CLEAN-v28 🔥🔥🔥');
-        console.log('✅ ELIMINADO botón AÑADIR A DUAL de resultados GAS (ya no es necesario)');
-        console.log('✅ VER MEJOR OPCIÓN funciona en DUAL');
-        console.log('✅ POWER CUP MODE (verde) + DRK MODE (azul)');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-NOMBRE-COMPLETO-v29 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-NOMBRE-COMPLETO-v29 🔥🔥🔥');
+        console.log('✅ Nombres de tarifa: "Comercializadora - Nombre tarifa"');
+        console.log('✅ Ejemplo: "DRK - DRK FIJO 4" o "BOE3 - DRK 3"');
+        console.log('✅ GAS sin botón DUAL');
         console.log('📁 BACKUP: BACKUP_QR_full_GAS_V2_DUAL_20251231_010742.html');
         
         // Eliminamos 6.1TD del estado inicial
@@ -11787,7 +11787,11 @@
                             const drkCost = s.results.drk.total_anual || 0;
                             const originalBill = s.originalBillAnnual || 0;
                             const savings = originalBill - drkCost;
-                            const tariffName = s.offer?.description || s.offer?.name || 'Tarifa DRK';  // ✅ USAR DESCRIPTION
+                            
+                            // NUEVO: Mostrar "Comercializadora - Nombre tarifa"
+                            const tariffName = s.offer?.name && s.offer?.description 
+                                ? `${s.offer.name} - ${s.offer.description}` 
+                                : s.offer?.description || s.offer?.name || 'Tarifa DRK';
                             
                             // Para GAS, mostrar desglose completo
                             if (s.type === 'gas' && s.gasBreakdown) {
