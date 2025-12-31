@@ -1482,9 +1482,9 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-GAS-v20 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-GAS-v20 🔥🔥🔥');
-        console.log('✅ GAS ahora añade correctamente al array DUAL (arreglado error kwh)');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-GAS-DEBUG-v21 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-GAS-DEBUG-v21 🔥🔥🔥');
+        console.log('✅ GAS con logs de debug + fallback total_anual || total');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -12807,7 +12807,14 @@
                     
                     // Extraer mejor resultado para DUAL
                     const bestResult = results[0];
+                    console.log('===== DEBUG GAS =====');
                     console.log('Best gas result:', bestResult);
+                    console.log('Propiedades de bestResult:', Object.keys(bestResult));
+                    console.log('  - nombre:', bestResult.nombre);
+                    console.log('  - total:', bestResult.total);
+                    console.log('  - total_anual:', bestResult.total_anual);
+                    console.log('  - ahorro_anual:', bestResult.ahorro_anual);
+                    console.log('====================');
                     
                     const data = window.gasCalculationParams || {};
                     console.log('Gas calculation params:', data);
@@ -12822,7 +12829,7 @@
                             description: bestResult.nombre || 'Tarifa Gas DRK',
                             isDrk: true
                         },
-                        totalAnnual: bestResult.total_anual || 0,
+                        totalAnnual: bestResult.total_anual || bestResult.total || 0,
                         originalBillAnnual: (data.importe_factura || 0) * 12,
                         data: {
                             kwh: data.consumo_anual_kwh || 0,
@@ -12836,7 +12843,7 @@
                         results: {
                             drk: {
                                 total: bestResult.total || 0,
-                                total_anual: bestResult.total_anual || 0
+                                total_anual: bestResult.total_anual || bestResult.total || 0
                             },
                             powercup: {
                                 total: results.length > 1 ? results[1].total : 0,
@@ -12851,7 +12858,9 @@
                     console.log('✅ Suministro GAS añadido al array');
                     console.log('  - Total suministros:', dualSupplies.length);
                     console.log('  - Tarifa:', newSupply.tariff);
-                    console.log('  - Coste anual:', newSupply.totalAnnual);
+                    console.log('  - Coste anual (totalAnnual):', newSupply.totalAnnual);
+                    console.log('  - Coste mensual:', newSupply.totalAnnual / 12);
+                    console.log('  - Objeto completo:', newSupply);
                     
                     // Actualizar UI
                     updateDualSuppliesList();
