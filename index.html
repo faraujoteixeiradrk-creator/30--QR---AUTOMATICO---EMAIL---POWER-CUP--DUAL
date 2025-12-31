@@ -450,6 +450,20 @@
                     <p class="text-sm text-slate-500 mb-4 text-center">Tarifa: <span id="gas-selected-tariff" class="font-bold text-red-600"></span></p>
                     
                     <div class="space-y-4">
+                        <!-- CUPS de GAS -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">
+                                CUPS (Opcional)
+                            </label>
+                            <input 
+                                type="text" 
+                                id="gas-cups" 
+                                placeholder="Ej: ES0021000020679723GY" 
+                                class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:border-red-500 focus:outline-none text-sm"
+                            >
+                            <p class="text-xs text-slate-500 mt-1">Se incluirá en el PDF si lo proporcionas</p>
+                        </div>
+                        
                         <!-- Días de facturación -->
                         <div>
                             <label class="block text-sm font-bold text-slate-700 mb-2">
@@ -819,7 +833,7 @@
                     
                     <!-- Botones de descarga -->
                     <div class="mt-6 flex flex-col gap-3">
-                        <button onclick="dualGeneratePDF()" class="w-full py-3 bg-slate-700 hover:bg-slate-800 text-white rounded-xl font-semibold transition-all text-sm shadow-md flex items-center justify-center gap-2">
+                        <button onclick="showClientDataModal()" class="w-full py-3 bg-slate-700 hover:bg-slate-800 text-white rounded-xl font-semibold transition-all text-sm shadow-md flex items-center justify-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
                             </svg>
@@ -893,6 +907,109 @@
                         </button>
                         
                         <button onclick="dualCancelAdd()" class="w-full py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition-all">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- MODAL: Datos del Comercial y Cliente (para PDF DUAL) -->
+        <div id="client-data-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md border-t-4 border-blue-500 max-h-[90vh] overflow-y-auto">
+                <div class="p-6">
+                    <h3 class="text-2xl font-black text-blue-600 mb-2 text-center">Datos del Comercial y Cliente</h3>
+                    <p class="text-sm text-slate-500 mb-4 text-center">Rellene sus datos. El resumen profesional de la oferta se copiará a su portapapeles (Ctrl+V).</p>
+                    
+                    <div class="space-y-4">
+                        <!-- Código comercial -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">
+                                CÓDIGO COMERCIAL (Obligatorio)
+                            </label>
+                            <input 
+                                type="text" 
+                                id="comercial-code" 
+                                placeholder="Ej: D=00" 
+                                class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                            >
+                        </div>
+                        
+                        <!-- Nombre del cliente -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">
+                                Nombre Cliente
+                            </label>
+                            <input 
+                                type="text" 
+                                id="client-name" 
+                                placeholder="Nombre completo del cliente" 
+                                class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                            >
+                        </div>
+                        
+                        <!-- Teléfono -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">
+                                Teléfono
+                            </label>
+                            <input 
+                                type="tel" 
+                                id="client-phone" 
+                                placeholder="Teléfono del cliente" 
+                                class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                            >
+                        </div>
+                        
+                        <!-- Email -->
+                        <div>
+                            <label class="block text-sm font-bold text-slate-700 mb-2">
+                                Email
+                                <svg class="inline ml-1 w-5 h-5" viewBox="0 0 24 24" fill="#9333ea">
+                                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                                </svg>
+                            </label>
+                            <input 
+                                type="email" 
+                                id="client-email" 
+                                placeholder="email@ejemplo.com" 
+                                class="w-full px-4 py-3 border-2 border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                            >
+                        </div>
+                        
+                        <!-- Nota para iPhone -->
+                        <div class="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
+                            <div class="flex items-start gap-3">
+                                <span class="text-2xl">⚠️</span>
+                                <div class="text-sm">
+                                    <p class="font-bold text-amber-900 mb-2">NOTA PARA USUARIOS DE iPHONE:</p>
+                                    <p class="text-amber-800 mb-2">Si copias desde iPhone, el formato puede no verse correctamente en algunos correos. Para mejor resultado:</p>
+                                    <ul class="text-amber-800 space-y-1 ml-4">
+                                        <li>✓ Copia desde un <strong>ordenador</strong></li>
+                                        <li>✓ O usa <strong>Gmail/Outlook web</strong> en el navegador móvil</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Botones -->
+                    <div class="mt-6 space-y-3">
+                        <button onclick="copyDualHTML()" class="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
+                            </svg>
+                            📋 COPIAR COMPARATIVO (HTML)
+                        </button>
+                        
+                        <button onclick="generateDualPDF()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                            </svg>
+                            📄 CREAR PDF COMPARATIVO
+                        </button>
+                        
+                        <button onclick="closeClientDataModal()" class="w-full py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition-all">
                             Cancelar
                         </button>
                     </div>
@@ -1482,11 +1599,12 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-PRECIOS-CALC-v41 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-PRECIOS-CALC-v41 🔥🔥🔥');
-        console.log('✅ PDF DUAL: Precios en CÁLCULOS corregidos');
-        console.log('✅ Ahora usa s.offer para precios en fórmulas de POTENCIA y ENERGÍA');
-        console.log('✅ Ya no muestra "x 0.000000" en los cálculos');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-CLIENT-DATA-v42 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-CLIENT-DATA-v42 🔥🔥🔥');
+        console.log('✅ MODAL: Solicita datos del comercial y cliente antes de generar PDF');
+        console.log('✅ GAS: Campo CUPS añadido en formulario');
+        console.log('✅ PDF: Usa nombre del cliente y código comercial capturados');
+        console.log('✅ PDF: CUPS de GAS se incluye cuando se proporciona');
         console.log('✅ Formato completo como las comparativas individuales');
         
         // Eliminamos 6.1TD del estado inicial
@@ -11858,8 +11976,68 @@
             `;
         }
         
+        // Función: Mostrar modal de datos del comercial y cliente
+        function showClientDataModal() {
+            if (!dualSupplies || dualSupplies.length === 0) {
+                alert('No hay suministros para generar la propuesta.');
+                return;
+            }
+            
+            const results = window.dualGlobalResults;
+            if (!results) {
+                alert('Calcula la comparativa primero.');
+                return;
+            }
+            
+            // Mostrar el modal
+            document.getElementById('client-data-modal').classList.remove('hidden');
+            document.getElementById('client-data-modal').classList.add('flex');
+        }
+        
+        // Función: Cerrar modal de datos del cliente
+        function closeClientDataModal() {
+            document.getElementById('client-data-modal').classList.remove('flex');
+            document.getElementById('client-data-modal').classList.add('hidden');
+        }
+        
+        // Función: Copiar HTML comparativo al portapapeles
+        function copyDualHTML() {
+            const comercialCode = document.getElementById('comercial-code').value.trim();
+            if (!comercialCode) {
+                alert('Por favor, introduce el código comercial (obligatorio)');
+                document.getElementById('comercial-code').focus();
+                return;
+            }
+            
+            const clientName = document.getElementById('client-name').value.trim() || '[NOMBRE COMPLETO CLIENTE]';
+            
+            // Aquí generaríamos el HTML completo para copiar
+            // Por ahora, mostramos un mensaje
+            alert('Funcionalidad de copiar HTML en desarrollo. Use el botón de PDF por ahora.');
+        }
+        
+        // Función: Generar PDF con datos capturados
+        function generateDualPDF() {
+            const comercialCode = document.getElementById('comercial-code').value.trim();
+            if (!comercialCode) {
+                alert('Por favor, introduce el código comercial (obligatorio)');
+                document.getElementById('comercial-code').focus();
+                return;
+            }
+            
+            const clientName = document.getElementById('client-name').value.trim() || '[NOMBRE COMPLETO CLIENTE]';
+            const clientPhone = document.getElementById('client-phone').value.trim() || '';
+            const clientEmail = document.getElementById('client-email').value.trim() || '';
+            
+            // Cerrar el modal
+            closeClientDataModal();
+            
+            // Llamar a la función de generación de PDF pasando los datos
+            dualGeneratePDF(comercialCode, clientName, clientPhone, clientEmail);
+        }
+        
         // Función: Generar PDF DUAL
-        function dualGeneratePDF() {
+        function dualGeneratePDF(comercialCode = 'D=00', clientName = '[NOMBRE COMPLETO CLIENTE]', clientPhone = '', clientEmail = '') {
             console.log('📄 Generando PDF DUAL completo...');
             
             if (!dualSupplies || dualSupplies.length === 0) {
@@ -12068,11 +12246,11 @@
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
                     <td style="vertical-align:top">
-                        <p style="margin:0 0 3px 0;font-size:11px;color:#64748b;line-height:1.6"><strong>CLIENTE:</strong> [NOMBRE COMPLETO CLIENTE]</p>
+                        <p style="margin:0 0 3px 0;font-size:11px;color:#64748b;line-height:1.6"><strong>CLIENTE:</strong> ${clientName}</p>
                         <p style="margin:0;font-size:11px;color:#64748b;line-height:1.6"><strong>CUPS TOTALES:</strong> ${dualSupplies.length}</p>
                     </td>
                     <td style="text-align:right;vertical-align:top">
-                        <p style="margin:0;font-size:10px;color:#64748b"><strong>COMERCIAL:</strong> zdcdsx</p>
+                        <p style="margin:0;font-size:10px;color:#64748b"><strong>COMERCIAL:</strong> ${comercialCode}</p>
                     </td>
                 </tr>
             </table>
@@ -12162,7 +12340,7 @@
                 <li>Número de cuenta bancaria (IBAN)</li>
             </ol>
             <div style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.2);border-radius:4px;text-align:center;font-size:11px">
-                Envía la documentación al comercial: <strong>zdcdsx</strong>
+                Envía la documentación al comercial: <strong>${comercialCode}</strong>
             </div>
         </div>
         
@@ -12578,6 +12756,7 @@
         // Función: Calcular con tipo específico (fija o indexada)
         function calculateGasWithType(type) {
             // Validar inputs
+            const cups = document.getElementById('gas-cups').value.trim();
             const dias = parseFloat(document.getElementById('gas-dias').value);
             const kwh = parseFloat(document.getElementById('gas-kwh').value);
             const totalCliente = parseFloat(document.getElementById('gas-total-cliente').value);
@@ -12593,7 +12772,7 @@
             }
             
             // Guardar parámetros (CRÍTICO: también en window para modo DUAL)
-            gasCalculationParams = { dias, kwh, totalCliente, type, mode: 'best' };
+            gasCalculationParams = { cups, dias, kwh, totalCliente, type, mode: 'best' };
             window.gasCalculationParams = gasCalculationParams;
             console.log('✅ gasCalculationParams guardado en window:', window.gasCalculationParams);
             
@@ -12764,6 +12943,7 @@
             document.getElementById('gas-selected-tariff').textContent = displayTariff;
             
             // Resetear formulario
+            document.getElementById('gas-cups').value = '';
             document.getElementById('gas-dias').value = '';
             document.getElementById('gas-kwh').value = '';
             document.getElementById('gas-total-cliente').value = '';
@@ -13301,7 +13481,7 @@
                     // CREAR el objeto de suministro para GAS (con DESGLOSE COMPLETO)
                     const newSupply = {
                         type: 'gas',
-                        cups: '', // Gas no tiene CUPS
+                        cups: data.cups || 'N/A', // CUPS de GAS capturado del formulario
                         tariff: currentGasTariff || bestResult.tarifa || 'Gas',
                         offer: {
                             name: bestResult.name || 'DRK',
