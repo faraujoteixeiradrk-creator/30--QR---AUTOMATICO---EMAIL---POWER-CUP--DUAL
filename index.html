@@ -14755,7 +14755,7 @@
             // Texto derecha
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
-            doc.setTextColor(100, 120, 140);
+            doc.setTextColor(40, 60, 80);
             doc.text('ESTUDIO DE AHORRO', pageWidth - margin, 15, { align: 'right' });
             doc.setFontSize(16);
             doc.setTextColor(255, 255, 255);
@@ -15128,27 +15128,30 @@
             doc.setFillColor(255, 255, 255); // Centro blanco
             doc.circle(logoX, logoY, logoR * 0.35, 'F');
             
-            // Texto DRK (izquierda del logo)
+            // Texto DRK ENERGÍA (derecha del logo)
             doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
+            doc.setFontSize(24);
+            doc.text('DRK', logoX + 15, 16);
             doc.setFontSize(22);
-            doc.text('DRK', logoX + 15, 18);
+            doc.text('ENERGÍA', logoX + 15, 25);
             
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7);
-            doc.text('Liderando el ahorro y la', logoX + 15, 24);
-            doc.text('eficiencia energética.', logoX + 15, 28);
+            doc.text('Liderando el ahorro y la', logoX + 15, 30);
+            doc.text('eficiencia energética.', logoX + 15, 34);
             
             // Texto derecha del header
+            doc.setTextColor(40, 60, 80);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(9);
             doc.text('ESTUDIO DE AHORRO', pageWidth - 12, 12, { align: 'right' });
             
-            doc.setTextColor(200, 210, 220);
-            doc.setFontSize(10);
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(11);
             doc.text('COMPARATIVA', pageWidth - 12, 20, { align: 'right' });
             
-            doc.setTextColor(255, 255, 255);
+            doc.setTextColor(100, 120, 140);
             doc.setFontSize(9);
             doc.text('PROFESIONAL', pageWidth - 12, 28, { align: 'right' });
             
@@ -15715,16 +15718,16 @@
             doc.text('eficiencia energética.', logoX + 30, 44.5);
             
             // TEXTO DERECHA DEL HEADER
-            doc.setTextColor(255, 255, 255);
+            doc.setTextColor(40, 60, 80);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(11);
             doc.text('ESTUDIO DE AHORRO', pageWidth - 12, 16, { align: 'right' });
             
-            doc.setTextColor(215, 230, 215);
+            doc.setTextColor(255, 255, 255);
             doc.setFontSize(13);
             doc.text('COMPARATIVA', pageWidth - 12, 27, { align: 'right' });
             
-            doc.setTextColor(255, 255, 255);
+            doc.setTextColor(100, 120, 140);
             doc.setFontSize(11);
             doc.text('PROFESIONAL', pageWidth - 12, 37, { align: 'right' });
             
@@ -16046,16 +16049,16 @@
             doc.text('eficiencia energética.', logoX + 30, 44.5);
             
             // TEXTO DERECHA DEL HEADER
-            doc.setTextColor(255, 255, 255);
+            doc.setTextColor(40, 60, 80);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(11);
             doc.text('ESTUDIO DE AHORRO', pageWidth - 12, 16, { align: 'right' });
             
-            doc.setTextColor(215, 230, 215);
+            doc.setTextColor(255, 255, 255);
             doc.setFontSize(13);
             doc.text('COMPARATIVA', pageWidth - 12, 27, { align: 'right' });
             
-            doc.setTextColor(255, 255, 255);
+            doc.setTextColor(100, 120, 140);
             doc.setFontSize(11);
             doc.text('PROFESIONAL', pageWidth - 12, 37, { align: 'right' });
             
