@@ -1482,9 +1482,9 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-GAS-DEBUG-v21 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-GAS-DEBUG-v21 🔥🔥🔥');
-        console.log('✅ GAS con logs de debug + fallback total_anual || total');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-GAS-FIXED-v22 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-GAS-FIXED-v22 🔥🔥🔥');
+        console.log('✅ GAS arreglado: window.gasCalculationParams + totalCliente + total*12');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -12149,8 +12149,10 @@
                 return;
             }
             
-            // Guardar parámetros
+            // Guardar parámetros (CRÍTICO: también en window para modo DUAL)
             gasCalculationParams = { dias, kwh, totalCliente, type, mode: 'best' };
+            window.gasCalculationParams = gasCalculationParams;
+            console.log('✅ gasCalculationParams guardado en window:', window.gasCalculationParams);
             
             // Cerrar modal y calcular
             closeGasModal();
@@ -12177,7 +12179,7 @@
             const selectionMode = document.querySelector('input[name="gas-selection-mode"]:checked').value;
             const compareChecked = document.getElementById('gas-compare-indexed-fixed').checked;
             
-            // Guardar parámetros
+            // Guardar parámetros (CRÍTICO: también en window para modo DUAL)
             gasCalculationParams = {
                 dias,
                 kwh,
@@ -12185,6 +12187,8 @@
                 mode: selectionMode,
                 compareIndexedVsFixed: compareChecked
             };
+            window.gasCalculationParams = gasCalculationParams;
+            console.log('✅ gasCalculationParams guardado en window:', window.gasCalculationParams);
             
             // Cerrar modal
             closeGasModal();
@@ -12810,40 +12814,58 @@
                     console.log('===== DEBUG GAS =====');
                     console.log('Best gas result:', bestResult);
                     console.log('Propiedades de bestResult:', Object.keys(bestResult));
-                    console.log('  - nombre:', bestResult.nombre);
-                    console.log('  - total:', bestResult.total);
-                    console.log('  - total_anual:', bestResult.total_anual);
+                    console.log('  - name:', bestResult.name);
+                    console.log('  - descripcion:', bestResult.descripcion);
+                    console.log('  - tarifa:', bestResult.tarifa);
+                    console.log('  - total (mensual):', bestResult.total);
+                    console.log('  - total * 12 (anual):', bestResult.total * 12);
                     console.log('  - ahorro_anual:', bestResult.ahorro_anual);
                     console.log('====================');
                     
                     const data = window.gasCalculationParams || {};
                     console.log('Gas calculation params:', data);
                     
+                    // Calcular anual desde el mensual
+                    const totalMensual = bestResult.total || 0;
+                    const totalAnual = totalMensual * 12;
+                    
+                    // Obtener factura original desde gasCalculationParams
+                    // NOTA: gasCalculationParams usa 'totalCliente', no 'importe_factura'
+                    const importeFacturaMensual = data.totalCliente || data.importe_factura || 0;
+                    const originalBillAnnual = importeFacturaMensual * 12;
+                    
+                    console.log('Cálculos:');
+                    console.log('  - Total mensual DRK:', totalMensual);
+                    console.log('  - Total anual DRK:', totalAnual);
+                    console.log('  - Factura original mensual:', importeFacturaMensual);
+                    console.log('  - Factura original anual:', originalBillAnnual);
+                    console.log('  - Ahorro anual:', originalBillAnnual - totalAnual);
+                    
                     // CREAR el objeto de suministro para GAS
                     const newSupply = {
                         type: 'gas',
                         cups: '', // Gas no tiene CUPS
-                        tariff: currentGasTariff || 'Gas',
+                        tariff: currentGasTariff || bestResult.tarifa || 'Gas',
                         offer: {
-                            name: bestResult.nombre || 'DRK Gas',
-                            description: bestResult.nombre || 'Tarifa Gas DRK',
+                            name: bestResult.name || bestResult.descripcion || 'DRK Gas',
+                            description: bestResult.descripcion || bestResult.name || 'Tarifa Gas DRK',
                             isDrk: true
                         },
-                        totalAnnual: bestResult.total_anual || bestResult.total || 0,
-                        originalBillAnnual: (data.importe_factura || 0) * 12,
+                        totalAnnual: totalAnual,
+                        originalBillAnnual: originalBillAnnual,
                         data: {
                             kwh: data.consumo_anual_kwh || 0,
                             kwh_p1: 0,
                             kwh_p2: 0,
                             kwh_p3: 0,
                             consumo_anual_kwh: data.consumo_anual_kwh || 0,
-                            importe_factura: data.importe_factura || 0,
+                            importe_factura: importeFacturaMensual,
                             dias: 30
                         },
                         results: {
                             drk: {
-                                total: bestResult.total || 0,
-                                total_anual: bestResult.total_anual || bestResult.total || 0
+                                total: totalMensual,
+                                total_anual: totalAnual
                             },
                             powercup: {
                                 total: results.length > 1 ? results[1].total : 0,
