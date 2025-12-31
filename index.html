@@ -1482,9 +1482,9 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-RESUMEN-v19 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-RESUMEN-v19 🔥🔥🔥');
-        console.log('✅ Resumen mejorado: AHORRO + NOMBRE tarifa + Color azul claro');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-GAS-v20 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-GAS-v20 🔥🔥🔥');
+        console.log('✅ GAS ahora añade correctamente al array DUAL (arreglado error kwh)');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -12799,7 +12799,7 @@
             
             // CRÍTICO: Interceptar DUAL AL PRINCIPIO, antes de procesar HTML
             if (window.dualMode === true) {
-                console.log('⚡ Modo DUAL detectado en GAS - interceptando ANTES de generar HTML');
+                console.log('⚡ Modo DUAL detectado en GAS - añadiendo al array');
                 
                 try {
                     // Ordenar por mejor ahorro
@@ -12807,37 +12807,74 @@
                     
                     // Extraer mejor resultado para DUAL
                     const bestResult = results[0];
-                    console.log('Best result:', bestResult);
+                    console.log('Best gas result:', bestResult);
                     
-                    const data = window.gasCalculationParams;
+                    const data = window.gasCalculationParams || {};
                     console.log('Gas calculation params:', data);
                     
-                    const gasResults = {
-                        drk: {
-                            total: bestResult.total,
-                            total_anual: bestResult.total_anual
+                    // CREAR el objeto de suministro para GAS
+                    const newSupply = {
+                        type: 'gas',
+                        cups: '', // Gas no tiene CUPS
+                        tariff: currentGasTariff || 'Gas',
+                        offer: {
+                            name: bestResult.nombre || 'DRK Gas',
+                            description: bestResult.nombre || 'Tarifa Gas DRK',
+                            isDrk: true
                         },
-                        powercup: {
-                            total: 0,
-                            total_anual: 0
+                        totalAnnual: bestResult.total_anual || 0,
+                        originalBillAnnual: (data.importe_factura || 0) * 12,
+                        data: {
+                            kwh: data.consumo_anual_kwh || 0,
+                            kwh_p1: 0,
+                            kwh_p2: 0,
+                            kwh_p3: 0,
+                            consumo_anual_kwh: data.consumo_anual_kwh || 0,
+                            importe_factura: data.importe_factura || 0,
+                            dias: 30
+                        },
+                        results: {
+                            drk: {
+                                total: bestResult.total || 0,
+                                total_anual: bestResult.total_anual || 0
+                            },
+                            powercup: {
+                                total: results.length > 1 ? results[1].total : 0,
+                                total_anual: results.length > 1 ? results[1].total_anual : 0
+                            }
                         }
                     };
                     
-                    // Si hay dos resultados, el segundo es PowerCup
-                    if (results.length > 1) {
-                        gasResults.powercup = {
-                            total: results[1].total,
-                            total_anual: results[1].total_anual
-                        };
+                    // AÑADIR al array
+                    dualSupplies.push(newSupply);
+                    
+                    console.log('✅ Suministro GAS añadido al array');
+                    console.log('  - Total suministros:', dualSupplies.length);
+                    console.log('  - Tarifa:', newSupply.tariff);
+                    console.log('  - Coste anual:', newSupply.totalAnnual);
+                    
+                    // Actualizar UI
+                    updateDualSuppliesList();
+                    console.log('✅ UI actualizada');
+                    
+                    // Cerrar modal de gas si está abierto
+                    const gasModal = document.getElementById('gas-modal');
+                    if (gasModal) {
+                        gasModal.classList.add('hidden');
                     }
                     
-                    console.log('Gas results preparados:', gasResults);
-                    console.log('Llamando a showDualConfirm...');
+                    // Ocultar TODAS las pantallas
+                    hideAllScreens();
                     
-                    showDualConfirm('gas', currentGasTariff, data, gasResults);
-                    return; // IMPORTANTE: Salir aquí para no procesar el resto
+                    // Volver a la pantalla DUAL
+                    document.getElementById('screen-dual').classList.add('active');
+                    
+                    console.log('✅ Usuario puede añadir más suministros o calcular');
+                    
+                    return; // IMPORTANTE: Salir aquí
                 } catch (error) {
                     console.error('Error en modo DUAL para GAS:', error);
+                    console.error('Error stack:', error.stack);
                     alert('Error al procesar el suministro de gas: ' + error.message);
                     backToDualManager();
                     return;
