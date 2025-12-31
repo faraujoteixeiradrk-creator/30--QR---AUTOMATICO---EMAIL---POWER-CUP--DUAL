@@ -1482,9 +1482,11 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-GAS-DESGLOSE-v23 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-GAS-DESGLOSE-v23 🔥🔥🔥');
-        console.log('✅ GAS ahora guarda y muestra desglose completo (términos, energía, IVA)');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-COMPLETO-v24 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-COMPLETO-v24 🔥🔥🔥');
+        console.log('✅ ELECTRICIDAD con desglose completo');
+        console.log('✅ GAS con valores corregidos (total_fijo, total_energia)');
+        console.log('✅ Muestra DESCRIPTION en lugar de NAME');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -8981,7 +8983,7 @@
                 if (window.dualMode === true) {
                     console.log('===== 🔥 MODO DUAL - Añadiendo suministro al array =====');
                     
-                    // CREAR el objeto de suministro
+                    // CREAR el objeto de suministro CON DESGLOSE COMPLETO
                     const newSupply = {
                         type: 'electricidad',
                         cups: lastComparisonResult.cups || '',
@@ -8990,6 +8992,22 @@
                         totalAnnual: lastComparisonResult.totalAnnual,
                         originalBillAnnual: lastComparisonResult.originalBillAnnual || (lastComparisonResult.importe_total || 0) * 12,
                         data: lastComparisonResult,
+                        // NUEVO: Añadir desglose completo de electricidad
+                        electricityBreakdown: {
+                            energyCosts: lastComparisonResult.energyCosts || [],
+                            powerCosts: lastComparisonResult.powerCosts || [],
+                            subEnergy: lastComparisonResult.subEnergyNet || 0,
+                            subPower: lastComparisonResult.subPower || 0,
+                            subBase: lastComparisonResult.subBase || 0,
+                            costIE: lastComparisonResult.costIE || 0,
+                            baseImp: lastComparisonResult.baseImp || 0,
+                            costIVA: lastComparisonResult.costIVA || 0,
+                            totalPeriod: lastComparisonResult.totalPeriod || 0,
+                            totalAnnual: lastComparisonResult.totalAnnual || 0,
+                            ahorro_mensual: (lastComparisonResult.originalBillPeriod || 0) - (lastComparisonResult.totalPeriod || 0),
+                            ahorro_anual: (lastComparisonResult.originalBillAnnual || 0) - (lastComparisonResult.totalAnnual || 0),
+                            dias: lastComparisonResult.dias_facturados || 30
+                        },
                         results: {
                             drk: {
                                 total: lastComparisonResult.totalAnnual / 12,
@@ -10306,6 +10324,22 @@
                         totalAnnual: result.totalAnnual,
                         originalBillAnnual: result.originalBillAnnual || (result.importe_total || 0) * 12,
                         data: result,
+                        // NUEVO: Añadir desglose completo de electricidad
+                        electricityBreakdown: {
+                            energyCosts: result.energyCosts || [],
+                            powerCosts: result.powerCosts || [],
+                            subEnergy: result.subEnergyNet || 0,
+                            subPower: result.subPower || 0,
+                            subBase: result.subBase || 0,
+                            costIE: result.costIE || 0,
+                            baseImp: result.baseImp || 0,
+                            costIVA: result.costIVA || 0,
+                            totalPeriod: result.totalPeriod || 0,
+                            totalAnnual: result.totalAnnual || 0,
+                            ahorro_mensual: (result.originalBillPeriod || 0) - (result.totalPeriod || 0),
+                            ahorro_anual: (result.originalBillAnnual || 0) - (result.totalAnnual || 0),
+                            dias: result.dias_facturados || 30
+                        },
                         results: {
                             drk: {
                                 total: result.totalAnnual / 12,
@@ -11626,7 +11660,7 @@
                             const drkCost = s.results.drk.total_anual || 0;
                             const originalBill = s.originalBillAnnual || 0;
                             const savings = originalBill - drkCost;
-                            const tariffName = s.offer?.name || s.offer?.description || 'Tarifa DRK';
+                            const tariffName = s.offer?.description || s.offer?.name || 'Tarifa DRK';  // ✅ USAR DESCRIPTION
                             
                             // Para GAS, mostrar desglose completo
                             if (s.type === 'gas' && s.gasBreakdown) {
@@ -11674,12 +11708,60 @@
                             `;
                             }
                             
-                            // Para ELECTRICIDAD, diseño simple
+                            // Para ELECTRICIDAD, mostrar desglose completo también
+                            if (s.type === 'electricidad' && s.electricityBreakdown) {
+                                const eb = s.electricityBreakdown;
+                                const totalKwh = eb.energyCosts?.reduce((sum, e) => sum + (e.kwh || 0), 0) || 0;
+                                
+                                return `
+                                <div class="bg-white rounded-lg p-3 border border-slate-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-lg">⚡</span>
+                                            <span class="text-xs font-semibold text-slate-600">${s.tariff}</span>
+                                        </div>
+                                        <span class="text-sm font-bold text-slate-900">${formatEuro(drkCost)}</span>
+                                    </div>
+                                    <div class="text-xs text-slate-700 font-medium mb-2">${tariffName}</div>
+                                    
+                                    <!-- Desglose ELECTRICIDAD -->
+                                    <div class="bg-slate-50 rounded p-2 space-y-1 text-xs">
+                                        <div class="flex justify-between">
+                                            <span>Potencia (${eb.dias} días)</span>
+                                            <span>${formatEuro(eb.subPower)}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Energía (${totalKwh.toFixed(0)} kWh)</span>
+                                            <span>${formatEuro(eb.subEnergy)}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Imp. eléctrico (5.113%)</span>
+                                            <span>${formatEuro(eb.costIE)}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>IVA (21%)</span>
+                                            <span>${formatEuro(eb.costIVA)}</span>
+                                        </div>
+                                        <div class="flex justify-between font-semibold pt-1 border-t border-slate-200">
+                                            <span>TOTAL PERIODO</span>
+                                            <span>${formatEuro(eb.totalPeriod)}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200">
+                                        <span class="text-xs text-slate-600">Factura actual: ${formatEuro(originalBill / 12)}/mes</span>
+                                        <span class="text-xs font-semibold text-green-600">Ahorro: ${formatEuro(savings)}/año</span>
+                                    </div>
+                                </div>
+                            `;
+                            }
+                            
+                            // Fallback simple si no hay desglose
                             return `
                             <div class="bg-white rounded-lg p-3 border border-slate-200">
                                 <div class="flex items-center justify-between mb-1">
                                     <div class="flex items-center gap-2">
-                                        <span class="text-lg">⚡</span>
+                                        <span class="text-lg">${s.type === 'electricidad' ? '⚡' : '🔥'}</span>
                                         <span class="text-xs font-semibold text-slate-600">${s.tariff}</span>
                                     </div>
                                     <span class="text-sm font-bold text-slate-900">${formatEuro(drkCost)}</span>
@@ -12889,27 +12971,40 @@
                     console.log('  - Ahorro anual:', originalBillAnnual - totalAnual);
                     console.log('  - Ahorro mensual:', importeFacturaMensual - totalMensual);
                     
+                    // Parsear valores correctamente (pueden venir como "11.18€" o "11,18")
+                    const parseGasValue = (val) => {
+                        if (!val) return 0;
+                        if (typeof val === 'number') return val;
+                        // Eliminar símbolo € y convertir comas a puntos
+                        return parseFloat(val.toString().replace('€', '').replace(',', '.').trim()) || 0;
+                    };
+                    
+                    console.log('Valores parseados:');
+                    console.log('  - total_fijo:', parseGasValue(bestResult.total_fijo));
+                    console.log('  - total_energia:', parseGasValue(bestResult.total_energia));
+                    console.log('  - impuesto_hidrocarburos:', parseGasValue(bestResult.impuesto_hidrocarburos));
+                    
                     // CREAR el objeto de suministro para GAS (con DESGLOSE COMPLETO)
                     const newSupply = {
                         type: 'gas',
                         cups: '', // Gas no tiene CUPS
                         tariff: currentGasTariff || bestResult.tarifa || 'Gas',
                         offer: {
-                            name: bestResult.name || bestResult.descripcion || 'DRK Gas',
-                            description: bestResult.descripcion || bestResult.name || 'Tarifa Gas DRK',
+                            name: bestResult.name || 'DRK',
+                            description: bestResult.descripcion || bestResult.name || 'DRK Gas',  // ✅ DESCRIPTION
                             isDrk: true
                         },
                         totalAnnual: totalAnual,
                         originalBillAnnual: originalBillAnnual,
-                        // NUEVO: Añadir desglose completo
+                        // NUEVO: Añadir desglose completo (PROPIEDADES CORREGIDAS)
                         gasBreakdown: {
-                            termino_fijo: bestResult.p_fijo_anual || 0,
-                            termino_fijo_diario: bestResult.p_fijo_diario || 0,
-                            energia: bestResult.total_energia || 0,
-                            impuesto_hidrocarburos: bestResult.impuesto_hidrocarburos || 0,
-                            subtotal: bestResult.subtotal || 0,
-                            iva: bestResult.iva || 0,
-                            total: bestResult.total || 0,
+                            termino_fijo: parseGasValue(bestResult.total_fijo),      // ✅ CORREGIDO: total_fijo
+                            termino_fijo_diario: parseFloat(bestResult.p_fijo_diario) || 0,
+                            energia: parseGasValue(bestResult.total_energia),         // ✅ CORREGIDO: total_energia
+                            impuesto_hidrocarburos: parseGasValue(bestResult.impuesto_hidrocarburos), // ✅
+                            subtotal: parseGasValue(bestResult.subtotal),
+                            iva: parseGasValue(bestResult.iva),
+                            total: parseGasValue(bestResult.total),
                             total_anual: totalAnual,
                             ahorro_mensual: importeFacturaMensual - totalMensual,
                             ahorro_anual: originalBillAnnual - totalAnual,
