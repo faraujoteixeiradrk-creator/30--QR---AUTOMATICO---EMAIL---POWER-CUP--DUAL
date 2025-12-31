@@ -1482,9 +1482,9 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-GAS-FIXED-v22 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-GAS-FIXED-v22 🔥🔥🔥');
-        console.log('✅ GAS arreglado: window.gasCalculationParams + totalCliente + total*12');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-GAS-DESGLOSE-v23 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-GAS-DESGLOSE-v23 🔥🔥🔥');
+        console.log('✅ GAS ahora guarda y muestra desglose completo (términos, energía, IVA)');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -11628,11 +11628,58 @@
                             const savings = originalBill - drkCost;
                             const tariffName = s.offer?.name || s.offer?.description || 'Tarifa DRK';
                             
+                            // Para GAS, mostrar desglose completo
+                            if (s.type === 'gas' && s.gasBreakdown) {
+                                const gb = s.gasBreakdown;
+                                return `
+                                <div class="bg-white rounded-lg p-3 border border-slate-200">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div class="flex items-center gap-2">
+                                            <span class="text-lg">🔥</span>
+                                            <span class="text-xs font-semibold text-slate-600">${s.tariff}</span>
+                                        </div>
+                                        <span class="text-sm font-bold text-slate-900">${formatEuro(drkCost)}</span>
+                                    </div>
+                                    <div class="text-xs text-slate-700 font-medium mb-2">${tariffName}</div>
+                                    
+                                    <!-- Desglose GAS -->
+                                    <div class="bg-slate-50 rounded p-2 space-y-1 text-xs">
+                                        <div class="flex justify-between">
+                                            <span>Término fijo (${gb.dias} días)</span>
+                                            <span>${formatEuro(gb.termino_fijo)}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Energía (${gb.kwh} kWh)</span>
+                                            <span>${formatEuro(gb.energia)}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>Imp. hidrocarburos</span>
+                                            <span>${formatEuro(gb.impuesto_hidrocarburos)}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span>IVA (21%)</span>
+                                            <span>${formatEuro(gb.iva)}</span>
+                                        </div>
+                                        <div class="flex justify-between font-semibold pt-1 border-t border-slate-200">
+                                            <span>TOTAL MENSUAL</span>
+                                            <span>${formatEuro(gb.total)}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200">
+                                        <span class="text-xs text-slate-600">Factura actual: ${formatEuro(originalBill / 12)}/mes</span>
+                                        <span class="text-xs font-semibold text-green-600">Ahorro: ${formatEuro(savings)}/año</span>
+                                    </div>
+                                </div>
+                            `;
+                            }
+                            
+                            // Para ELECTRICIDAD, diseño simple
                             return `
                             <div class="bg-white rounded-lg p-3 border border-slate-200">
                                 <div class="flex items-center justify-between mb-1">
                                     <div class="flex items-center gap-2">
-                                        <span class="text-lg">${s.type === 'electricidad' ? '⚡' : '🔥'}</span>
+                                        <span class="text-lg">⚡</span>
                                         <span class="text-xs font-semibold text-slate-600">${s.tariff}</span>
                                     </div>
                                     <span class="text-sm font-bold text-slate-900">${formatEuro(drkCost)}</span>
@@ -12840,8 +12887,9 @@
                     console.log('  - Factura original mensual:', importeFacturaMensual);
                     console.log('  - Factura original anual:', originalBillAnnual);
                     console.log('  - Ahorro anual:', originalBillAnnual - totalAnual);
+                    console.log('  - Ahorro mensual:', importeFacturaMensual - totalMensual);
                     
-                    // CREAR el objeto de suministro para GAS
+                    // CREAR el objeto de suministro para GAS (con DESGLOSE COMPLETO)
                     const newSupply = {
                         type: 'gas',
                         cups: '', // Gas no tiene CUPS
@@ -12853,14 +12901,29 @@
                         },
                         totalAnnual: totalAnual,
                         originalBillAnnual: originalBillAnnual,
+                        // NUEVO: Añadir desglose completo
+                        gasBreakdown: {
+                            termino_fijo: bestResult.p_fijo_anual || 0,
+                            termino_fijo_diario: bestResult.p_fijo_diario || 0,
+                            energia: bestResult.total_energia || 0,
+                            impuesto_hidrocarburos: bestResult.impuesto_hidrocarburos || 0,
+                            subtotal: bestResult.subtotal || 0,
+                            iva: bestResult.iva || 0,
+                            total: bestResult.total || 0,
+                            total_anual: totalAnual,
+                            ahorro_mensual: importeFacturaMensual - totalMensual,
+                            ahorro_anual: originalBillAnnual - totalAnual,
+                            kwh: data.kwh || 0,
+                            dias: data.dias || 30
+                        },
                         data: {
-                            kwh: data.consumo_anual_kwh || 0,
+                            kwh: data.kwh || 0,
                             kwh_p1: 0,
                             kwh_p2: 0,
                             kwh_p3: 0,
-                            consumo_anual_kwh: data.consumo_anual_kwh || 0,
+                            consumo_anual_kwh: data.kwh || 0,
                             importe_factura: importeFacturaMensual,
-                            dias: 30
+                            dias: data.dias || 30
                         },
                         results: {
                             drk: {
