@@ -1482,11 +1482,12 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-SEPARADO-v25 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-SEPARADO-v25 🔥🔥🔥');
-        console.log('✅ Imp. hidrocarburos CORREGIDO (sin S)');
-        console.log('✅ Tarjetas SEPARADAS: Electricidad (azul) + Gas (naranja)');
-        console.log('📁 BACKUP creado: BACKUP_QR_full_GAS_V2_DUAL_XXXXXX.html');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-POWERCUP-v26 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-POWERCUP-v26 🔥🔥🔥');
+        console.log('✅ POWER CUP MODE implementado con colores VERDES');
+        console.log('✅ DRK MODE con colores AZULES');
+        console.log('✅ Detección automática según comparisonMode');
+        console.log('📁 BACKUP anterior: BACKUP_QR_full_GAS_V2_DUAL_20251231_010742.html');
         
         // Eliminamos 6.1TD del estado inicial
         let currentTariffs = {
@@ -11653,7 +11654,9 @@
                 totalElectricidad,
                 totalGas,
                 countElectricidad,
-                countGas
+                countGas,
+                // NUEVO: Guardar modo de comparación
+                comparisonMode: comparisonMode  // 'drk_prioritized' o 'overall_best'
             };
             
             // Mostrar resultados
@@ -11672,6 +11675,53 @@
             count.textContent = results.supplies;
             
             const formatEuro = (val) => val.toFixed(2).replace('.', ',') + ' €';
+            
+            // DETECTAR MODO: DRK o Power Cup
+            const isPowerCupMode = results.comparisonMode === 'overall_best';
+            const brandName = isPowerCupMode ? 'Power Cup' : 'DRK';
+            
+            // COLORES DINÁMICOS
+            const colors = isPowerCupMode ? {
+                // Power Cup: VERDE
+                primary: '#22c55e',      // green-500
+                secondary: '#16a34a',    // green-600
+                border: '#4ade80',       // green-400
+                electricidad: {
+                    from: '#22c55e',     // green-500
+                    to: '#16a34a',       // green-600
+                    border: '#4ade80'    // green-400
+                },
+                gas: {
+                    from: '#FF6B35',     // naranja (igual)
+                    to: '#F7931E',
+                    border: '#FF8C52'
+                },
+                total: {
+                    from: '#22c55e',     // gradiente verde a naranja
+                    to: '#FF6B35',
+                    border: '#4ade80'
+                }
+            } : {
+                // DRK: AZUL
+                primary: '#4A90E2',
+                secondary: '#357ABD',
+                border: '#5BA3F5',
+                electricidad: {
+                    from: '#4A90E2',
+                    to: '#357ABD',
+                    border: '#5BA3F5'
+                },
+                gas: {
+                    from: '#FF6B35',
+                    to: '#F7931E',
+                    border: '#FF8C52'
+                },
+                total: {
+                    from: '#4A90E2',
+                    to: '#FF6B35',
+                    border: '#5BA3F5'
+                }
+            };
             
             container.innerHTML = `
                 <!-- Resumen por tipo -->
@@ -11800,9 +11850,9 @@
                 
                 <!-- TARJETAS SEPARADAS POR TIPO -->
                 
-                <!-- Tarjeta ELECTRICIDAD Total (AZUL) -->
+                <!-- Tarjeta ELECTRICIDAD Total (AZUL para DRK / VERDE para Power Cup) -->
                 ${results.countElectricidad > 0 ? `
-                <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: 2px solid #5BA3F5;">
+                <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, ${colors.electricidad.from} 0%, ${colors.electricidad.to} 100%); border: 2px solid ${colors.electricidad.border};">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold text-white">⚡ Electricidad Total</h3>
                         <div class="bg-white bg-opacity-20 p-3 rounded-xl">
@@ -11817,9 +11867,9 @@
                 </div>
                 ` : ''}
                 
-                <!-- Tarjeta GAS Total (NARANJA/ROJO) -->
+                <!-- Tarjeta GAS Total (NARANJA/ROJO siempre) -->
                 ${results.countGas > 0 ? `
-                <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #FF6B35 0%, #F7931E 100%); border: 2px solid #FF8C52;">
+                <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, ${colors.gas.from} 0%, ${colors.gas.to} 100%); border: 2px solid ${colors.gas.border};">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold text-white">🔥 Gas Total</h3>
                         <div class="bg-white bg-opacity-20 p-3 rounded-xl">
@@ -11834,11 +11884,11 @@
                 </div>
                 ` : ''}
                 
-                <!-- Tarjeta DRK TOTAL (si hay ambos tipos) -->
+                <!-- Tarjeta TOTAL (si hay ambos tipos) - DRK o Power Cup -->
                 ${results.countElectricidad > 0 && results.countGas > 0 ? `
-                <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #4A90E2 0%, #FF6B35 100%); border: 2px solid #5BA3F5;">
+                <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, ${colors.total.from} 0%, ${colors.total.to} 100%); border: 2px solid ${colors.total.border};">
                     <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-2xl font-bold text-white">DRK Total</h3>
+                        <h3 class="text-2xl font-bold text-white">${brandName} Total</h3>
                         <div class="bg-white bg-opacity-20 p-3 rounded-xl">
                             <span class="text-2xl">⚡🔥</span>
                         </div>
@@ -11851,8 +11901,8 @@
                 </div>
                 ` : ''}
                 
-                <!-- NUEVO: Tarjeta de AHORRO TOTAL (mismo color) -->
-                <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: 2px solid #5BA3F5;">
+                <!-- NUEVO: Tarjeta de AHORRO TOTAL (colores dinámicos según modo) -->
+                <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%); border: 2px solid ${colors.border};">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold text-white">💰 Ahorro Total</h3>
                         <div class="bg-white bg-opacity-20 p-3 rounded-xl">
@@ -11864,7 +11914,7 @@
                         <p class="text-2xl font-bold text-white">${formatEuro(results.totalOriginalBill)}</p>
                     </div>
                     <div class="bg-white bg-opacity-10 rounded-xl p-4 mb-3">
-                        <p class="text-sm text-white opacity-90 mb-2">Con DRK pagarías:</p>
+                        <p class="text-sm text-white opacity-90 mb-2">Con ${brandName} pagarías:</p>
                         <p class="text-2xl font-bold text-white">${formatEuro(results.totalDRK)}</p>
                     </div>
                     <div class="rounded-xl p-4" style="background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3);">
