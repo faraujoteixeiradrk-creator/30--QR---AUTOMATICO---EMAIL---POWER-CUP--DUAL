@@ -1474,11 +1474,11 @@
         const EXTERNAL_APP_URL = 'https://faraujoteixeiradrk-creator.github.io/QR-21-POWER-2-0-TD---3.0-TD-Con-PDF/';
         
         // Estado Global
-        // ⚡⚡⚡ VERSIÓN: 2024-12-31-FIX-CONSOLE-v33 ⚡⚡⚡
-        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-FIX-CONSOLE-v33 🔥🔥🔥');
-        console.log('✅ FIX DEFINITIVO: console.log escapado correctamente');
-        console.log('✅ Generador de PDF funcional');
-        console.log('✅ Escape correcto de <\/script> en template string');
+        // ⚡⚡⚡ VERSIÓN: 2024-12-31-DEBUG-PDF-v34 ⚡⚡⚡
+        console.log('🔥🔥🔥 ARCHIVO CARGADO - VERSIÓN: 2024-12-31-DEBUG-PDF-v34 🔥🔥🔥');
+        console.log('✅ LOGS DE DEPURACIÓN añadidos en dualGeneratePDF');
+        console.log('✅ Try-catch para capturar errores');
+        console.log('✅ Verificación de ventanas bloqueadas');
         console.log('📁 BACKUP: BACKUP_QR_full_GAS_V2_DUAL_20251231_010742.html');
         
         // Eliminamos 6.1TD del estado inicial
@@ -12028,47 +12028,69 @@
         
         // Función: Generar PDF DUAL
         function dualGeneratePDF() {
-            console.log('🔥 Generando propuesta PDF con datos DUAL...');
+            console.log('🔥🔥🔥 INICIO dualGeneratePDF() 🔥🔥🔥');
             
-            if (!dualSupplies || dualSupplies.length === 0) {
-                alert('No hay suministros para generar la propuesta. Añade al menos un suministro.');
-                return;
-            }
-            
-            const results = window.dualGlobalResults;
-            const isPowerCup = results.comparisonMode === 'overall_best';
-            const brandName = isPowerCup ? 'POWER CUP' : 'DRK';
-            const brandColor = isPowerCup ? '#22c55e' : '#4A90E2';
-            
-            // Calcular totales
-            const totalSavings = results.totalSavings || 0;
-            const totalOriginalBill = results.totalOriginalBill || 0;
-            const totalNew = isPowerCup ? results.totalPowerCup : results.totalDRK;
-            const monthlyOriginal = totalOriginalBill / 12;
-            const monthlyNew = totalNew / 12;
-            
-            // Generar filas de la tabla de resumen
-            let tableRows = '';
-            dualSupplies.forEach((s, i) => {
-                const icon = s.type === 'electricidad' ? '⚡' : '🔥';
-                const cupsShort = (s.cups || '').substring(0, 20) + '...';
-                const ahorro = s.originalBillAnnual - s.results.drk.total_anual;
+            try {
+                console.log('1️⃣ Verificando dualSupplies...');
+                console.log('   - dualSupplies:', dualSupplies);
+                console.log('   - length:', dualSupplies ? dualSupplies.length : 'undefined');
                 
-                tableRows += `
-                    <tr>
-                        <td><strong>[${i+1}]</strong></td>
-                        <td><span class="supply-icon">${icon}</span> ${s.type === 'electricidad' ? 'Elec.' : 'Gas'}</td>
-                        <td style="font-size: 10px;">${cupsShort}</td>
-                        <td>${s.tariff || 'N/A'}</td>
-                        <td>${s.electricityBreakdown?.dias || s.gasBreakdown?.dias || 30}</td>
-                        <td style="text-align: right; font-weight: bold; color: #22c55e;">${ahorro.toFixed(2).replace('.', ',')} €</td>
-                    </tr>
-                `;
-            });
-            
-            // Generar desgloses detallados
-            let breakdownsHTML = '';
-            dualSupplies.forEach((s, i) => {
+                if (!dualSupplies || dualSupplies.length === 0) {
+                    alert('No hay suministros para generar la propuesta. Añade al menos un suministro.');
+                    return;
+                }
+                
+                console.log('2️⃣ Obteniendo dualGlobalResults...');
+                const results = window.dualGlobalResults;
+                console.log('   - results:', results);
+                
+                if (!results) {
+                    alert('No hay resultados calculados. Por favor, calcula la comparativa primero.');
+                    return;
+                }
+                
+                console.log('3️⃣ Detectando modo...');
+                const isPowerCup = results.comparisonMode === 'overall_best';
+                const brandName = isPowerCup ? 'POWER CUP' : 'DRK';
+                const brandColor = isPowerCup ? '#22c55e' : '#4A90E2';
+                console.log('   - brandName:', brandName);
+                console.log('   - isPowerCup:', isPowerCup);
+                
+                console.log('4️⃣ Calculando totales...');
+                // Calcular totales
+                const totalSavings = results.totalSavings || 0;
+                const totalOriginalBill = results.totalOriginalBill || 0;
+                const totalNew = isPowerCup ? results.totalPowerCup : results.totalDRK;
+                const monthlyOriginal = totalOriginalBill / 12;
+                const monthlyNew = totalNew / 12;
+                console.log('   - totalSavings:', totalSavings);
+                console.log('   - totalNew:', totalNew);
+                
+                console.log('5️⃣ Generando tabla de resumen...');
+                // Generar filas de la tabla de resumen
+                let tableRows = '';
+                dualSupplies.forEach((s, i) => {
+                    const icon = s.type === 'electricidad' ? '⚡' : '🔥';
+                    const cupsShort = (s.cups || '').substring(0, 20) + '...';
+                    const ahorro = s.originalBillAnnual - s.results.drk.total_anual;
+                    
+                    tableRows += `
+                        <tr>
+                            <td><strong>[${i+1}]</strong></td>
+                            <td><span class="supply-icon">${icon}</span> ${s.type === 'electricidad' ? 'Elec.' : 'Gas'}</td>
+                            <td style="font-size: 10px;">${cupsShort}</td>
+                            <td>${s.tariff || 'N/A'}</td>
+                            <td>${s.electricityBreakdown?.dias || s.gasBreakdown?.dias || 30}</td>
+                            <td style="text-align: right; font-weight: bold; color: #22c55e;">${ahorro.toFixed(2).replace('.', ',')} €</td>
+                        </tr>
+                    `;
+                });
+                console.log('   - tableRows generadas:', tableRows.length, 'chars');
+                
+                console.log('6️⃣ Generando desgloses detallados...');
+                // Generar desgloses detallados
+                let breakdownsHTML = '';
+                dualSupplies.forEach((s, i) => {
                 if (s.type === 'electricidad' && s.electricityBreakdown) {
                     const eb = s.electricityBreakdown;
                     breakdownsHTML += `
@@ -12268,13 +12290,30 @@
     <\/script>
 </body>
 </html>`;
-            
-            // Abrir en nueva ventana
-            const newWindow = window.open('', '_blank');
-            newWindow.document.write(htmlContent);
-            newWindow.document.close();
-            
-            console.log('✅ Propuesta generada y abierta en nueva ventana');
+                
+                console.log('7️⃣ HTML generado:', htmlContent.length, 'chars');
+                console.log('8️⃣ Abriendo nueva ventana...');
+                
+                // Abrir en nueva ventana
+                const newWindow = window.open('', '_blank');
+                
+                if (!newWindow) {
+                    alert('⚠️ No se pudo abrir la ventana. Verifica que no esté bloqueada por el navegador.');
+                    console.error('❌ window.open bloqueado');
+                    return;
+                }
+                
+                console.log('9️⃣ Escribiendo contenido...');
+                newWindow.document.write(htmlContent);
+                newWindow.document.close();
+                
+                console.log('✅✅✅ Propuesta generada y abierta en nueva ventana');
+                
+            } catch (error) {
+                console.error('❌❌❌ ERROR EN dualGeneratePDF:', error);
+                console.error('   Stack:', error.stack);
+                alert('Error al generar PDF: ' + error.message);
+            }
         }
         
         // NUEVO: Funciones para pantalla de confirmación
