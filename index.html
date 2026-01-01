@@ -9142,11 +9142,18 @@
                             dias: lastComparisonResult.dias_facturados || 30
                         },
                         results: {
-                            drk: {
+                            // Detectar si estamos en modo Power Cup o DRK
+                            drk: comparisonMode === 'overall_best' ? {
+                                total: 0,
+                                total_anual: 0
+                            } : {
                                 total: lastComparisonResult.totalAnnual / 12,
                                 total_anual: lastComparisonResult.totalAnnual
                             },
-                            powercup: {
+                            powercup: comparisonMode === 'overall_best' ? {
+                                total: lastComparisonResult.totalAnnual / 12,
+                                total_anual: lastComparisonResult.totalAnnual
+                            } : {
                                 total: 0,
                                 total_anual: 0
                             }
@@ -9372,26 +9379,41 @@
             // ⚡ INTERCEPTAR MODO DUAL AQUÍ
             if (window.dualMode === true) {
                 console.log('===== 🔥 MODO DUAL - Interceptando en selectBestOptionDirectDual =====');
+                console.log('comparisonMode:', comparisonMode);
                 
                 // Preparar datos para confirmación DUAL
                 const tariff = lastComparisonResult.tariffType || currentTariffType || '2.0TD';
                 const data = extractDataFromResult(lastComparisonResult);
                 
-                const drkCost = lastComparisonResult.totalAnnual || 0;
-                const powercupCost = lastIndexedResult.totalAnnual || 0;
+                const totalCost = lastComparisonResult.totalAnnual || 0;
+                
+                // DETECTAR si estamos en modo Power Cup o DRK
+                const isPowerCupMode = comparisonMode === 'overall_best';
+                console.log('🔍 Modo detectado:', isPowerCupMode ? 'POWER CUP' : 'DRK');
+                console.log('Total cost:', totalCost);
                 
                 const results = {
-                    drk: {
-                        total: drkCost / 12,
-                        total_anual: drkCost
+                    drk: isPowerCupMode ? {
+                        total: 0,
+                        total_anual: 0
+                    } : {
+                        total: totalCost / 12,
+                        total_anual: totalCost
                     },
-                    powercup: {
-                        total: powercupCost / 12,
-                        total_anual: powercupCost
+                    powercup: isPowerCupMode ? {
+                        total: totalCost / 12,
+                        total_anual: totalCost
+                    } : {
+                        total: 0,
+                        total_anual: 0
                     }
                 };
                 
-                console.log('Datos preparados para DUAL:', { tariff, data, results });
+                console.log('Datos preparados para DUAL:');
+                console.log('  - tariff:', tariff);
+                console.log('  - results.drk.total_anual:', results.drk.total_anual);
+                console.log('  - results.powercup.total_anual:', results.powercup.total_anual);
+                
                 showDualConfirm('electricidad', tariff, data, results);
                 return;
             }
@@ -9465,6 +9487,7 @@
                     console.log('lastComparisonResult.offer.name:', lastComparisonResult?.offer?.name);
                     console.log('lastComparisonResult.tariffType:', lastComparisonResult?.tariffType);
                     console.log('currentTariffType:', currentTariffType);
+                    console.log('comparisonMode:', comparisonMode);
                     
                     const tariff = lastComparisonResult?.tariffType || currentTariffType || '2.0TD';
                     console.log('✅ Tariff extraída:', tariff);
@@ -9473,16 +9496,26 @@
                     const data = extractDataFromResult(lastComparisonResult);
                     console.log('✅ Data extraída - kwh_p1:', data.kwh_p1, 'dias:', data.dias, 'originalBillAnnual:', data.originalBillAnnual);
                     
-                    console.log('🔍 Extrayendo coste DRK...');
-                    const drkCost = lastComparisonResult?.totalAnnual || 0;
-                    console.log('✅ DRK cost:', drkCost);
+                    console.log('🔍 Extrayendo coste...');
+                    const totalCost = lastComparisonResult?.totalAnnual || 0;
+                    console.log('✅ Total cost:', totalCost);
+                    
+                    // DETECTAR si estamos en modo Power Cup o DRK
+                    const isPowerCupMode = comparisonMode === 'overall_best';
+                    console.log('🔍 Modo detectado:', isPowerCupMode ? 'POWER CUP' : 'DRK');
                     
                     const results = {
-                        drk: {
-                            total: drkCost / 12,
-                            total_anual: drkCost
+                        drk: isPowerCupMode ? {
+                            total: 0,
+                            total_anual: 0
+                        } : {
+                            total: totalCost / 12,
+                            total_anual: totalCost
                         },
-                        powercup: {
+                        powercup: isPowerCupMode ? {
+                            total: totalCost / 12,
+                            total_anual: totalCost
+                        } : {
                             total: 0,
                             total_anual: 0
                         }
