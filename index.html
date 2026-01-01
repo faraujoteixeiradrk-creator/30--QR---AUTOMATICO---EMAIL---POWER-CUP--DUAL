@@ -11474,6 +11474,9 @@
         }
 
         function goToElectricidad() {
+            // Desactivar modo DUAL (solo activo cuando se navega desde dualSelectTariff)
+            window.dualMode = false;
+            checkDualMode(); // Actualizar visibilidad del botón DUAL
             hideAllScreens();
             document.getElementById('screen-electricidad').classList.add('active');
             // Ocultar el modo de comparación (ya está seleccionado)
@@ -11481,6 +11484,9 @@
         }
 
         function goToGas() {
+            // Desactivar modo DUAL (solo activo cuando se navega desde dualSelectTariff)
+            window.dualMode = false;
+            checkDualMode(); // Actualizar visibilidad del botón DUAL
             hideAllScreens();
             document.getElementById('screen-gas').classList.add('active');
             // Ocultar el modo de comparación (ya está seleccionado)
@@ -11592,6 +11598,7 @@
             
             dualCurrentType = type;
             window.dualMode = true;
+            checkDualMode(); // Actualizar visibilidad del botón DUAL
             
             if (type === 'electricidad') {
                 // Configurar el tipo de tarifa ANTES de cambiar pantallas
@@ -12588,6 +12595,7 @@
             
             const supply = {
                 type: type, // 'electricidad' o 'gas'
+                cups: data.cups || 'N/A', // CUPS del suministro
                 tariff: tariff,
                 data: data,
                 results: results,
@@ -12847,6 +12855,7 @@
         // Función: Proceder a cálculo según configuración
         function proceedToGasCalculation() {
             // Validar inputs
+            const cups = document.getElementById('gas-cups').value.trim();
             const dias = parseFloat(document.getElementById('gas-dias').value);
             const kwh = parseFloat(document.getElementById('gas-kwh').value);
             const totalCliente = parseFloat(document.getElementById('gas-total-cliente').value);
@@ -12866,6 +12875,7 @@
             
             // Guardar parámetros (CRÍTICO: también en window para modo DUAL)
             gasCalculationParams = {
+                cups,
                 dias,
                 kwh,
                 totalCliente,
