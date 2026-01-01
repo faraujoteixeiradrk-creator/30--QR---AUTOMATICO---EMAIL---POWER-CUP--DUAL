@@ -12140,6 +12140,9 @@
                             <div style="background:${accentColor};color:white;padding:12px 20px;border-radius:8px 8px 0 0;font-weight:bold;font-size:13px">
                                 [${i+1}] ${(s.cups||'N/A').substring(0,30)}...
                                 <div style="font-size:11px;opacity:0.9;margin-top:3px">Tipo: ${s.tariff} | Días: ${eb.dias} días | CUPS: [${i+1}]</div>
+                                <div style="font-size:11px;opacity:0.95;margin-top:5px;background:rgba(0,0,0,0.15);padding:6px 10px;border-radius:4px">
+                                    <strong>TARIFA:</strong> ${s.offer?.name || 'N/A'} - ${s.offer?.description || 'N/A'}
+                                </div>
                             </div>
                             <div style="background:#f8fafc;padding:15px 20px;border:1px solid #e2e8f0;border-top:none">
                                 <div style="margin-bottom:12px">
@@ -12206,6 +12209,9 @@
                             <div style="background:${accentColor};color:white;padding:12px 20px;border-radius:8px 8px 0 0;font-weight:bold;font-size:13px">
                                 [${i+1}] ${(s.cups||'N/A').substring(0,30)}...
                                 <div style="font-size:11px;opacity:0.9;margin-top:3px">Tipo: ${s.tariff} | Días: ${gb.dias} días | CUPS: [${i+1}]</div>
+                                <div style="font-size:11px;opacity:0.95;margin-top:5px;background:rgba(0,0,0,0.15);padding:6px 10px;border-radius:4px">
+                                    <strong>TARIFA:</strong> ${s.offer?.name || 'N/A'} - ${s.offer?.description || 'N/A'}
+                                </div>
                             </div>
                             <div style="background:#f8fafc;padding:15px 20px;border:1px solid #e2e8f0;border-top:none">
                                 <div style="margin-bottom:12px">
