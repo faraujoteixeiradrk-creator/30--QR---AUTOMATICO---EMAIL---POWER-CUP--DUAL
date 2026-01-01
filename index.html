@@ -12101,7 +12101,8 @@
                     </div>
                 </div>
                 
-                <!-- Tarjeta DRK -->
+                <!-- Tarjeta DRK (SOLO si NO es modo Power Cup) -->
+                ${results.comparisonMode !== 'overall_best' ? `
                 <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: 2px solid #5BA3F5;">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold text-white">DRK Total</h3>
@@ -12115,8 +12116,10 @@
                         <p class="text-sm text-white opacity-80 mt-2">${results.supplies} suministros combinados</p>
                     </div>
                 </div>
+                ` : ''}
                 
-                <!-- NUEVO: Tarjeta de AHORRO TOTAL (mismo color) -->
+                <!-- Tarjeta AHORRO TOTAL (SOLO si NO es modo Power Cup) -->
+                ${results.comparisonMode !== 'overall_best' ? `
                 <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: 2px solid #5BA3F5;">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold text-white">💰 Ahorro Total</h3>
@@ -12138,9 +12141,10 @@
                         <p class="text-sm text-white opacity-80 mt-2">${(results.totalSavings / 12).toFixed(2).replace('.', ',')} € al mes</p>
                     </div>
                 </div>
+                ` : ''}
                 
-                <!-- Tarjeta Power Cup (SOLO si hay datos) -->
-                ${results.totalPowerCup > 0 ? `
+                <!-- Tarjeta Power Cup (SOLO si es modo Power Cup O si hay datos de comparación) -->
+                ${(results.comparisonMode === 'overall_best' || results.totalPowerCup > 0) ? `
                 <div class="bg-gradient-to-br from-powercup-600 to-powercup-800 text-white rounded-2xl shadow-2xl p-6 border-2 border-powercup-500 mb-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold">Power Cup Total</h3>
@@ -12156,8 +12160,33 @@
                 </div>
                 ` : ''}
                 
-                <!-- Comparativa (SOLO si hay datos de Power Cup) -->
-                ${results.totalPowerCup > 0 ? `
+                <!-- Tarjeta AHORRO TOTAL para Power Cup (SOLO si es modo Power Cup) -->
+                ${results.comparisonMode === 'overall_best' ? `
+                <div class="bg-gradient-to-br from-powercup-600 to-powercup-800 text-white rounded-2xl shadow-2xl p-6 border-2 border-powercup-500 mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-2xl font-bold">💰 Ahorro Total</h3>
+                        <div class="bg-white bg-opacity-20 p-3 rounded-xl">
+                            <span class="text-2xl">📊</span>
+                        </div>
+                    </div>
+                    <div class="bg-white bg-opacity-10 rounded-xl p-4 mb-3">
+                        <p class="text-sm text-powercup-100 mb-2">Factura actual total:</p>
+                        <p class="text-2xl font-bold">${formatEuro(results.totalOriginalBill)}</p>
+                    </div>
+                    <div class="bg-white bg-opacity-10 rounded-xl p-4 mb-3">
+                        <p class="text-sm text-powercup-100 mb-2">Con Power Cup pagarías:</p>
+                        <p class="text-2xl font-bold">${formatEuro(results.totalPowerCup)}</p>
+                    </div>
+                    <div class="rounded-xl p-4" style="background: rgba(255,255,255,0.15); border: 2px solid rgba(255,255,255,0.3);">
+                        <p class="text-sm text-powercup-100 mb-2">🎉 Ahorro anual generado:</p>
+                        <p class="text-4xl font-bold">${formatEuro(results.totalSavings)}</p>
+                        <p class="text-sm text-powercup-100 mt-2">${(results.totalSavings / 12).toFixed(2).replace('.', ',')} € al mes</p>
+                    </div>
+                </div>
+                ` : ''}
+                
+                <!-- Comparativa (SOLO si NO es modo Power Cup Y hay datos de Power Cup) -->
+                ${results.comparisonMode !== 'overall_best' && results.totalPowerCup > 0 ? `
                 <div class="bg-white rounded-2xl shadow-lg p-6 border-2 border-slate-200">
                     <h4 class="text-lg font-bold text-slate-800 mb-4 text-center">Comparativa DRK vs Power Cup</h4>
                     ${results.diff > 0 ? `
