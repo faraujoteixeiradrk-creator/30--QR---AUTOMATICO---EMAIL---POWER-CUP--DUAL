@@ -12515,19 +12515,19 @@
             </table>
         </div>
         
-        <!-- RECUADRO COMPARATIVA (DISEÑO PROFESIONAL) -->
-        <div style="margin:0 35px 25px 35px;padding:18px 20px;background:${isPowerCup ? '#dbeafe' : '#dbeafe'};border-radius:8px;border:2px solid ${isPowerCup ? '#3b82f6' : '#3b82f6'}">
+        <!-- RECUADRO COMPARATIVA SUPERIOR (DISEÑO IMAGEN 1) -->
+        <div style="margin:0 35px 25px 35px;padding:25px 30px;background:#dbeafe;border-radius:10px;border:3px solid #3b82f6">
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="width:50%;padding:0 15px 0 0;border-right:2px solid ${isPowerCup ? '#3b82f6' : '#3b82f6'}">
-                        <p style="margin:0 0 8px 0;font-size:12px;font-weight:600;color:#1e3a8a;text-transform:uppercase">COSTE ACTUAL ANUAL</p>
-                        <p style="margin:0;font-size:28px;font-weight:bold;line-height:1.2;color:#1e3a8a">${eur(totalOriginalBill)}</p>
-                        <p style="margin:6px 0 0 0;font-size:10px;color:#475569;font-weight:500">/ AÑO</p>
+                    <td style="width:50%;padding:0 20px 0 0;border-right:3px solid #3b82f6">
+                        <p style="margin:0 0 10px 0;font-size:13px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px">COSTE ACTUAL ANUAL</p>
+                        <p style="margin:0;font-size:36px;font-weight:bold;line-height:1.2;color:#1e40af">${eur(totalOriginalBill)}</p>
+                        <p style="margin:8px 0 0 0;font-size:12px;color:#1e40af;font-weight:500">/ AÑO</p>
                     </td>
-                    <td style="width:50%;padding:0 0 0 15px">
-                        <p style="margin:0 0 8px 0;font-size:12px;font-weight:600;color:#1e3a8a;text-transform:uppercase">NUEVO COSTE ${brandName} ANUAL</p>
-                        <p style="margin:0;font-size:28px;font-weight:bold;line-height:1.2;color:#1e3a8a">${eur(totalNew)}</p>
-                        <p style="margin:6px 0 0 0;font-size:10px;color:#475569;font-weight:500">${(totalNew/12).toFixed(2)} € / MES</p>
+                    <td style="width:50%;padding:0 0 0 20px">
+                        <p style="margin:0 0 10px 0;font-size:13px;font-weight:700;color:#1e40af;text-transform:uppercase;letter-spacing:0.5px">NUEVO COSTE ${brandName} ANUAL</p>
+                        <p style="margin:0;font-size:36px;font-weight:bold;line-height:1.2;color:#1e40af">${eur(totalNew)}</p>
+                        <p style="margin:8px 0 0 0;font-size:12px;color:#1e40af;font-weight:500">${(totalNew/12).toFixed(2)} € / MES</p>
                     </td>
                 </tr>
             </table>
@@ -12561,33 +12561,33 @@
             ${desgloses}
         </div>
         
-        <!-- AHORRO FINAL -->
-        <div style="margin:25px 35px 15px 35px;padding:20px;background:#3b82f6;color:white;border-radius:8px;text-align:center;border:3px solid #1e40af">
-            <p style="margin:0;font-size:14px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px">TU AHORRO ANUAL ESTIMADO ES:</p>
-            <p style="margin:10px 0 6px 0;font-size:36px;font-weight:bold;letter-spacing:1px">${eur(totalSavings)}</p>
-            <p style="margin:0;font-size:13px;font-weight:600;text-transform:uppercase">¡CONSIGUE TU AHORRO ANUAL!</p>
+        <!-- AHORRO FINAL AZUL GRANDE -->
+        <div style="margin:25px 35px 20px 35px;padding:30px;background:#3b82f6;color:white;border-radius:10px;text-align:center;border:4px solid #2563eb">
+            <p style="margin:0;font-size:16px;font-weight:bold;text-transform:uppercase;letter-spacing:1px">TU AHORRO ANUAL ESTIMADO ES:</p>
+            <p style="margin:15px 0;font-size:48px;font-weight:bold;letter-spacing:2px">${eur(totalSavings)}</p>
+            <p style="margin:0;font-size:16px;font-weight:700;text-transform:uppercase;letter-spacing:1px">¡CONSIGUE TU AHORRO ANUAL!</p>
         </div>
         
-        <!-- TABLA COMPARATIVA FINAL (FACTURA ACTUAL vs NUEVO COSTE) -->
+        <!-- TABLA COMPARATIVA FINAL (TU FACTURA ACTUAL vs TU NUEVO COSTE) -->
         <div style="margin:0 35px 30px 35px">
             <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
                 <tr>
-                    <!-- COLUMNA IZQUIERDA: TU FACTURA ACTUAL (GRIS/BLANCO CON ROJO) -->
-                    <td style="width:48%;padding:20px;background:#f8f9fa;border:2px solid #e2e8f0;border-radius:8px;vertical-align:top;text-align:center">
-                        <p style="margin:0 0 15px 0;font-size:13px;color:#6b7280;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">TU FACTURA ACTUAL</p>
-                        <p style="margin:0;font-size:32px;font-weight:bold;color:#dc2626;line-height:1.2">${eur(totalOriginalBill)}</p>
-                        <p style="margin:8px 0 0 0;font-size:12px;color:#6b7280;font-weight:600">/ AÑO</p>
+                    <!-- COLUMNA IZQUIERDA: TU FACTURA ACTUAL (GRIS/BLANCO) -->
+                    <td style="width:48%;padding:25px;background:#f1f5f9;border:3px solid #cbd5e1;border-radius:10px;vertical-align:top;text-align:center">
+                        <p style="margin:0 0 15px 0;font-size:14px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">TU FACTURA ACTUAL</p>
+                        <p style="margin:0;font-size:36px;font-weight:bold;color:#dc2626;line-height:1.2">${eur(totalOriginalBill)}</p>
+                        <p style="margin:10px 0 0 0;font-size:13px;color:#64748b;font-weight:600">/ AÑO</p>
                     </td>
                     
                     <!-- ESPACIO ENTRE COLUMNAS -->
                     <td style="width:4%"></td>
                     
                     <!-- COLUMNA DERECHA: TU NUEVO COSTE DRK/POWER (AZUL) -->
-                    <td style="width:48%;padding:20px;background:#dbeafe;border:3px solid #3b82f6;border-radius:8px;vertical-align:top;text-align:center">
-                        <p style="margin:0 0 15px 0;font-size:13px;color:#1e3a8a;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">TU NUEVO COSTE ${brandName}</p>
-                        <p style="margin:0;font-size:32px;font-weight:bold;color:#1e40af;line-height:1.2">${eur(totalNew)}</p>
-                        <p style="margin:8px 0 0 0;font-size:12px;color:#1e3a8a;font-weight:600">/ AÑO</p>
-                        <p style="margin:10px 0 0 0;font-size:14px;color:#1e40af;font-weight:700">${(totalNew/12).toFixed(2)} € / MES</p>
+                    <td style="width:48%;padding:25px;background:#dbeafe;border:4px solid #3b82f6;border-radius:10px;vertical-align:top;text-align:center">
+                        <p style="margin:0 0 15px 0;font-size:14px;color:#1e40af;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">TU NUEVO COSTE ${brandName}</p>
+                        <p style="margin:0;font-size:36px;font-weight:bold;color:#1e40af;line-height:1.2">${eur(totalNew)}</p>
+                        <p style="margin:10px 0 0 0;font-size:13px;color:#1e40af;font-weight:600">/ AÑO</p>
+                        <p style="margin:12px 0 0 0;font-size:15px;color:#1e40af;font-weight:700">${(totalNew/12).toFixed(2)} € / MES</p>
                     </td>
                 </tr>
             </table>
