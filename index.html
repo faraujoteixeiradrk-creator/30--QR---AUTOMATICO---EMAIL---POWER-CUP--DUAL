@@ -12572,10 +12572,12 @@
                     <p style="margin:0 0 2px 0;font-size:9px;color:#64748b">Energía: ${(s.offer?.p1_price||0).toFixed(6)} €/kWh</p>
                     `}
                     
+                    ${isElec ? `
+                    <!-- ELECTRICIDAD: POTENCIA -->
                     <div style="margin-top:12px;padding:10px;background:#546e7a;color:white;border-radius:5px">
                         <p style="margin:0;font-size:11px;font-weight:bold">POTENCIA</p>
                     </div>
-                    ${isElec && eb?.powerCosts ? eb.powerCosts.map(pc => `
+                    ${eb?.powerCosts ? eb.powerCosts.map(pc => `
                         <div style="padding:8px 10px;background:white;border-bottom:1px solid #e2e8f0">
                             <div style="display:table;width:100%">
                                 <div style="display:table-cell;font-size:10px;color:#1e293b">P${pc.period} (${pc.power_kw||0} kW x ${dias}d x ${(pc.priceDay||pc.price_euro_kw_day||0).toFixed(6)} €/kW/día)</div>
@@ -12584,17 +12586,24 @@
                         </div>
                     `).join('') : '<div style="padding:8px 10px;background:white;font-size:10px;color:#64748b">No hay datos de potencia</div>'}
                     
+                    <!-- ELECTRICIDAD: ENERGÍA -->
                     <div style="margin-top:12px;padding:10px;background:#546e7a;color:white;border-radius:5px">
                         <p style="margin:0;font-size:11px;font-weight:bold">ENERGÍA</p>
                     </div>
-                    ${isElec && eb?.energyCosts ? eb.energyCosts.map(ec => `
+                    ${eb?.energyCosts ? eb.energyCosts.map(ec => `
                         <div style="padding:8px 10px;background:white;border-bottom:1px solid #e2e8f0">
                             <div style="display:table;width:100%">
                                 <div style="display:table-cell;font-size:10px;color:#1e293b">E${ec.period} (${ec.kwh||0} kWh x ${(ec.price||ec.price_euro_kwh||0).toFixed(6)} €/kWh)</div>
                                 <div style="display:table-cell;text-align:right;font-size:10px;color:#1e293b;font-weight:bold">${(ec.cost_euros||0).toFixed(2)} €</div>
                             </div>
                         </div>
-                    `).join('') : !isElec && gb ? `
+                    `).join('') : '<div style="padding:8px 10px;background:white;font-size:10px;color:#64748b">No hay datos de energía</div>'}
+                    ` : `
+                    <!-- GAS: DESGLOSE (sin sección POTENCIA) -->
+                    <div style="margin-top:12px;padding:10px;background:#546e7a;color:white;border-radius:5px">
+                        <p style="margin:0;font-size:11px;font-weight:bold">DESGLOSE DE COSTES</p>
+                    </div>
+                    ${gb ? `
                         <div style="padding:8px 10px;background:white;border-bottom:1px solid #e2e8f0">
                             <div style="display:table;width:100%">
                                 <div style="display:table-cell;font-size:10px;color:#1e293b">Término fijo (${dias} días x ${(gb.termino_fijo_diario||0).toFixed(6)} €/día)</div>
@@ -12607,7 +12616,8 @@
                                 <div style="display:table-cell;text-align:right;font-size:10px;color:#1e293b;font-weight:bold">${(gb.energia||0).toFixed(2)} €</div>
                             </div>
                         </div>
-                    ` : '<div style="padding:8px 10px;background:white;font-size:10px;color:#64748b">No hay datos de energía</div>'}
+                    ` : '<div style="padding:8px 10px;background:white;font-size:10px;color:#64748b">No hay datos</div>'}
+                    `}
                     
                     <div style="margin-top:12px;padding:10px;background:#e2e8f0">
                         <div style="display:table;width:100%">
