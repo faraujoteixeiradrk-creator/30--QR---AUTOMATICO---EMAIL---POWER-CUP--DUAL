@@ -12598,13 +12598,13 @@
                         <div style="padding:8px 10px;background:white;border-bottom:1px solid #e2e8f0">
                             <div style="display:table;width:100%">
                                 <div style="display:table-cell;font-size:10px;color:#1e293b">Término fijo (${dias} días x ${(gb.termino_fijo_diario||0).toFixed(6)} €/día)</div>
-                                <div style="display:table-cell;text-align:right;font-size:10px;color:#1e293b;font-weight:bold">${(gb.coste_termino_fijo||0).toFixed(2)} €</div>
+                                <div style="display:table-cell;text-align:right;font-size:10px;color:#1e293b;font-weight:bold">${(gb.termino_fijo||0).toFixed(2)} €</div>
                             </div>
                         </div>
                         <div style="padding:8px 10px;background:white;border-bottom:1px solid #e2e8f0">
                             <div style="display:table;width:100%">
-                                <div style="display:table-cell;font-size:10px;color:#1e293b">Energía (${gb.consumo_kwh||0} kWh x ${(gb.precio_energia||0).toFixed(6)} €/kWh)</div>
-                                <div style="display:table-cell;text-align:right;font-size:10px;color:#1e293b;font-weight:bold">${(gb.coste_energia||0).toFixed(2)} €</div>
+                                <div style="display:table-cell;font-size:10px;color:#1e293b">Energía (${gb.kwh||0} kWh x ${(s.offer?.p1_price||0).toFixed(6)} €/kWh)</div>
+                                <div style="display:table-cell;text-align:right;font-size:10px;color:#1e293b;font-weight:bold">${(gb.energia||0).toFixed(2)} €</div>
                             </div>
                         </div>
                     ` : '<div style="padding:8px 10px;background:white;font-size:10px;color:#64748b">No hay datos de energía</div>'}
