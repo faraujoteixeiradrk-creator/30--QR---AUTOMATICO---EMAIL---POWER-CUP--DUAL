@@ -12706,6 +12706,10 @@
                 results: results,
                 description: description,
                 totalKwh: totalKwh,
+                // CRÍTICO: Calcular totalAnnual desde el resultado correspondiente (DRK o Power Cup)
+                totalAnnual: (results.drk.total_anual > 0) ? results.drk.total_anual : results.powercup.total_anual,
+                // CRÍTICO: Guardar factura original para cálculo de ahorro
+                originalBillAnnual: data.originalBillAnnual || 0,
                 timestamp: new Date().getTime()
             };
             
