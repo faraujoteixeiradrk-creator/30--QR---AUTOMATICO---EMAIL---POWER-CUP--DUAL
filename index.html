@@ -1552,6 +1552,9 @@
     <textarea id="paste-catcher" aria-hidden="true" title="Área de pegado (invisible)"></textarea>
 
     <script>
+        // Inicializar modo DUAL en false
+        window.dualMode = false;
+        
         // --- CONFIGURACIÓN DE TIPO DE TARIFAS ---
         // **ATENCIÓN: Los IDs de las hojas deben ser públicos para funcionar (CSV)**
         // Eliminamos 6.1TD de la configuración
@@ -13026,6 +13029,11 @@
             // Actualizar UI
             updateGasSelectionUI();
             
+            // CRÍTICO: Verificar modo DUAL para ocultar/mostrar botón DUAL
+            if (window.checkDualMode) {
+                window.checkDualMode();
+            }
+            
             // Mostrar modal
             document.getElementById('gas-manual-input-modal').classList.remove('hidden');
             document.getElementById('gas-manual-input-modal').classList.add('flex');
@@ -13036,6 +13044,7 @@
             }
             
             console.log(`📋 Tarifa seleccionada: ${tariff} (buscará: ${tariff.toLowerCase()})`);
+            console.log(`🔍 Modo DUAL: ${window.dualMode}`);
         }
         
         // Función: Mostrar selector de tarifas manual
