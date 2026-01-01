@@ -1976,6 +1976,7 @@
             manuallySelectedOffer = null;
             compareWithIndexed = false;
             bestOptionTariffChoice = 'fija';
+            currentTariffType = null; // NUEVO: Resetear tipo de tarifa
             
             // DUAL: Limpiar variables DUAL
             window.dualMode = false;
@@ -2016,6 +2017,9 @@
             document.getElementById('manual-input-modal')?.classList.remove('flex');
             document.getElementById('multicups-finalize-btn-main')?.classList.add('hidden');
             document.getElementById('manual-tariff-selector-wrapper')?.classList.add('hidden');
+            
+            // IMPORTANTE: Mostrar landing-view para que esté visible al volver a Electricidad/Gas
+            document.getElementById('landing-view')?.classList.remove('hidden');
             
             document.querySelectorAll('.hidden-period').forEach(el => el.style.display = 'none');
             document.getElementById('tariff-display-badge').textContent = '0';
