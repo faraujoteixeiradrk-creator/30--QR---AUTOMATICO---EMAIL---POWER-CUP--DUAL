@@ -11982,7 +11982,13 @@
                             const currentCost = isPowerCupMode ? (s.results.powercup?.total_anual || 0) : (s.results.drk?.total_anual || 0);
                             const originalBill = s.originalBillAnnual || 0;
                             const savings = originalBill - currentCost;
-                            const tariffName = s.offer?.description || s.offer?.name || 'Tarifa DRK';  // ✅ USAR DESCRIPTION
+                            
+                            // Construir nombre completo de tarifa: COMERCIALIZADORA - TARIFA
+                            const comercializadora = s.offer?.name || '';
+                            const tarifa = s.offer?.description || '';
+                            const tariffName = (comercializadora && tarifa && comercializadora !== tarifa) 
+                                ? `${comercializadora} - ${tarifa}` 
+                                : (tarifa || comercializadora || 'Tarifa DRK');
                             
                             // Para GAS, mostrar desglose completo
                             if (s.type === 'gas' && s.gasBreakdown) {
@@ -12275,12 +12281,19 @@ Confirmo mi aceptación de la oferta energética DUAL que detallo a continuació
                 const currentCost = isPowerCup ? (supply.results.powercup?.total_anual || 0) : (supply.results.drk?.total_anual || 0);
                 const ahorro = (supply.originalBillAnnual || 0) - currentCost;
                 
+                // Construir nombre completo de tarifa: COMERCIALIZADORA - TARIFA
+                const comercializadora = supply.offer?.name || '';
+                const tarifa = supply.offer?.description || '';
+                const tarifaCompleta = (comercializadora && tarifa && comercializadora !== tarifa) 
+                    ? `${comercializadora} - ${tarifa}` 
+                    : (tarifa || comercializadora || 'N/A');
+                
                 emailBody += `════════════════════════════════════════
 ${emoji} SUMINISTRO ${index + 1}: ${tipo}
 ════════════════════════════════════════
 
 🔌 CUPS: ${supply.cups}
-⚡ TARIFA: ${supply.offer?.description || supply.offer?.name || 'N/A'}
+⚡ TARIFA CONTRATADA: ${tarifaCompleta}
 
 💰 Ahorro Anual: ${formatEuroEmail(ahorro)}
 📅 Coste Mensual: ${formatEuroEmail(currentCost / 12)}
@@ -12347,6 +12360,13 @@ ${clientName}
             
             // Generar desgloses detallados
             const desgloses = dualSupplies.map((s, i) => {
+                // Construir nombre completo de tarifa: COMERCIALIZADORA - TARIFA
+                const comercializadora = s.offer?.name || '';
+                const tarifa = s.offer?.description || '';
+                const tarifaCompleta = (comercializadora && tarifa && comercializadora !== tarifa) 
+                    ? `${comercializadora} - ${tarifa}` 
+                    : (tarifa || comercializadora || 'N/A');
+                
                 if (s.type === 'electricidad' && s.electricityBreakdown) {
                     const eb = s.electricityBreakdown;
                     return `
@@ -12355,7 +12375,7 @@ ${clientName}
                                 [${i+1}] ${(s.cups||'N/A').substring(0,30)}...
                                 <div style="font-size:11px;opacity:0.9;margin-top:3px">Tipo: ${s.tariff} | Días: ${eb.dias} días | CUPS: [${i+1}]</div>
                                 <div style="font-size:11px;opacity:0.95;margin-top:5px;background:rgba(0,0,0,0.15);padding:6px 10px;border-radius:4px">
-                                    <strong>TARIFA:</strong> ${s.offer?.name || 'N/A'} - ${s.offer?.description || 'N/A'}
+                                    <strong>TARIFA:</strong> ${tarifaCompleta}
                                 </div>
                             </div>
                             <div style="background:#f8fafc;padding:15px 20px;border:1px solid #e2e8f0;border-top:none">
@@ -12422,7 +12442,7 @@ ${clientName}
                                 [${i+1}] ${(s.cups||'N/A').substring(0,30)}...
                                 <div style="font-size:11px;opacity:0.9;margin-top:3px">Tipo: ${s.tariff} | Días: ${gb.dias} días | CUPS: [${i+1}]</div>
                                 <div style="font-size:11px;opacity:0.95;margin-top:5px;background:rgba(0,0,0,0.15);padding:6px 10px;border-radius:4px">
-                                    <strong>TARIFA:</strong> ${s.offer?.name || 'N/A'} - ${s.offer?.description || 'N/A'}
+                                    <strong>TARIFA:</strong> ${tarifaCompleta}
                                 </div>
                             </div>
                             <div style="background:#f8fafc;padding:15px 20px;border:1px solid #e2e8f0;border-top:none">
@@ -12599,11 +12619,18 @@ ${clientName}
                 const totalPeriod = isElec ? eb?.totalPeriod : gb?.total || 0;
                 const ahorroAnual = (s.originalBillAnnual || 0) - (s.totalAnnual || 0);
                 
+                // Construir nombre completo de tarifa: COMERCIALIZADORA - TARIFA
+                const comercializadora = s.offer?.name || '';
+                const tarifa = s.offer?.description || '';
+                const tarifaCompleta = (comercializadora && tarifa && comercializadora !== tarifa) 
+                    ? `${comercializadora} - ${tarifa}` 
+                    : (tarifa || comercializadora || 'N/A');
+                
                 return `
                 <div style="margin:15px 30px;background:#546e7a;padding:12px;border-radius:5px">
                     <p style="margin:0 0 5px 0;font-size:11px;color:white;font-weight:bold">[${i+1}] ${s.cups.substring(0,25)}...</p>
                     <p style="margin:0;font-size:10px;color:white">Tipo: ${s.tariff} | Días: ${dias} días | CUPS: [${i+1}]</p>
-                    <p style="margin:5px 0 0 0;font-size:10px;color:white"><strong>TARIFA:</strong> ${s.offer?.name || 'N/A'} - ${s.offer?.description || 'N/A'}</p>
+                    <p style="margin:5px 0 0 0;font-size:10px;color:white"><strong>TARIFA:</strong> ${tarifaCompleta}</p>
                 </div>
                 
                 <div style="margin:0 30px 15px 30px;padding:15px;background:#f8f9fa;border:1px solid #e2e8f0">
