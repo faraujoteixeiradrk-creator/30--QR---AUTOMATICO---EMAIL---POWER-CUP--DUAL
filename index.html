@@ -1002,18 +1002,11 @@
                             📋 COPIAR COMPARATIVO (HTML)
                         </button>
                         
-                        <button onclick="dualClientAction='pdf'; showClientDataModal()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3">
+                        <button onclick="showClientDataModal()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                             </svg>
                             📄 CREAR PDF COMPARATIVO
-                        </button>
-                        
-                        <button onclick="confirmAndSendEmail()" class="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                            </svg>
-                            ✅ CONFIRMAR Y ENVIAR
                         </button>
                         
                         <button onclick="closeClientDataModal()" class="w-full py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition-all">
@@ -1624,7 +1617,6 @@
         let lastComparisonResult = null;
         let lastIndexedResult = null; // Para almacenar el resultado de tarifa indexada
         let comparisonMode = 'drk_prioritized';
-        let dualClientAction = 'pdf'; // 'pdf' o 'email'
         let compareWithIndexed = false; // Control para comparación con tarifas indexadas
         let bestOptionTariffChoice = 'fija'; // NUEVO: Elección de tarifa para VER MEJOR OPCIÓN ('fija' o 'indexada')
         let isProcessingBestOption = false; // NUEVO: Bandera para prevenir llamadas concurrentes
@@ -12240,6 +12232,89 @@
             }
         }
         
+        // Función auxiliar para formatear euros en email
+        function formatEuroEmail(value) {
+            return (value || 0).toFixed(2).replace('.', ',') + ' €';
+        }
+        
+        // Función auxiliar para generar mailto link
+        function generateMailtoLink(comercialCode, clientName, clientPhone, clientEmail, supplies, results, isPowerCup, brandName, totalSavings, totalOriginalBill, totalNew) {
+            const recipients = 'f.araujo@drk.es;rguerra@drk.es;s.caballero@drk.es';
+            const subject = `✅ CONFIRMACIÓN - DUAL ${brandName} - ${clientName}`;
+            
+            let emailBody = `✅ CONFIRMACIÓN DE ACEPTACIÓN DE OFERTA DUAL
+
+Estimado equipo de DRK,
+
+Confirmo mi aceptación de la oferta energética DUAL que detallo a continuación:
+
+════════════════════════════════════════
+📋 RESUMEN GENERAL
+════════════════════════════════════════
+
+💼 Comercial: ${comercialCode}
+🎯 Modalidad: DUAL (Electricidad + Gas)
+📊 Marca: ${brandName}
+📅 Total Suministros: ${supplies.length}
+
+════════════════════════════════════════
+💰 BENEFICIO ECONÓMICO TOTAL
+════════════════════════════════════════
+
+💵 Factura Actual Total: ${formatEuroEmail(totalOriginalBill)}/año
+💚 Con ${brandName} Total: ${formatEuroEmail(totalNew)}/año
+🎉 Ahorro Anual Total: ${formatEuroEmail(totalSavings)}
+📅 Ahorro Mensual: ${formatEuroEmail(totalSavings / 12)}/mes
+
+`;
+
+            supplies.forEach((supply, index) => {
+                const isElec = supply.type === 'electricidad';
+                const emoji = isElec ? '⚡' : '🔥';
+                const tipo = isElec ? 'ELECTRICIDAD' : 'GAS';
+                const currentCost = isPowerCup ? (supply.results.powercup?.total_anual || 0) : (supply.results.drk?.total_anual || 0);
+                const ahorro = (supply.originalBillAnnual || 0) - currentCost;
+                
+                emailBody += `════════════════════════════════════════
+${emoji} SUMINISTRO ${index + 1}: ${tipo}
+════════════════════════════════════════
+
+🔌 CUPS: ${supply.cups}
+⚡ TARIFA: ${supply.offer?.description || supply.offer?.name || 'N/A'}
+
+💰 Ahorro Anual: ${formatEuroEmail(ahorro)}
+📅 Coste Mensual: ${formatEuroEmail(currentCost / 12)}
+
+`;
+            });
+
+            emailBody += `════════════════════════════════════════
+👤 DATOS DEL TITULAR
+════════════════════════════════════════
+
+📛 Nombre: ${clientName}
+📱 Teléfono: ${clientPhone}
+📧 Email: ${clientEmail}
+
+════════════════════════════════════════
+📎 DOCUMENTACIÓN ADJUNTA
+════════════════════════════════════════
+
+✓ 1. Foto DNI/CIF (anverso y reverso)
+✓ 2. Últimas facturas (mín. 3 meses)
+✓ 3. Autorización cambio titular (si aplica)
+✓ 4. Teléfono de contacto
+✓ 5. IBAN
+
+════════════════════════════════════════
+
+Atentamente,
+${clientName}
+`;
+
+            return `mailto:${recipients}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
+        }
+        
         // Función auxiliar: Generar HTML DUAL (usada por PDF y copiar HTML)
         function generateDualHTMLContent(comercialCode, clientName, clientPhone = '', clientEmail = '') {
             console.log('📄 Generando HTML DUAL con datos capturados:');
@@ -12633,6 +12708,20 @@
             </div>
         </div>
         
+        <!-- BOTÓN CONFIRMAR Y ENVIAR -->
+        <div style="background:#ffffff;padding:30px;margin:30px;border-radius:8px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.1)">
+            <p style="margin:0 0 20px 0;font-size:18px;color:#1e293b;font-weight:bold">📋 Para confirmar esta oferta:</p>
+            <p style="margin:0 0 10px 0;font-size:14px;color:#64748b">Haz clic en el botón de abajo</p>
+            <p style="margin:0 0 20px 0;font-size:14px;color:#64748b">Se abrirá tu cliente de email</p>
+            <p style="margin:0 0 20px 0;font-size:14px;color:#64748b;font-weight:bold">Adjunta la documentación requerida</p>
+            <p style="margin:0 0 25px 0;font-size:14px;color:#64748b">Envía el email</p>
+            
+            <a href="${generateMailtoLink(comercialCode, clientName, clientPhone, clientEmail, dualSupplies, results, isPowerCup, brandName, totalSavings, totalOriginalBill, totalNew)}" 
+               style="display:inline-block;background:#22c55e;color:white;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:bold;box-shadow:0 4px 6px rgba(34,197,94,0.3)">
+                ✅ CONFIRMAR Y ENVIAR
+            </a>
+        </div>
+        
     </div>
 </body>
 </html>`;
@@ -12656,16 +12745,8 @@
             // Cerrar el modal
             closeClientDataModal();
             
-            // Decidir acción según el modo
-            if (dualClientAction === 'email') {
-                // Generar y enviar email
-                generateConfirmationEmail(comercialCode, clientName, clientPhone, clientEmail);
-                // Resetear modo
-                dualClientAction = 'pdf';
-            } else {
-                // Generar PDF (comportamiento por defecto)
-                dualGeneratePDF(comercialCode, clientName, clientPhone, clientEmail);
-            }
+            // Generar PDF
+            dualGeneratePDF(comercialCode, clientName, clientPhone, clientEmail);
         }
         
         // Función: Generar PDF DUAL
@@ -12837,186 +12918,6 @@
         }
         
         // Función: Confirmar y enviar email
-        function confirmAndSendEmail() {
-            if (!window.dualGlobalResults) {
-                alert('No hay resultados calculados. Por favor, calcula primero.');
-                return;
-            }
-            
-            // Establecer modo EMAIL
-            dualClientAction = 'email';
-            
-            // Pedir datos del cliente
-            showClientDataModal();
-        }
-        
-        // Función: Generar y enviar email de confirmación
-        function generateConfirmationEmail(comercialCode, clientName, clientPhone, clientEmail) {
-            const isPowerCup = comparisonMode === 'overall_best';
-            const brandName = isPowerCup ? 'POWER CUP' : 'DRK';
-            const results = window.dualGlobalResults;
-            
-            // Destinatarios
-            const recipients = 'f.araujo@drk.es;rguerra@drk.es;s.caballero@drk.es';
-            
-            // Asunto
-            const subject = `✅ CONFIRMACIÓN DE ACEPTACIÓN - DUAL ${brandName} - ${clientName}`;
-            
-            // Generar contenido del email
-            let emailBody = `✅ CONFIRMACIÓN DE ACEPTACIÓN DE OFERTA DUAL
-
-Estimado equipo de DRK,
-
-Confirmo mi aceptación de la oferta energética DUAL que detallo a continuación:
-
-════════════════════════════════════════
-📋 RESUMEN GENERAL
-════════════════════════════════════════
-
-💼 Comercial: ${comercialCode}
-🎯 Modalidad: DUAL (Electricidad + Gas)
-📊 Marca: ${brandName}
-📅 Total Suministros: ${dualSupplies.length}
-
-════════════════════════════════════════
-💰 BENEFICIO ECONÓMICO TOTAL
-════════════════════════════════════════
-
-💵 Factura Actual Total: ${formatEuroEmail(results.totalOriginalBill)}/año
-💚 Con ${brandName} Total: ${formatEuroEmail(isPowerCup ? results.totalPowerCup : results.totalDRK)}/año
-🎉 Ahorro Anual Total: ${formatEuroEmail(results.totalSavings)}
-📅 Ahorro Mensual: ${formatEuroEmail(results.totalSavings / 12)}/mes
-
-`;
-
-            // Añadir cada suministro
-            dualSupplies.forEach((supply, index) => {
-                const isElec = supply.type === 'electricidad';
-                const emoji = isElec ? '⚡' : '🔥';
-                const tipo = isElec ? 'ELECTRICIDAD' : 'GAS';
-                const currentCost = isPowerCup ? (supply.results.powercup?.total_anual || 0) : (supply.results.drk?.total_anual || 0);
-                const ahorro = (supply.originalBillAnnual || 0) - currentCost;
-                
-                emailBody += `════════════════════════════════════════
-${emoji} SUMINISTRO ${index + 1}: ${tipo}
-════════════════════════════════════════
-
-🔌 CUPS: ${supply.cups}
-⚡ TARIFA CONTRATADA: ${supply.offer?.description || supply.offer?.name || 'N/A'}
-🌍 Zona Geográfica: PENÍNSULA
-`;
-
-                if (isElec) {
-                    const eb = supply.electricityBreakdown;
-                    if (eb) {
-                        const totalKwh = eb.energyCosts?.reduce((sum, e) => sum + (e.kwh || 0), 0) || 0;
-                        emailBody += `📊 Consumo Total: ${totalKwh.toFixed(0)} kWh (${eb.dias} días)
-
-💰 BENEFICIO ECONÓMICO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💵 Ahorro Anual: ${formatEuroEmail(ahorro)}
-📅 Coste Mensual: ${formatEuroEmail(currentCost / 12)}
-
-💡 PRECIOS CONTRATADOS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🔴 POTENCIA:
-`;
-                        if (supply.offer?.p1_power_price) {
-                            emailBody += `   • P1: ${supply.offer.p1_power_price.toFixed(6)} €/kW/día
-`;
-                        }
-                        if (supply.offer?.p2_power_price) {
-                            emailBody += `   • P2: ${supply.offer.p2_power_price.toFixed(6)} €/kW/día
-`;
-                        }
-                        
-                        emailBody += `
-🟢 ENERGÍA:
-`;
-                        if (supply.offer?.p1_price) {
-                            emailBody += `   • E1 (Punta): ${supply.offer.p1_price.toFixed(6)} €/kWh
-`;
-                        }
-                        if (supply.offer?.p2_price) {
-                            emailBody += `   • E2 (Llano): ${supply.offer.p2_price.toFixed(6)} €/kWh
-`;
-                        }
-                        if (supply.offer?.p3_price) {
-                            emailBody += `   • E3 (Valle): ${supply.offer.p3_price.toFixed(6)} €/kWh
-`;
-                        }
-                    }
-                } else {
-                    // GAS
-                    const gb = supply.gasBreakdown;
-                    if (gb) {
-                        emailBody += `📊 Consumo Total: ${gb.kwh} kWh (${gb.dias} días)
-
-💰 BENEFICIO ECONÓMICO
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💵 Ahorro Anual: ${formatEuroEmail(ahorro)}
-📅 Coste Mensual: ${formatEuroEmail(currentCost / 12)}
-
-💡 PRECIOS CONTRATADOS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-🔵 GAS:
-   • Término Fijo: ${(supply.offer?.p_fijo_diario || 0).toFixed(6)} €/día
-   • Energía: ${(supply.offer?.p1_price || 0).toFixed(6)} €/kWh
-`;
-                    }
-                }
-                
-                emailBody += `
-`;
-            });
-
-            emailBody += `════════════════════════════════════════
-👤 DATOS DEL TITULAR
-════════════════════════════════════════
-
-📛 Nombre completo: ${clientName}
-📱 Teléfono: ${clientPhone}
-📧 Email: ${clientEmail}
-
-════════════════════════════════════════
-📎 DOCUMENTACIÓN ADJUNTA
-════════════════════════════════════════
-
-Adjunto la siguiente documentación para formalizar los contratos:
-
-✓ 1. Foto DNI/CIF (anverso y reverso)
-✓ 2. Últimas facturas de luz y gas (mín. 3 meses)
-✓ 3. Email de contacto
-✓ 4. Teléfono de contacto
-✓ 5. Número de cuenta bancaria (IBAN)
-
-════════════════════════════════════════
-💬 COMENTARIOS ADICIONALES
-════════════════════════════════════════
-
-[Escriba aquí cualquier observación o consulta adicional]
-
-════════════════════════════════════════
-
-Quedo a la espera de la confirmación de la formalización de los contratos.
-
-Atentamente,
-${clientName}
-`;
-
-            // Crear mailto link
-            const mailtoLink = `mailto:${recipients}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(emailBody)}`;
-            
-            // Abrir cliente de correo
-            window.location.href = mailtoLink;
-        }
-        
-        // Función auxiliar para formatear euros en email
-        function formatEuroEmail(value) {
-            return (value || 0).toFixed(2).replace('.', ',') + ' €';
-        }
         
         // Función auxiliar: Añadir suministro desde resultados
         window.dualAddFromResults = function(type, tariff, data, results) {
