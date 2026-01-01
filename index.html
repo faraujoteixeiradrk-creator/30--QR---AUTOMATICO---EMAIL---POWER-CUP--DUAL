@@ -13107,8 +13107,12 @@
             hideAllScreens();
             document.getElementById('screen-gas-results').classList.add('active');
             
-            // Detectar modo DUAL y mostrar botón si corresponde
-            if (window.checkDualMode) window.checkDualMode();
+            // NO mostrar botón DUAL aquí - esta es la pantalla de selección manual
+            // Ocultar explícitamente el botón DUAL
+            const gasDualContainer = document.getElementById('gas-dual-button-container');
+            if (gasDualContainer) {
+                gasDualContainer.style.display = 'none';
+            }
         }
         
         // Función: Renderizar selector de tarifas con ordenamiento
@@ -13228,6 +13232,12 @@
             `;
             
             container.innerHTML = html;
+            
+            // Ocultar botón DUAL en selector manual
+            const gasDualContainer = document.getElementById('gas-dual-button-container');
+            if (gasDualContainer) {
+                gasDualContainer.style.display = 'none';
+            }
             
             // Guardar ordenamiento actual
             window.gasSortedTariffs = sortedTariffs;
