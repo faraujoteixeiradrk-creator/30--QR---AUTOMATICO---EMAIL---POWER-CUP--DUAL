@@ -9099,102 +9099,47 @@
                 
                 console.log('✅ Contexto procesado');
                 
-                // ⚡⚡⚡ SOLUCIÓN ULTRA SIMPLE - MODO DUAL ⚡⚡⚡
+                // ⚡⚡⚡ MODO DUAL - Mostrar pantalla de confirmación ⚡⚡⚡
                 if (window.dualMode === true) {
-                    console.log('===== 🔥 MODO DUAL - Añadiendo suministro al array =====');
+                    console.log('===== 🔥 MODO DUAL - Mostrando pantalla de confirmación =====');
                     
-                    // CREAR el objeto de suministro CON DESGLOSE COMPLETO
-                    // CREAR el objeto de suministro CON DESGLOSE COMPLETO
-                    const newSupply = {
-                        type: 'electricidad',
-                        cups: lastComparisonResult.cups || '',
-                        tariff: lastComparisonResult.tariffType || currentTariffType || '2.0TD',
-                        offer: {
-                            ...lastComparisonResult.offer,
-                            // Extraer precios de los arrays powerCosts y energyCosts
-                            // CORREGIDO: Usar los nombres de propiedades correctos: priceDay y price
-                            p1_power_price: lastComparisonResult.powerCosts?.[0]?.priceDay || lastComparisonResult.powerCosts?.[0]?.price_euro_kw_day,
-                            p2_power_price: lastComparisonResult.powerCosts?.[1]?.priceDay || lastComparisonResult.powerCosts?.[1]?.price_euro_kw_day,
-                            p1_price: lastComparisonResult.energyCosts?.[0]?.price || lastComparisonResult.energyCosts?.[0]?.price_euro_kwh,
-                            p2_price: lastComparisonResult.energyCosts?.[1]?.price || lastComparisonResult.energyCosts?.[1]?.price_euro_kwh,
-                            p3_price: lastComparisonResult.energyCosts?.[2]?.price || lastComparisonResult.energyCosts?.[2]?.price_euro_kwh,
-                            p4_price: lastComparisonResult.energyCosts?.[3]?.price || lastComparisonResult.energyCosts?.[3]?.price_euro_kwh,
-                            p5_price: lastComparisonResult.energyCosts?.[4]?.price || lastComparisonResult.energyCosts?.[4]?.price_euro_kwh,
-                            p6_price: lastComparisonResult.energyCosts?.[5]?.price || lastComparisonResult.energyCosts?.[5]?.price_euro_kwh
+                    // Preparar datos para confirmación DUAL (igual que las otras funciones)
+                    const tariff = lastComparisonResult.tariffType || currentTariffType || '2.0TD';
+                    const data = extractDataFromResult(lastComparisonResult);
+                    
+                    const totalCost = lastComparisonResult.totalAnnual || 0;
+                    
+                    // DETECTAR si estamos en modo Power Cup o DRK
+                    const isPowerCupMode = comparisonMode === 'overall_best';
+                    console.log('🔍 Modo detectado:', isPowerCupMode ? 'POWER CUP' : 'DRK');
+                    console.log('Total cost:', totalCost);
+                    
+                    const results = {
+                        drk: isPowerCupMode ? {
+                            total: 0,
+                            total_anual: 0
+                        } : {
+                            total: totalCost / 12,
+                            total_anual: totalCost
                         },
-                        totalAnnual: lastComparisonResult.totalAnnual,
-                        originalBillAnnual: lastComparisonResult.originalBillAnnual || (lastComparisonResult.importe_total || 0) * 12,
-                        data: lastComparisonResult,
-                        // NUEVO: Añadir desglose completo de electricidad
-                        electricityBreakdown: {
-                            energyCosts: lastComparisonResult.energyCosts || [],
-                            powerCosts: lastComparisonResult.powerCosts || [],
-                            subEnergy: lastComparisonResult.subEnergyNet || 0,
-                            subPower: lastComparisonResult.subPower || 0,
-                            subBase: lastComparisonResult.subBase || 0,
-                            costIE: lastComparisonResult.costIE || 0,
-                            baseImp: lastComparisonResult.baseImp || 0,
-                            costIVA: lastComparisonResult.costIVA || 0,
-                            totalPeriod: lastComparisonResult.totalPeriod || 0,
-                            totalAnnual: lastComparisonResult.totalAnnual || 0,
-                            ahorro_mensual: (lastComparisonResult.originalBillPeriod || 0) - (lastComparisonResult.totalPeriod || 0),
-                            ahorro_anual: (lastComparisonResult.originalBillAnnual || 0) - (lastComparisonResult.totalAnnual || 0),
-                            dias: lastComparisonResult.dias_facturados || 30
-                        },
-                        results: {
-                            // Detectar si estamos en modo Power Cup o DRK
-                            drk: comparisonMode === 'overall_best' ? {
-                                total: 0,
-                                total_anual: 0
-                            } : {
-                                total: lastComparisonResult.totalAnnual / 12,
-                                total_anual: lastComparisonResult.totalAnnual
-                            },
-                            powercup: comparisonMode === 'overall_best' ? {
-                                total: lastComparisonResult.totalAnnual / 12,
-                                total_anual: lastComparisonResult.totalAnnual
-                            } : {
-                                total: 0,
-                                total_anual: 0
-                            }
+                        powercup: isPowerCupMode ? {
+                            total: totalCost / 12,
+                            total_anual: totalCost
+                        } : {
+                            total: 0,
+                            total_anual: 0
                         }
                     };
                     
-                    // AÑADIR al array (no sobrescribir)
-                    dualSupplies.push(newSupply);
+                    console.log('Datos preparados para DUAL:');
+                    console.log('  - tariff:', tariff);
+                    console.log('  - results.drk.total_anual:', results.drk.total_anual);
+                    console.log('  - results.powercup.total_anual:', results.powercup.total_anual);
                     
-                    console.log('✅ Suministro añadido al array');
-                    console.log('  - Total suministros:', dualSupplies.length);
-                    console.log('  - CUPS:', newSupply.cups);
-                    console.log('  - Tarifa:', newSupply.tariff);
-                    console.log('  - Coste anual:', newSupply.totalAnnual);
+                    // Mostrar pantalla de confirmación DUAL
+                    showDualConfirm('electricidad', tariff, data, results);
                     
-                    // Actualizar UI usando la función existente
-                    updateDualSuppliesList();
-                    console.log('✅ UI actualizada con updateDualSuppliesList()');
-                    
-                    // CRÍTICO: Cerrar modal de decisión de ofertas (si está abierto)
-                    const offerModal = document.getElementById('offer-decision-modal');
-                    if (offerModal) {
-                        offerModal.classList.add('hidden');
-                        offerModal.classList.remove('flex');
-                    }
-                    
-                    // Cerrar selector de tipo de tarifa
-                    const tariffSelector = document.getElementById('best-option-tariff-selector');
-                    if (tariffSelector) {
-                        tariffSelector.classList.add('hidden');
-                    }
-                    
-                    // CRÍTICO: Ocultar TODAS las pantallas primero
-                    console.log('Ocultando todas las pantallas...');
-                    hideAllScreens();
-                    
-                    // Volver a la pantalla DUAL
-                    console.log('Mostrando pantalla DUAL...');
-                    document.getElementById('screen-dual').classList.add('active');
-                    
-                    console.log('✅ Usuario puede añadir más suministros o calcular');
+                    console.log('✅ Pantalla de confirmación mostrada');
                     
                     // Resetear bandera
                     setTimeout(() => {
@@ -9202,13 +9147,12 @@
                         console.log('✅ Bandera reseteada');
                     }, 100);
                     
-                    return; // FIN
+                    return; // CRÍTICO: Salir aquí
                 }
                 
                 console.log('🔍 Ejecutando función apropiada...');
                 
                 try {
-                    console.log('🔍 Ejecutando función apropiada...');
                     console.log('🔍 Verificando variables antes del if...');
                     
                     try {
