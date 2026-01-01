@@ -11884,45 +11884,40 @@
             console.log('Suministros en array:', dualSupplies.length);
             
             if (dualSupplies.length === 0) {
-                alert('Debes añadir al menos un suministro');
+                window.showErrorModal('Debes añadir al menos un suministro antes de calcular.', '⚠️ No hay suministros');
                 return;
             }
             
-            // Si solo hay 1 suministro, mostrar confirmación DUAL simple
+            // CORREGIDO: Si solo hay 1 suministro, avisar que falta el otro
             if (dualSupplies.length === 1) {
-                console.log('✅ Solo 1 suministro, mostrando confirmación DUAL');
+                console.log('⚠️ Solo 1 suministro detectado');
                 const supply = dualSupplies[0];
+                const tipoActual = supply.type;
+                const tipoFaltante = tipoActual === 'electricidad' ? 'GAS' : 'ELECTRICIDAD';
                 
-                // Preparar datos para showDualConfirm
-                const tariff = supply.tariff || '2.0TD';
-                const data = {
-                    kwh_p1: supply.data.consumo_punta || supply.data.kwh_p1 || 0,
-                    kwh_p2: supply.data.consumo_llano || supply.data.kwh_p2 || 0,
-                    kwh_p3: supply.data.consumo_valle || supply.data.kwh_p3 || 0,
-                    potencia_p1: supply.data.potencia_p1_kw || supply.data.power_p1 || 0,
-                    potencia_p2: supply.data.potencia_p2_kw || supply.data.power_p2 || 0,
-                    dias: supply.data.dias_facturados || supply.data.dias || 30,
-                    cups: supply.cups || ''
-                };
-                
-                const results = supply.results || {
-                    drk: {
-                        total: supply.totalAnnual / 12,
-                        total_anual: supply.totalAnnual
-                    },
-                    powercup: {
-                        total: 0,
-                        total_anual: 0
-                    }
-                };
-                
-                console.log('Datos preparados:');
-                console.log('  - type:', supply.type);
-                console.log('  - tariff:', tariff);
-                console.log('  - totalAnnual:', supply.totalAnnual);
-                console.log('Llamando showDualConfirm...');
-                
-                showDualConfirm(supply.type, tariff, data, results);
+                window.showErrorModal(
+                    `Para hacer una comparativa DUAL necesitas añadir tanto ELECTRICIDAD como GAS.\n\n` +
+                    `Actualmente solo tienes: ${tipoActual.toUpperCase()}\n\n` +
+                    `Por favor, añade un suministro de ${tipoFaltante}.`,
+                    '⚠️ Falta añadir suministro'
+                );
+                console.log(`Usuario necesita añadir: ${tipoFaltante}`);
+                return;
+            }
+            
+            // NUEVO: Verificar que hay tanto electricidad como gas
+            const hasElectricidad = dualSupplies.some(s => s.type === 'electricidad');
+            const hasGas = dualSupplies.some(s => s.type === 'gas');
+            
+            if (!hasElectricidad || !hasGas) {
+                const tipoFaltante = !hasElectricidad ? 'ELECTRICIDAD' : 'GAS';
+                window.showErrorModal(
+                    `Para hacer una comparativa DUAL necesitas añadir tanto ELECTRICIDAD como GAS.\n\n` +
+                    `Falta añadir: ${tipoFaltante}\n\n` +
+                    `Por favor, añade un suministro de ${tipoFaltante}.`,
+                    '⚠️ Falta tipo de suministro'
+                );
+                console.log(`Falta añadir: ${tipoFaltante}`);
                 return;
             }
             
@@ -12679,6 +12674,19 @@
         }
         
         function showDualConfirm(type, tariff, data, results) {
+            // DEPRECATED: Esta función ya no debería usarse en modo DUAL
+            // Si se llama, es porque falta añadir el otro tipo de suministro
+            console.error('⚠️ showDualConfirm fue llamada incorrectamente');
+            console.error('Esta función está obsoleta para modo DUAL');
+            window.showErrorModal(
+                'Esta funcionalidad ya no está disponible.\n\n' +
+                'Por favor, añade tanto ELECTRICIDAD como GAS antes de calcular.',
+                '⚠️ Función obsoleta'
+            );
+            return;
+            
+            // Código antiguo comentado (por si se necesita en el futuro)
+            /*
             console.log('=== showDualConfirm ===');
             console.log('Type:', type);
             console.log('Tariff:', tariff);
@@ -12789,6 +12797,7 @@
             }, 50);
             
             console.log('Pantalla de confirmación DUAL mostrada');
+            */
         }
         
         // Función: Confirmar y añadir a DUAL
