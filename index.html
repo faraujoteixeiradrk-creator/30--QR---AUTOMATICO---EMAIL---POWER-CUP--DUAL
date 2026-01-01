@@ -12216,77 +12216,59 @@
             }
             
             const clientName = document.getElementById('client-name').value.trim() || '[NOMBRE COMPLETO CLIENTE]';
-            
-            // Aquí generaríamos el HTML completo para copiar
-            // Por ahora, mostramos un mensaje
-            alert('Funcionalidad de copiar HTML en desarrollo. Use el botón de PDF por ahora.');
-        }
-        
-        // Función: Generar PDF con datos capturados
-        function generateDualPDF() {
-            const comercialCode = document.getElementById('comercial-code').value.trim();
-            if (!comercialCode) {
-                alert('Por favor, introduce el código comercial (obligatorio)');
-                document.getElementById('comercial-code').focus();
-                return;
-            }
-            
-            const clientName = document.getElementById('client-name').value.trim() || '[NOMBRE COMPLETO CLIENTE]';
             const clientPhone = document.getElementById('client-phone').value.trim() || '';
             const clientEmail = document.getElementById('client-email').value.trim() || '';
             
             // Cerrar el modal
             closeClientDataModal();
             
-            // Llamar a la función de generación de PDF pasando los datos
-            dualGeneratePDF(comercialCode, clientName, clientPhone, clientEmail);
+            // Llamar a la función que genera el HTML (igual que el PDF)
+            const html = generateDualHTMLContent(comercialCode, clientName, clientPhone, clientEmail);
+            
+            if (!html) {
+                return; // Ya se mostró el error en generateDualHTMLContent
+            }
+            
+            // Copiar al portapapeles
+            navigator.clipboard.writeText(html).then(() => {
+                alert('✅ HTML copiado al portapapeles correctamente!\n\nPuedes pegarlo directamente en tu correo electrónico.');
+                console.log('✅ HTML copiado al portapapeles');
+            }).catch(err => {
+                console.error('Error al copiar:', err);
+                // Fallback: Mostrar en textarea para copiar manualmente
+                const textarea = document.createElement('textarea');
+                textarea.value = html;
+                textarea.style.position = 'fixed';
+                textarea.style.opacity = '0';
+                document.body.appendChild(textarea);
+                textarea.select();
+                try {
+                    document.execCommand('copy');
+                    alert('✅ HTML copiado al portapapeles correctamente!\n\nPuedes pegarlo directamente en tu correo electrónico.');
+                    console.log('✅ HTML copiado (fallback)');
+                } catch (e) {
+                    alert('❌ No se pudo copiar automáticamente. Por favor, usa el botón PDF.');
+                    console.error('Error en fallback:', e);
+                }
+                document.body.removeChild(textarea);
+            });
         }
         
-        // Función: Generar PDF DUAL
-        function dualGeneratePDF(comercialCode = 'D=00', clientName = '[NOMBRE COMPLETO CLIENTE]', clientPhone = '', clientEmail = '') {
-            console.log('📄 Generando PDF DUAL con datos capturados:');
+        // Función auxiliar: Generar HTML DUAL (usada por PDF y copiar HTML)
+        function generateDualHTMLContent(comercialCode, clientName, clientPhone = '', clientEmail = '') {
+            console.log('📄 Generando HTML DUAL con datos capturados:');
             console.log('  - comercialCode:', comercialCode);
             console.log('  - clientName:', clientName);
             
             if (!dualSupplies || dualSupplies.length === 0) {
                 alert('No hay suministros para generar la propuesta.');
-                return;
+                return null;
             }
-            
-            // DEBUG: Imprimir cada suministro para ver su estructura
-            console.log('🔍 DEBUG - Contenido de dualSupplies:');
-            dualSupplies.forEach((s, i) => {
-                console.log(`  [${i+1}] Tipo:`, s.type);
-                console.log(`  [${i+1}] CUPS:`, s.cups);
-                console.log(`  [${i+1}] Tarifa:`, s.tariff);
-                if (s.type === 'electricidad') {
-                    console.log(`  [${i+1}] electricityBreakdown.powerCosts:`, s.electricityBreakdown?.powerCosts);
-                    console.log(`  [${i+1}] electricityBreakdown.energyCosts:`, s.electricityBreakdown?.energyCosts);
-                    
-                    // NUEVO: Ver el contenido completo de cada elemento del array
-                    if (s.electricityBreakdown?.powerCosts) {
-                        console.log(`  [${i+1}] 🔍 powerCosts[0] COMPLETO:`, JSON.stringify(s.electricityBreakdown.powerCosts[0], null, 2));
-                        console.log(`  [${i+1}] 🔍 powerCosts[1] COMPLETO:`, JSON.stringify(s.electricityBreakdown.powerCosts[1], null, 2));
-                    }
-                    if (s.electricityBreakdown?.energyCosts) {
-                        console.log(`  [${i+1}] 🔍 energyCosts[0] COMPLETO:`, JSON.stringify(s.electricityBreakdown.energyCosts[0], null, 2));
-                        console.log(`  [${i+1}] 🔍 energyCosts[1] COMPLETO:`, JSON.stringify(s.electricityBreakdown.energyCosts[1], null, 2));
-                        console.log(`  [${i+1}] 🔍 energyCosts[2] COMPLETO:`, JSON.stringify(s.electricityBreakdown.energyCosts[2], null, 2));
-                    }
-                    
-                    console.log(`  [${i+1}] offer.p1_power_price:`, s.offer?.p1_power_price);
-                    console.log(`  [${i+1}] offer.p1_price:`, s.offer?.p1_price);
-                } else if (s.type === 'gas') {
-                    console.log(`  [${i+1}] gasBreakdown:`, s.gasBreakdown);
-                    console.log(`  [${i+1}] offer.p_fijo_diario:`, s.offer?.p_fijo_diario);
-                    console.log(`  [${i+1}] offer.p1_price:`, s.offer?.p1_price);
-                }
-            });
             
             const results = window.dualGlobalResults;
             if (!results) {
                 alert('Calcula la comparativa primero.');
-                return;
+                return null;
             }
             
             const isPowerCup = results.comparisonMode === 'overall_best';
@@ -12353,7 +12335,6 @@
                                 <div style="background:${accentColor};color:white;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:12px;font-weight:bold">POTENCIA</div>
                                 ${(eb.powerCosts||[]).map((pc, idx) => {
                                     const priceKey = idx === 0 ? 'p1_power_price' : 'p2_power_price';
-                                    // CORREGIDO: Usar priceDay como fallback además de price_euro_kw_day
                                     const precio = s.offer?.[priceKey] || pc.priceDay || pc.price_euro_kw_day || 0;
                                     return `
                                     <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
@@ -12365,7 +12346,6 @@
                                 <div style="background:${accentColor};color:white;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:12px;font-weight:bold">ENERGÍA</div>
                                 ${(eb.energyCosts||[]).map((ec, idx) => {
                                     const priceKey = `p${idx+1}_price`;
-                                    // CORREGIDO: Usar price como fallback además de price_euro_kwh
                                     const precio = s.offer?.[priceKey] || ec.price || ec.price_euro_kwh || 0;
                                     return `
                                     <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
@@ -12400,24 +12380,29 @@
                                 <div style="margin-bottom:12px">
                                     <div style="font-weight:bold;color:${accentColor};margin-bottom:5px;font-size:12px">PRECIOS APLICADOS:</div>
                                     <div style="font-size:11px;color:#64748b">
-                                        <strong>POTENCIA:</strong> Precio fijo: ${((s.offer?.p_fijo_diario||0)/365).toFixed(6)} €/día<br>
-                                        <strong>ENERGÍA:</strong> ${(s.offer?.p1_price||0).toFixed(6)} €/kWh
+                                        Término fijo: ${(s.offer?.p_fijo_diario||0).toFixed(6)} €/día<br>
+                                        Energía: ${(s.offer?.p1_price||0).toFixed(6)} €/kWh
                                     </div>
                                 </div>
                                 
-                                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:11px">
-                                    <span>Término fijo (${gb.dias||30} días)</span>
+                                <div style="background:${accentColor};color:white;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:12px;font-weight:bold">DESGLOSE GAS</div>
+                                <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
+                                    <span>Término fijo (${gb.dias} días)</span>
                                     <span style="font-weight:bold">${(gb.termino_fijo||0).toFixed(2)} €</span>
                                 </div>
-                                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:11px">
+                                <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
                                     <span>Energía (${gb.kwh||0} kWh)</span>
                                     <span style="font-weight:bold">${(gb.energia||0).toFixed(2)} €</span>
                                 </div>
-                                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:11px">
-                                    <span>Imp. hidrocarburos</span>
+                                <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
+                                    <span>Impuesto hidrocarburos</span>
                                     <span style="font-weight:bold">${(gb.impuesto_hidrocarburos||0).toFixed(2)} €</span>
                                 </div>
-                                <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #e2e8f0;font-size:11px">
+                                <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
+                                    <span>Subtotal</span>
+                                    <span style="font-weight:bold">${(gb.subtotal||0).toFixed(2)} €</span>
+                                </div>
+                                <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
                                     <span>IVA (21%)</span>
                                     <span style="font-weight:bold">${(gb.iva||0).toFixed(2)} €</span>
                                 </div>
@@ -12520,62 +12505,42 @@
             </table>
         </div>
         
-        <!-- CAJA GRIS: LA MEJOR OPCIÓN -->
-        <div style="margin:0 35px 25px 35px;padding:18px;background:linear-gradient(135deg,${primaryColor} 0%,${accentColor} 100%);border-radius:8px;text-align:center">
-            <p style="margin:0 0 6px 0;font-size:11px;color:white;opacity:0.95;font-weight:600">LA MEJOR OPCIÓN PARA TI ES</p>
-            <h2 style="margin:0;font-size:26px;font-weight:900;color:white;letter-spacing:2px">${brandName}</h2>
-            <p style="margin:6px 0 0 0;font-size:10px;color:white;opacity:0.85">Obtén el mejor ahorro consolidado con ${brandName} Energía</p>
-        </div>
-        
-        <!-- AHORRO ANUAL -->
-        <div style="margin:0 35px 15px 35px;text-align:center">
-            <p style="margin:0 0 6px 0;font-size:12px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Tu ahorro anual estimado</p>
-            <h1 style="margin:0;font-size:40px;font-weight:900;color:#22c55e">${eur(totalSavings)}</h1>
-        </div>
-        
-        <!-- COMPARATIVA LADO A LADO -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="margin:15px 0">
-            <tr>
-                <td style="width:48%;padding:0 18px 0 35px">
-                    <div style="padding:14px;background:#fef2f2;border-radius:6px;border:1px solid #fecaca">
-                        <p style="margin:0 0 4px 0;font-size:9px;color:#991b1b;text-transform:uppercase;font-weight:700;text-align:center">Tu factura actual</p>
-                        <p style="margin:0;font-size:15px;font-weight:bold;color:#dc2626;text-decoration:line-through;text-align:center">${eur(totalOriginalBill/12)}/mes</p>
-                        <p style="margin:2px 0 0 0;font-size:10px;color:#991b1b;text-align:center">Total Periodo (Variable)</p>
-                        <p style="margin:4px 0 0 0;font-size:13px;font-weight:bold;color:#dc2626;text-decoration:line-through;text-align:center">${eur(totalOriginalBill)}/año</p>
-                    </div>
-                </td>
-                <td style="width:4%;"></td>
-                <td style="width:48%;padding:0 35px 0 18px">
-                    <div style="padding:14px;background:#f0f9ff;border-radius:6px;border:1px solid #bfdbfe">
-                        <p style="margin:0 0 4px 0;font-size:9px;color:#1e40af;text-transform:uppercase;font-weight:700;text-align:center">Tu nuevo coste ${brandName}</p>
-                        <p style="margin:0;font-size:15px;font-weight:bold;color:#546e7a;text-align:center">${eur(totalNew/12)}/mes</p>
-                        <p style="margin:2px 0 0 0;font-size:10px;color:#1e40af;text-align:center">Estimado Mensual</p>
-                        <p style="margin:4px 0 0 0;font-size:13px;font-weight:bold;color:#546e7a;text-align:center">${eur(totalNew)}/año</p>
-                    </div>
-                </td>
-            </tr>
-        </table>
-        
-        <!-- BANDA VERDE: RESUMEN -->
-        <div style="background:#22c55e;color:white;padding:10px 35px;margin:25px 35px 0 35px;border-radius:8px">
-            <h2 style="margin:0;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px">RESUMEN DE ${dualSupplies.length} SUMINISTROS</h2>
-        </div>
-        
-        <!-- TABLA SUMINISTROS -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse">
-            <thead>
-                <tr style="background:#f1f5f9">
-                    <th style="padding:10px 15px;text-align:center;font-size:10px;font-weight:bold;color:#475569;text-transform:uppercase;border-bottom:2px solid #e2e8f0">Nº</th>
-                    <th style="padding:10px 15px;text-align:left;font-size:10px;font-weight:bold;color:#475569;text-transform:uppercase;border-bottom:2px solid #e2e8f0">CUPS</th>
-                    <th style="padding:10px 15px;text-align:center;font-size:10px;font-weight:bold;color:#475569;text-transform:uppercase;border-bottom:2px solid #e2e8f0">TIPO</th>
-                    <th style="padding:10px 15px;text-align:center;font-size:10px;font-weight:bold;color:#475569;text-transform:uppercase;border-bottom:2px solid #e2e8f0">DÍAS</th>
-                    <th style="padding:10px 15px;text-align:right;font-size:10px;font-weight:bold;color:#475569;text-transform:uppercase;border-bottom:2px solid #e2e8f0">AHORRO</th>
+        <!-- RECUADRO COMPARATIVA AZUL (DISEÑO PROFESIONAL) -->
+        <div style="margin:0 35px 25px 35px;padding:18px 20px;background:linear-gradient(135deg, ${isPowerCup ? '#4d7c0f' : '#546e7a'} 0%, ${isPowerCup ? '#84cc16' : '#607d8b'} 100%);border-radius:8px;color:white">
+            <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                    <td style="width:50%;padding:0 15px 0 0;border-right:1px solid rgba(255,255,255,0.3)">
+                        <p style="margin:0 0 8px 0;font-size:12px;opacity:0.95;font-weight:500">COSTE ACTUAL ANUAL</p>
+                        <p style="margin:0;font-size:26px;font-weight:bold;line-height:1.2">${eur(totalOriginalBill)}</p>
+                        <p style="margin:6px 0 0 0;font-size:9px;opacity:0.8">/ AÑO</p>
+                    </td>
+                    <td style="width:50%;padding:0 0 0 15px">
+                        <p style="margin:0 0 8px 0;font-size:12px;opacity:0.95;font-weight:500">NUEVO COSTE ${brandName} ANUAL</p>
+                        <p style="margin:0;font-size:26px;font-weight:bold;line-height:1.2">${eur(totalNew)}</p>
+                        <p style="margin:6px 0 0 0;font-size:9px;opacity:0.8">${(totalNew/12).toFixed(2)} € / MES</p>
+                    </td>
                 </tr>
-            </thead>
-            <tbody>
-                ${tableRows}
-            </tbody>
-        </table>
+            </table>
+        </div>
+        
+        <!-- TABLA RESUMEN SUMINISTROS -->
+        <div style="margin:0 35px 25px 35px">
+            <h3 style="margin:0 0 12px 0;font-size:14px;font-weight:bold;color:#1e293b;border-bottom:2px solid ${accentColor};padding-bottom:8px">SUMINISTROS AÑADIDOS (${dualSupplies.length})</h3>
+            <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid #e2e8f0">
+                <thead>
+                    <tr style="background:#f1f5f9">
+                        <th style="padding:10px 15px;text-align:center;font-size:10px;color:#475569;border-bottom:2px solid #cbd5e1">#</th>
+                        <th style="padding:10px 15px;text-align:left;font-size:10px;color:#475569;border-bottom:2px solid #cbd5e1">CUPS</th>
+                        <th style="padding:10px 15px;text-align:center;font-size:10px;color:#475569;border-bottom:2px solid #cbd5e1">TARIFA</th>
+                        <th style="padding:10px 15px;text-align:center;font-size:10px;color:#475569;border-bottom:2px solid #cbd5e1">DÍAS</th>
+                        <th style="padding:10px 15px;text-align:right;font-size:10px;color:#475569;border-bottom:2px solid #cbd5e1">AHORRO</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+            </table>
+        </div>
         
         <!-- BANDA VERDE: DESGLOSE DETALLADO -->
         <div style="background:#22c55e;color:white;padding:10px 35px;margin:25px 35px 0 35px;border-radius:8px">
@@ -12612,6 +12577,43 @@
 </body>
 </html>`;
             
+            return html;
+        }
+        
+        // Función: Generar PDF con datos capturados
+        function generateDualPDF() {
+            const comercialCode = document.getElementById('comercial-code').value.trim();
+            if (!comercialCode) {
+                alert('Por favor, introduce el código comercial (obligatorio)');
+                document.getElementById('comercial-code').focus();
+                return;
+            }
+            
+            const clientName = document.getElementById('client-name').value.trim() || '[NOMBRE COMPLETO CLIENTE]';
+            const clientPhone = document.getElementById('client-phone').value.trim() || '';
+            const clientEmail = document.getElementById('client-email').value.trim() || '';
+            
+            // Cerrar el modal
+            closeClientDataModal();
+            
+            // Llamar a la función de generación de PDF pasando los datos
+            dualGeneratePDF(comercialCode, clientName, clientPhone, clientEmail);
+        }
+        
+        // Función: Generar PDF DUAL
+        function dualGeneratePDF(comercialCode = 'D=00', clientName = '[NOMBRE COMPLETO CLIENTE]', clientPhone = '', clientEmail = '') {
+            console.log('📄 Generando PDF DUAL con datos capturados:');
+            console.log('  - comercialCode:', comercialCode);
+            console.log('  - clientName:', clientName);
+            
+            // Generar HTML usando la función auxiliar
+            const html = generateDualHTMLContent(comercialCode, clientName, clientPhone, clientEmail);
+            
+            if (!html) {
+                return; // Ya se mostró el error en generateDualHTMLContent
+            }
+            
+            // Abrir en ventana nueva
             const w = window.open('','_blank');
             if(!w){alert('⚠️ Ventana bloqueada. Permite ventanas emergentes.');return;}
             w.document.write(html);
@@ -12619,9 +12621,6 @@
             console.log('✅ PDF completo generado');
         }
         
-        // NUEVO: Funciones para pantalla de confirmación
-        
-        // Función: Mostrar pantalla de confirmación DUAL
         function showDualConfirm(type, tariff, data, results) {
             console.log('=== showDualConfirm ===');
             console.log('Type:', type);
