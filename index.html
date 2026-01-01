@@ -994,19 +994,12 @@
                     </div>
                     
                     <!-- Botones -->
-                    <div class="mt-6 space-y-3">
-                        <button onclick="copyDualHTML()" class="w-full py-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path>
-                            </svg>
-                            📋 COPIAR COMPARATIVO (HTML)
-                        </button>
-                        
+                    <div class="mt-6">
                         <button onclick="generateDualPDF()" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
                             </svg>
-                            📄 CREAR PDF COMPARATIVO
+                            📄 GENERAR PDF PROFESIONAL
                         </button>
                         
                         <button onclick="closeClientDataModal()" class="w-full py-3 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold rounded-xl transition-all">
@@ -12207,21 +12200,6 @@
         }
         
         // Función: Copiar HTML comparativo al portapapeles
-        function copyDualHTML() {
-            const comercialCode = document.getElementById('comercial-code').value.trim();
-            if (!comercialCode) {
-                alert('Por favor, introduce el código comercial (obligatorio)');
-                document.getElementById('comercial-code').focus();
-                return;
-            }
-            
-            const clientName = document.getElementById('client-name').value.trim() || '[NOMBRE COMPLETO CLIENTE]';
-            
-            // Aquí generaríamos el HTML completo para copiar
-            // Por ahora, mostramos un mensaje
-            alert('Funcionalidad de copiar HTML en desarrollo. Use el botón de PDF por ahora.');
-        }
-        
         // Función: Generar PDF con datos capturados
         function generateDualPDF() {
             const comercialCode = document.getElementById('comercial-code').value.trim();
