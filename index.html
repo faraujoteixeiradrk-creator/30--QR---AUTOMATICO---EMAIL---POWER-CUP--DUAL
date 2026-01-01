@@ -12229,29 +12229,39 @@
                 return; // Ya se mostró el error en generateDualHTMLContent
             }
             
-            // Copiar al portapapeles
-            navigator.clipboard.writeText(html).then(() => {
-                alert('✅ HTML copiado al portapapeles correctamente!\n\nPuedes pegarlo directamente en tu correo electrónico.');
-                console.log('✅ HTML copiado al portapapeles');
-            }).catch(err => {
-                console.error('Error al copiar:', err);
-                // Fallback: Mostrar en textarea para copiar manualmente
-                const textarea = document.createElement('textarea');
-                textarea.value = html;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                try {
-                    document.execCommand('copy');
-                    alert('✅ HTML copiado al portapapeles correctamente!\n\nPuedes pegarlo directamente en tu correo electrónico.');
-                    console.log('✅ HTML copiado (fallback)');
-                } catch (e) {
-                    alert('❌ No se pudo copiar automáticamente. Por favor, usa el botón PDF.');
-                    console.error('Error en fallback:', e);
+            // NUEVO: Copiar como HTML renderizado (no como texto)
+            // Crear un contenedor temporal invisible
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'fixed';
+            tempContainer.style.left = '-9999px';
+            tempContainer.style.top = '0';
+            tempContainer.innerHTML = html;
+            document.body.appendChild(tempContainer);
+            
+            // Seleccionar todo el contenido del contenedor
+            const range = document.createRange();
+            range.selectNodeContents(tempContainer);
+            const selection = window.getSelection();
+            selection.removeAllRanges();
+            selection.addRange(range);
+            
+            // Intentar copiar
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    alert('✅ HTML copiado correctamente!\n\nAhora puedes:\n1. Abrir tu correo (Gmail/Outlook)\n2. Hacer clic en "Redactar"\n3. Pegar (Ctrl+V o Cmd+V)\n\nSe pegará el diseño completo, no el código.');
+                    console.log('✅ HTML renderizado copiado');
+                } else {
+                    throw new Error('execCommand falló');
                 }
-                document.body.removeChild(textarea);
-            });
+            } catch (err) {
+                console.error('Error al copiar:', err);
+                alert('❌ No se pudo copiar automáticamente.\n\nPor favor, usa el botón "CREAR PDF COMPARATIVO" en su lugar.');
+            } finally {
+                // Limpiar: deseleccionar y eliminar el contenedor temporal
+                selection.removeAllRanges();
+                document.body.removeChild(tempContainer);
+            }
         }
         
         // Función auxiliar: Generar HTML DUAL (usada por PDF y copiar HTML)
