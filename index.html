@@ -1996,6 +1996,13 @@
             compareWithIndexed = false; // Resetear comparación indexada
             bestOptionTariffChoice = 'fija'; // NUEVO: Resetear elección de tarifa
             
+            // DUAL: Limpiar variables DUAL
+            window.dualMode = false;
+            dualSupplies = [];
+            window.dualGlobalResults = null;
+            dualTempSupply = null;
+            console.log('✅ Variables DUAL limpiadas');
+            
             // Resetear checkbox de comparación indexada
             const checkboxIndexed = document.getElementById('compare-indexed-checkbox');
             if (checkboxIndexed) {
@@ -2028,6 +2035,15 @@
             document.getElementById('scanner-view').classList.add('hidden');
             document.getElementById('manual-input-modal').classList.add('hidden');  
             document.getElementById('manual-input-modal').classList.remove('flex');
+            
+            // DUAL: Ocultar pantallas DUAL
+            document.getElementById('screen-dual-manager')?.classList.remove('active');
+            document.getElementById('screen-dual-results')?.classList.remove('active');
+            document.getElementById('screen-dual-confirm')?.classList.remove('active');
+            console.log('✅ Pantallas DUAL ocultadas');
+            
+            // Mostrar pantalla inicial
+            document.getElementById('screen-inicio')?.classList.add('active');
             
             document.getElementById('multicups-finalize-btn-main')?.classList.add('hidden'); // Old MultiCups button
             document.getElementById('manual-tariff-selector-wrapper').classList.add('hidden');
