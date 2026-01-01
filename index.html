@@ -12611,8 +12611,8 @@
                     ${eb?.powerCosts ? eb.powerCosts.map(pc => `
                         <div style="padding:8px 10px;background:white;border-bottom:1px solid #e2e8f0">
                             <div style="display:table;width:100%">
-                                <div style="display:table-cell;font-size:10px;color:#1e293b">P${pc.period} (${pc.power_kw||0} kW x ${dias}d x ${(pc.priceDay||pc.price_euro_kw_day||0).toFixed(6)} €/kW/día)</div>
-                                <div style="display:table-cell;text-align:right;font-size:10px;color:#1e293b;font-weight:bold">${(pc.cost_euros||0).toFixed(2)} €</div>
+                                <div style="display:table-cell;font-size:10px;color:#1e293b">P${pc.period} (${pc.kw||0} kW x ${dias}d x ${(pc.priceDay||0).toFixed(6)} €/kW/día)</div>
+                                <div style="display:table-cell;text-align:right;font-size:10px;color:#1e293b;font-weight:bold">${(pc.cost||0).toFixed(2)} €</div>
                             </div>
                         </div>
                     `).join('') : '<div style="padding:8px 10px;background:white;font-size:10px;color:#64748b">No hay datos de potencia</div>'}
@@ -12624,8 +12624,8 @@
                     ${eb?.energyCosts ? eb.energyCosts.map(ec => `
                         <div style="padding:8px 10px;background:white;border-bottom:1px solid #e2e8f0">
                             <div style="display:table;width:100%">
-                                <div style="display:table-cell;font-size:10px;color:#1e293b">E${ec.period} (${ec.kwh||0} kWh x ${(ec.price||ec.price_euro_kwh||0).toFixed(6)} €/kWh)</div>
-                                <div style="display:table-cell;text-align:right;font-size:10px;color:#1e293b;font-weight:bold">${(ec.cost_euros||0).toFixed(2)} €</div>
+                                <div style="display:table-cell;font-size:10px;color:#1e293b">E${ec.period} (${ec.kwh||0} kWh x ${(ec.price||0).toFixed(6)} €/kWh)</div>
+                                <div style="display:table-cell;text-align:right;font-size:10px;color:#1e293b;font-weight:bold">${(ec.cost||0).toFixed(2)} €</div>
                             </div>
                         </div>
                     `).join('') : '<div style="padding:8px 10px;background:white;font-size:10px;color:#64748b">No hay datos de energía</div>'}
