@@ -1963,15 +1963,19 @@
             console.log('resetToLanding llamada');
             stopScanner();
             
+            // PRIMERO: Ocultar TODAS las pantallas antes de cualquier otra operación
+            hideAllScreens();
+            console.log('✅ Todas las pantallas ocultadas con hideAllScreens()');
+            
             // CRÍTICO: Limpiar TODAS las variables globales
             lastComparisonResult = null;
-            lastIndexedResult = null; // Limpiar resultado indexado
-            multiCupsData = []; // Limpiar datos de multicups
-            multiCupsAddType = null; // NEW: Reset sub-type
+            lastIndexedResult = null;
+            multiCupsData = [];
+            multiCupsAddType = null;
             availableOffers = [];
             manuallySelectedOffer = null;
-            compareWithIndexed = false; // Resetear comparación indexada
-            bestOptionTariffChoice = 'fija'; // NUEVO: Resetear elección de tarifa
+            compareWithIndexed = false;
+            bestOptionTariffChoice = 'fija';
             
             // DUAL: Limpiar variables DUAL
             window.dualMode = false;
@@ -1996,43 +2000,34 @@
             const brandToApply = comparisonMode === 'overall_best' ? BRANDS.POWER_CUP : BRANDS.DRK;
             applyBrandStyles(brandToApply);  
             
-            // Asegurarse de que el radio button correcto esté checked y dispare el evento para el branding.
+            // Asegurarse de que el radio button correcto esté checked
             const selectorInput = document.querySelector(`input[name="comparison_mode"][value="${comparisonMode}"]`);
             if (selectorInput) {
                 selectorInput.checked = true;
-                updateComparisonMode(comparisonMode); // Llamar directamente para asegurar el styling
+                updateComparisonMode(comparisonMode);
             }
 
-            // Mostrar el selector de modo de comparación
+            // Ocultar vistas adicionales del flujo normal
+            document.getElementById('initial-view')?.classList.add('hidden');
+            document.getElementById('multicups-saga-view')?.classList.add('hidden');
+            document.getElementById('results-view')?.classList.add('hidden');
+            document.getElementById('scanner-view')?.classList.add('hidden');
+            document.getElementById('manual-input-modal')?.classList.add('hidden');
+            document.getElementById('manual-input-modal')?.classList.remove('flex');
+            document.getElementById('multicups-finalize-btn-main')?.classList.add('hidden');
+            document.getElementById('manual-tariff-selector-wrapper')?.classList.add('hidden');
+            
+            document.querySelectorAll('.hidden-period').forEach(el => el.style.display = 'none');
+            document.getElementById('tariff-display-badge').textContent = '0';
+            
+            // FINALMENTE: Mostrar pantalla inicial y selector de modo
+            document.getElementById('screen-inicio')?.classList.add('active');
             const modoComparacionSection = document.getElementById('modo-comparacion-section');
             if (modoComparacionSection) {
                 modoComparacionSection.style.display = 'block';
             }
             
-            // Ocultar todas las vistas
-            document.getElementById('initial-view').classList.add('hidden');
-            document.getElementById('multicups-saga-view').classList.add('hidden'); // NEW: Cleanup saga view
-            document.getElementById('results-view').classList.add('hidden');
-            document.getElementById('scanner-view').classList.add('hidden');
-            document.getElementById('manual-input-modal').classList.add('hidden');  
-            document.getElementById('manual-input-modal').classList.remove('flex');
-            
-            // DUAL: Ocultar pantallas DUAL
-            document.getElementById('screen-dual-manager')?.classList.remove('active');
-            document.getElementById('screen-dual-results')?.classList.remove('active');
-            document.getElementById('screen-dual-confirm')?.classList.remove('active');
-            console.log('✅ Pantallas DUAL ocultadas');
-            
-            // Mostrar pantalla inicial
-            document.getElementById('screen-inicio')?.classList.add('active');
-            
-            document.getElementById('multicups-finalize-btn-main')?.classList.add('hidden'); // Old MultiCups button
-            document.getElementById('manual-tariff-selector-wrapper').classList.add('hidden');
-
-            document.querySelectorAll('.hidden-period').forEach(el => el.style.display = 'none');
-            document.getElementById('tariff-display-badge').textContent = '0'; // Resetear el contador de tarifas
-            
-            console.log('resetToLanding completada');
+            console.log('✅ resetToLanding completada - screen-inicio activa');
         };
 
         function toggleMultiCupsInputPeriods(tariffType, prefix = 'input') {
