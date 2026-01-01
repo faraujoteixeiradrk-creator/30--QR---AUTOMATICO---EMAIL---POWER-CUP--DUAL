@@ -1552,6 +1552,9 @@
     <textarea id="paste-catcher" aria-hidden="true" title="Área de pegado (invisible)"></textarea>
 
     <script>
+        // Inicializar modo DUAL en false
+        window.dualMode = false;
+        
         // --- CONFIGURACIÓN DE TIPO DE TARIFAS ---
         // **ATENCIÓN: Los IDs de las hojas deben ser públicos para funcionar (CSV)**
         // Eliminamos 6.1TD de la configuración
@@ -9096,11 +9099,10 @@
                 
                 console.log('✅ Contexto procesado');
                 
-                // ⚡⚡⚡ SOLUCIÓN ULTRA SIMPLE - MODO DUAL ⚡⚡⚡
+                // ⚡⚡⚡ MODO DUAL - Añadir directamente al array ⚡⚡⚡
                 if (window.dualMode === true) {
-                    console.log('===== 🔥 MODO DUAL - Añadiendo suministro al array =====');
+                    console.log('===== 🔥 MODO DUAL - Añadiendo directamente al array =====');
                     
-                    // CREAR el objeto de suministro CON DESGLOSE COMPLETO
                     // CREAR el objeto de suministro CON DESGLOSE COMPLETO
                     const newSupply = {
                         type: 'electricidad',
@@ -9108,20 +9110,18 @@
                         tariff: lastComparisonResult.tariffType || currentTariffType || '2.0TD',
                         offer: {
                             ...lastComparisonResult.offer,
-                            // Extraer precios de los arrays powerCosts y energyCosts
-                            p1_power_price: lastComparisonResult.powerCosts?.[0]?.price_euro_kw_day,
-                            p2_power_price: lastComparisonResult.powerCosts?.[1]?.price_euro_kw_day,
-                            p1_price: lastComparisonResult.energyCosts?.[0]?.price_euro_kwh,
-                            p2_price: lastComparisonResult.energyCosts?.[1]?.price_euro_kwh,
-                            p3_price: lastComparisonResult.energyCosts?.[2]?.price_euro_kwh,
-                            p4_price: lastComparisonResult.energyCosts?.[3]?.price_euro_kwh,
-                            p5_price: lastComparisonResult.energyCosts?.[4]?.price_euro_kwh,
-                            p6_price: lastComparisonResult.energyCosts?.[5]?.price_euro_kwh
+                            p1_power_price: lastComparisonResult.powerCosts?.[0]?.priceDay || lastComparisonResult.powerCosts?.[0]?.price_euro_kw_day,
+                            p2_power_price: lastComparisonResult.powerCosts?.[1]?.priceDay || lastComparisonResult.powerCosts?.[1]?.price_euro_kw_day,
+                            p1_price: lastComparisonResult.energyCosts?.[0]?.price || lastComparisonResult.energyCosts?.[0]?.price_euro_kwh,
+                            p2_price: lastComparisonResult.energyCosts?.[1]?.price || lastComparisonResult.energyCosts?.[1]?.price_euro_kwh,
+                            p3_price: lastComparisonResult.energyCosts?.[2]?.price || lastComparisonResult.energyCosts?.[2]?.price_euro_kwh,
+                            p4_price: lastComparisonResult.energyCosts?.[3]?.price || lastComparisonResult.energyCosts?.[3]?.price_euro_kwh,
+                            p5_price: lastComparisonResult.energyCosts?.[4]?.price || lastComparisonResult.energyCosts?.[4]?.price_euro_kwh,
+                            p6_price: lastComparisonResult.energyCosts?.[5]?.price || lastComparisonResult.energyCosts?.[5]?.price_euro_kwh
                         },
                         totalAnnual: lastComparisonResult.totalAnnual,
                         originalBillAnnual: lastComparisonResult.originalBillAnnual || (lastComparisonResult.importe_total || 0) * 12,
                         data: lastComparisonResult,
-                        // NUEVO: Añadir desglose completo de electricidad
                         electricityBreakdown: {
                             energyCosts: lastComparisonResult.energyCosts || [],
                             powerCosts: lastComparisonResult.powerCosts || [],
@@ -9138,18 +9138,24 @@
                             dias: lastComparisonResult.dias_facturados || 30
                         },
                         results: {
-                            drk: {
+                            drk: comparisonMode === 'overall_best' ? {
+                                total: 0,
+                                total_anual: 0
+                            } : {
                                 total: lastComparisonResult.totalAnnual / 12,
                                 total_anual: lastComparisonResult.totalAnnual
                             },
-                            powercup: {
+                            powercup: comparisonMode === 'overall_best' ? {
+                                total: lastComparisonResult.totalAnnual / 12,
+                                total_anual: lastComparisonResult.totalAnnual
+                            } : {
                                 total: 0,
                                 total_anual: 0
                             }
                         }
                     };
                     
-                    // AÑADIR al array (no sobrescribir)
+                    // AÑADIR al array
                     dualSupplies.push(newSupply);
                     
                     console.log('✅ Suministro añadido al array');
@@ -9158,32 +9164,29 @@
                     console.log('  - Tarifa:', newSupply.tariff);
                     console.log('  - Coste anual:', newSupply.totalAnnual);
                     
-                    // Actualizar UI usando la función existente
+                    // Actualizar UI
                     updateDualSuppliesList();
-                    console.log('✅ UI actualizada con updateDualSuppliesList()');
+                    console.log('✅ UI actualizada');
                     
-                    // CRÍTICO: Cerrar modal de decisión de ofertas (si está abierto)
+                    // Cerrar modales
                     const offerModal = document.getElementById('offer-decision-modal');
                     if (offerModal) {
                         offerModal.classList.add('hidden');
                         offerModal.classList.remove('flex');
                     }
                     
-                    // Cerrar selector de tipo de tarifa
                     const tariffSelector = document.getElementById('best-option-tariff-selector');
                     if (tariffSelector) {
                         tariffSelector.classList.add('hidden');
                     }
                     
-                    // CRÍTICO: Ocultar TODAS las pantallas primero
-                    console.log('Ocultando todas las pantallas...');
+                    // Ocultar todas las pantallas
                     hideAllScreens();
                     
-                    // Volver a la pantalla DUAL
-                    console.log('Mostrando pantalla DUAL...');
+                    // Volver a pantalla DUAL
                     document.getElementById('screen-dual').classList.add('active');
                     
-                    console.log('✅ Usuario puede añadir más suministros o calcular');
+                    console.log('✅ Usuario puede añadir más suministros');
                     
                     // Resetear bandera
                     setTimeout(() => {
@@ -9191,13 +9194,12 @@
                         console.log('✅ Bandera reseteada');
                     }, 100);
                     
-                    return; // FIN
+                    return; // CRÍTICO: Salir aquí
                 }
                 
                 console.log('🔍 Ejecutando función apropiada...');
                 
                 try {
-                    console.log('🔍 Ejecutando función apropiada...');
                     console.log('🔍 Verificando variables antes del if...');
                     
                     try {
@@ -9367,28 +9369,75 @@
             
             // ⚡ INTERCEPTAR MODO DUAL AQUÍ
             if (window.dualMode === true) {
-                console.log('===== 🔥 MODO DUAL - Interceptando en selectBestOptionDirectDual =====');
+                console.log('===== 🔥 MODO DUAL - Añadiendo directamente al array =====');
                 
-                // Preparar datos para confirmación DUAL
-                const tariff = lastComparisonResult.tariffType || currentTariffType || '2.0TD';
-                const data = extractDataFromResult(lastComparisonResult);
-                
-                const drkCost = lastComparisonResult.totalAnnual || 0;
-                const powercupCost = lastIndexedResult.totalAnnual || 0;
-                
-                const results = {
-                    drk: {
-                        total: drkCost / 12,
-                        total_anual: drkCost
+                // CREAR el objeto de suministro CON DESGLOSE COMPLETO
+                const newSupply = {
+                    type: 'electricidad',
+                    cups: lastComparisonResult.cups || '',
+                    tariff: lastComparisonResult.tariffType || currentTariffType || '2.0TD',
+                    offer: {
+                        ...lastComparisonResult.offer,
+                        p1_power_price: lastComparisonResult.powerCosts?.[0]?.priceDay || lastComparisonResult.powerCosts?.[0]?.price_euro_kw_day,
+                        p2_power_price: lastComparisonResult.powerCosts?.[1]?.priceDay || lastComparisonResult.powerCosts?.[1]?.price_euro_kw_day,
+                        p1_price: lastComparisonResult.energyCosts?.[0]?.price || lastComparisonResult.energyCosts?.[0]?.price_euro_kwh,
+                        p2_price: lastComparisonResult.energyCosts?.[1]?.price || lastComparisonResult.energyCosts?.[1]?.price_euro_kwh,
+                        p3_price: lastComparisonResult.energyCosts?.[2]?.price || lastComparisonResult.energyCosts?.[2]?.price_euro_kwh,
+                        p4_price: lastComparisonResult.energyCosts?.[3]?.price || lastComparisonResult.energyCosts?.[3]?.price_euro_kwh,
+                        p5_price: lastComparisonResult.energyCosts?.[4]?.price || lastComparisonResult.energyCosts?.[4]?.price_euro_kwh,
+                        p6_price: lastComparisonResult.energyCosts?.[5]?.price || lastComparisonResult.energyCosts?.[5]?.price_euro_kwh
                     },
-                    powercup: {
-                        total: powercupCost / 12,
-                        total_anual: powercupCost
+                    totalAnnual: lastComparisonResult.totalAnnual,
+                    originalBillAnnual: lastComparisonResult.originalBillAnnual || (lastComparisonResult.importe_total || 0) * 12,
+                    data: lastComparisonResult,
+                    electricityBreakdown: {
+                        energyCosts: lastComparisonResult.energyCosts || [],
+                        powerCosts: lastComparisonResult.powerCosts || [],
+                        subEnergy: lastComparisonResult.subEnergyNet || 0,
+                        subPower: lastComparisonResult.subPower || 0,
+                        subBase: lastComparisonResult.subBase || 0,
+                        costIE: lastComparisonResult.costIE || 0,
+                        baseImp: lastComparisonResult.baseImp || 0,
+                        costIVA: lastComparisonResult.costIVA || 0,
+                        totalPeriod: lastComparisonResult.totalPeriod || 0,
+                        totalAnnual: lastComparisonResult.totalAnnual || 0,
+                        ahorro_mensual: (lastComparisonResult.originalBillPeriod || 0) - (lastComparisonResult.totalPeriod || 0),
+                        ahorro_anual: (lastComparisonResult.originalBillAnnual || 0) - (lastComparisonResult.totalAnnual || 0),
+                        dias: lastComparisonResult.dias_facturados || 30
+                    },
+                    results: {
+                        drk: comparisonMode === 'overall_best' ? {
+                            total: 0,
+                            total_anual: 0
+                        } : {
+                            total: lastComparisonResult.totalAnnual / 12,
+                            total_anual: lastComparisonResult.totalAnnual
+                        },
+                        powercup: comparisonMode === 'overall_best' ? {
+                            total: lastComparisonResult.totalAnnual / 12,
+                            total_anual: lastComparisonResult.totalAnnual
+                        } : {
+                            total: 0,
+                            total_anual: 0
+                        }
                     }
                 };
                 
-                console.log('Datos preparados para DUAL:', { tariff, data, results });
-                showDualConfirm('electricidad', tariff, data, results);
+                // AÑADIR al array
+                dualSupplies.push(newSupply);
+                
+                console.log('✅ Suministro añadido al array');
+                console.log('  - Total suministros:', dualSupplies.length);
+                
+                // Actualizar UI
+                updateDualSuppliesList();
+                
+                // Ocultar todas las pantallas
+                hideAllScreens();
+                
+                // Volver a pantalla DUAL
+                document.getElementById('screen-dual').classList.add('active');
+                
                 return;
             }
             
@@ -9453,58 +9502,92 @@
             
             // ⚡ INTERCEPTAR MODO DUAL AQUÍ
             if (window.dualMode === true) {
-                console.log('===== 🔥 MODO DUAL - Interceptando en selectBestOptionDirectSingle =====');
+                console.log('===== 🔥 MODO DUAL - Añadiendo directamente al array =====');
                 
                 try {
-                    // Preparar datos para confirmación DUAL
-                    console.log('🔍 Extrayendo tariff...');
-                    console.log('lastComparisonResult.offer.name:', lastComparisonResult?.offer?.name);
-                    console.log('lastComparisonResult.tariffType:', lastComparisonResult?.tariffType);
-                    console.log('currentTariffType:', currentTariffType);
-                    
-                    const tariff = lastComparisonResult?.tariffType || currentTariffType || '2.0TD';
-                    console.log('✅ Tariff extraída:', tariff);
-                    
-                    console.log('🔍 Llamando extractDataFromResult...');
-                    const data = extractDataFromResult(lastComparisonResult);
-                    console.log('✅ Data extraída - kwh_p1:', data.kwh_p1, 'dias:', data.dias, 'originalBillAnnual:', data.originalBillAnnual);
-                    
-                    console.log('🔍 Extrayendo coste DRK...');
-                    const drkCost = lastComparisonResult?.totalAnnual || 0;
-                    console.log('✅ DRK cost:', drkCost);
-                    
-                    const results = {
-                        drk: {
-                            total: drkCost / 12,
-                            total_anual: drkCost
+                    // CREAR el objeto de suministro CON DESGLOSE COMPLETO
+                    const newSupply = {
+                        type: 'electricidad',
+                        cups: lastComparisonResult.cups || '',
+                        tariff: lastComparisonResult.tariffType || currentTariffType || '2.0TD',
+                        offer: {
+                            ...lastComparisonResult.offer,
+                            p1_power_price: lastComparisonResult.powerCosts?.[0]?.priceDay || lastComparisonResult.powerCosts?.[0]?.price_euro_kw_day,
+                            p2_power_price: lastComparisonResult.powerCosts?.[1]?.priceDay || lastComparisonResult.powerCosts?.[1]?.price_euro_kw_day,
+                            p1_price: lastComparisonResult.energyCosts?.[0]?.price || lastComparisonResult.energyCosts?.[0]?.price_euro_kwh,
+                            p2_price: lastComparisonResult.energyCosts?.[1]?.price || lastComparisonResult.energyCosts?.[1]?.price_euro_kwh,
+                            p3_price: lastComparisonResult.energyCosts?.[2]?.price || lastComparisonResult.energyCosts?.[2]?.price_euro_kwh,
+                            p4_price: lastComparisonResult.energyCosts?.[3]?.price || lastComparisonResult.energyCosts?.[3]?.price_euro_kwh,
+                            p5_price: lastComparisonResult.energyCosts?.[4]?.price || lastComparisonResult.energyCosts?.[4]?.price_euro_kwh,
+                            p6_price: lastComparisonResult.energyCosts?.[5]?.price || lastComparisonResult.energyCosts?.[5]?.price_euro_kwh
                         },
-                        powercup: {
-                            total: 0,
-                            total_anual: 0
+                        totalAnnual: lastComparisonResult.totalAnnual,
+                        originalBillAnnual: lastComparisonResult.originalBillAnnual || (lastComparisonResult.importe_total || 0) * 12,
+                        data: lastComparisonResult,
+                        electricityBreakdown: {
+                            energyCosts: lastComparisonResult.energyCosts || [],
+                            powerCosts: lastComparisonResult.powerCosts || [],
+                            subEnergy: lastComparisonResult.subEnergyNet || 0,
+                            subPower: lastComparisonResult.subPower || 0,
+                            subBase: lastComparisonResult.subBase || 0,
+                            costIE: lastComparisonResult.costIE || 0,
+                            baseImp: lastComparisonResult.baseImp || 0,
+                            costIVA: lastComparisonResult.costIVA || 0,
+                            totalPeriod: lastComparisonResult.totalPeriod || 0,
+                            totalAnnual: lastComparisonResult.totalAnnual || 0,
+                            ahorro_mensual: (lastComparisonResult.originalBillPeriod || 0) - (lastComparisonResult.totalPeriod || 0),
+                            ahorro_anual: (lastComparisonResult.originalBillAnnual || 0) - (lastComparisonResult.totalAnnual || 0),
+                            dias: lastComparisonResult.dias_facturados || 30
+                        },
+                        results: {
+                            drk: comparisonMode === 'overall_best' ? {
+                                total: 0,
+                                total_anual: 0
+                            } : {
+                                total: lastComparisonResult.totalAnnual / 12,
+                                total_anual: lastComparisonResult.totalAnnual
+                            },
+                            powercup: comparisonMode === 'overall_best' ? {
+                                total: lastComparisonResult.totalAnnual / 12,
+                                total_anual: lastComparisonResult.totalAnnual
+                            } : {
+                                total: 0,
+                                total_anual: 0
+                            }
                         }
                     };
                     
-                    console.log('✅ Results completo:');
-                    console.log('  - results.drk.total_anual:', results.drk.total_anual);
-                    console.log('  - results.powercup.total_anual:', results.powercup.total_anual);
+                    // AÑADIR al array
+                    dualSupplies.push(newSupply);
                     
-                    console.log('🚀 A punto de llamar showDualConfirm con:');
-                    console.log('  - type: electricidad');
-                    console.log('  - tariff:', tariff);
-                    console.log('  - data.kwh_p1:', data.kwh_p1, 'data.kwh_p2:', data.kwh_p2);
-                    console.log('  - data.dias:', data.dias);
-                    console.log('  - data.originalBillAnnual:', data.originalBillAnnual);
+                    console.log('✅ Suministro añadido al array');
+                    console.log('  - Total suministros:', dualSupplies.length);
+                    console.log('  - CUPS:', newSupply.cups);
+                    console.log('  - Tarifa:', newSupply.tariff);
+                    console.log('  - Coste anual:', newSupply.totalAnnual);
                     
-                    showDualConfirm('electricidad', tariff, data, results);
+                    // Actualizar UI
+                    updateDualSuppliesList();
+                    console.log('✅ UI actualizada');
                     
-                    console.log('✅✅✅ showDualConfirm ejecutada exitosamente');
+                    // Cerrar modales
+                    const offerModal = document.getElementById('offer-decision-modal');
+                    if (offerModal) {
+                        offerModal.classList.add('hidden');
+                        offerModal.classList.remove('flex');
+                    }
+                    
+                    // Ocultar todas las pantallas
+                    hideAllScreens();
+                    
+                    // Volver a pantalla DUAL
+                    document.getElementById('screen-dual').classList.add('active');
+                    
+                    console.log('✅ Volviendo a pantalla DUAL');
                     return;
                 } catch (error) {
-                    console.error('❌❌❌ ERROR CAPTURADO en interceptor DUAL:');
-                    console.error('Error message:', error.message);
-                    console.error('Error stack:', error.stack);
-                    console.error('Error completo:', error);
-                    alert('Error al preparar confirmación DUAL: ' + error.message);
+                    console.error('❌ ERROR en interceptor DUAL:', error);
+                    alert('Error al añadir suministro: ' + error.message);
                     return;
                 }
             }
@@ -9597,6 +9680,7 @@
             console.log('dualMode:', window.dualMode);
             console.log('compareWithIndexed:', compareWithIndexed);
             console.log('lastComparisonResult exists:', !!lastComparisonResult);
+            console.log('comparisonMode:', comparisonMode);
             console.log('=================================================');
             
             // Cerrar modal de decisión
@@ -9610,6 +9694,98 @@
             }
             
             console.log('✅ lastComparisonResult OK, continuando...');
+            
+            // ⚡⚡⚡ INTERCEPTOR MODO DUAL ⚡⚡⚡
+            if (window.dualMode === true) {
+                console.log('===== 🔥 MODO DUAL - Añadiendo directamente al array =====');
+                
+                try {
+                    // CREAR el objeto de suministro CON DESGLOSE COMPLETO
+                    const newSupply = {
+                        type: 'electricidad',
+                        cups: lastComparisonResult.cups || '',
+                        tariff: lastComparisonResult.tariffType || currentTariffType || '2.0TD',
+                        offer: {
+                            ...lastComparisonResult.offer,
+                            p1_power_price: lastComparisonResult.powerCosts?.[0]?.priceDay || lastComparisonResult.powerCosts?.[0]?.price_euro_kw_day,
+                            p2_power_price: lastComparisonResult.powerCosts?.[1]?.priceDay || lastComparisonResult.powerCosts?.[1]?.price_euro_kw_day,
+                            p1_price: lastComparisonResult.energyCosts?.[0]?.price || lastComparisonResult.energyCosts?.[0]?.price_euro_kwh,
+                            p2_price: lastComparisonResult.energyCosts?.[1]?.price || lastComparisonResult.energyCosts?.[1]?.price_euro_kwh,
+                            p3_price: lastComparisonResult.energyCosts?.[2]?.price || lastComparisonResult.energyCosts?.[2]?.price_euro_kwh,
+                            p4_price: lastComparisonResult.energyCosts?.[3]?.price || lastComparisonResult.energyCosts?.[3]?.price_euro_kwh,
+                            p5_price: lastComparisonResult.energyCosts?.[4]?.price || lastComparisonResult.energyCosts?.[4]?.price_euro_kwh,
+                            p6_price: lastComparisonResult.energyCosts?.[5]?.price || lastComparisonResult.energyCosts?.[5]?.price_euro_kwh
+                        },
+                        totalAnnual: lastComparisonResult.totalAnnual,
+                        originalBillAnnual: lastComparisonResult.originalBillAnnual || (lastComparisonResult.importe_total || 0) * 12,
+                        data: lastComparisonResult,
+                        electricityBreakdown: {
+                            energyCosts: lastComparisonResult.energyCosts || [],
+                            powerCosts: lastComparisonResult.powerCosts || [],
+                            subEnergy: lastComparisonResult.subEnergyNet || 0,
+                            subPower: lastComparisonResult.subPower || 0,
+                            subBase: lastComparisonResult.subBase || 0,
+                            costIE: lastComparisonResult.costIE || 0,
+                            baseImp: lastComparisonResult.baseImp || 0,
+                            costIVA: lastComparisonResult.costIVA || 0,
+                            totalPeriod: lastComparisonResult.totalPeriod || 0,
+                            totalAnnual: lastComparisonResult.totalAnnual || 0,
+                            ahorro_mensual: (lastComparisonResult.originalBillPeriod || 0) - (lastComparisonResult.totalPeriod || 0),
+                            ahorro_anual: (lastComparisonResult.originalBillAnnual || 0) - (lastComparisonResult.totalAnnual || 0),
+                            dias: lastComparisonResult.dias_facturados || 30
+                        },
+                        results: {
+                            drk: comparisonMode === 'overall_best' ? {
+                                total: 0,
+                                total_anual: 0
+                            } : {
+                                total: lastComparisonResult.totalAnnual / 12,
+                                total_anual: lastComparisonResult.totalAnnual
+                            },
+                            powercup: comparisonMode === 'overall_best' ? {
+                                total: lastComparisonResult.totalAnnual / 12,
+                                total_anual: lastComparisonResult.totalAnnual
+                            } : {
+                                total: 0,
+                                total_anual: 0
+                            }
+                        }
+                    };
+                    
+                    // AÑADIR al array
+                    dualSupplies.push(newSupply);
+                    
+                    console.log('✅ Suministro añadido al array');
+                    console.log('  - Total suministros:', dualSupplies.length);
+                    console.log('  - CUPS:', newSupply.cups);
+                    console.log('  - Tarifa:', newSupply.tariff);
+                    console.log('  - Coste anual:', newSupply.totalAnnual);
+                    
+                    // Actualizar UI
+                    updateDualSuppliesList();
+                    console.log('✅ UI actualizada');
+                    
+                    // Cerrar modales
+                    const offerModal = document.getElementById('offer-decision-modal');
+                    if (offerModal) {
+                        offerModal.classList.add('hidden');
+                        offerModal.classList.remove('flex');
+                    }
+                    
+                    // Ocultar todas las pantallas
+                    hideAllScreens();
+                    
+                    // Volver a pantalla DUAL
+                    document.getElementById('screen-dual').classList.add('active');
+                    
+                    console.log('✅ Volviendo a pantalla DUAL');
+                    return; // CRÍTICO: Salir aquí
+                } catch (error) {
+                    console.error('❌ ERROR en interceptor DUAL:', error);
+                    alert('Error al añadir suministro: ' + error.message);
+                    return;
+                }
+            }
             
             // ═══════════════════════════════════════════════════════════════
             // ARREGLO: Cuando compareWithIndexed = true, calcular FIJO vs INDEXADO correctamente
@@ -10452,14 +10628,15 @@
                         offer: {
                             ...result.offer,
                             // Extraer precios de los arrays powerCosts y energyCosts
-                            p1_power_price: result.powerCosts?.[0]?.price_euro_kw_day,
-                            p2_power_price: result.powerCosts?.[1]?.price_euro_kw_day,
-                            p1_price: result.energyCosts?.[0]?.price_euro_kwh,
-                            p2_price: result.energyCosts?.[1]?.price_euro_kwh,
-                            p3_price: result.energyCosts?.[2]?.price_euro_kwh,
-                            p4_price: result.energyCosts?.[3]?.price_euro_kwh,
-                            p5_price: result.energyCosts?.[4]?.price_euro_kwh,
-                            p6_price: result.energyCosts?.[5]?.price_euro_kwh
+                            // CORREGIDO: Usar los nombres de propiedades correctos: priceDay y price
+                            p1_power_price: result.powerCosts?.[0]?.priceDay || result.powerCosts?.[0]?.price_euro_kw_day,
+                            p2_power_price: result.powerCosts?.[1]?.priceDay || result.powerCosts?.[1]?.price_euro_kw_day,
+                            p1_price: result.energyCosts?.[0]?.price || result.energyCosts?.[0]?.price_euro_kwh,
+                            p2_price: result.energyCosts?.[1]?.price || result.energyCosts?.[1]?.price_euro_kwh,
+                            p3_price: result.energyCosts?.[2]?.price || result.energyCosts?.[2]?.price_euro_kwh,
+                            p4_price: result.energyCosts?.[3]?.price || result.energyCosts?.[3]?.price_euro_kwh,
+                            p5_price: result.energyCosts?.[4]?.price || result.energyCosts?.[4]?.price_euro_kwh,
+                            p6_price: result.energyCosts?.[5]?.price || result.energyCosts?.[5]?.price_euro_kwh
                         },
                         totalAnnual: result.totalAnnual,
                         originalBillAnnual: result.originalBillAnnual || (result.importe_total || 0) * 12,
@@ -11472,6 +11649,9 @@
         }
 
         function goToElectricidad() {
+            // Desactivar modo DUAL (solo activo cuando se navega desde dualSelectTariff)
+            window.dualMode = false;
+            checkDualMode(); // Actualizar visibilidad del botón DUAL
             hideAllScreens();
             document.getElementById('screen-electricidad').classList.add('active');
             // Ocultar el modo de comparación (ya está seleccionado)
@@ -11479,6 +11659,9 @@
         }
 
         function goToGas() {
+            // Desactivar modo DUAL (solo activo cuando se navega desde dualSelectTariff)
+            window.dualMode = false;
+            checkDualMode(); // Actualizar visibilidad del botón DUAL
             hideAllScreens();
             document.getElementById('screen-gas').classList.add('active');
             // Ocultar el modo de comparación (ya está seleccionado)
@@ -11590,6 +11773,7 @@
             
             dualCurrentType = type;
             window.dualMode = true;
+            checkDualMode(); // Actualizar visibilidad del botón DUAL
             
             if (type === 'electricidad') {
                 // Configurar el tipo de tarifa ANTES de cambiar pantallas
@@ -11765,6 +11949,7 @@
             
             // Guardar resultados globales
             window.dualGlobalResults = {
+                comparisonMode: comparisonMode, // AGREGADO: para saber si es DRK o Power Cup
                 totalDRK,
                 totalPowerCup,
                 totalOriginalBill,
@@ -12138,6 +12323,9 @@
                             <div style="background:${accentColor};color:white;padding:12px 20px;border-radius:8px 8px 0 0;font-weight:bold;font-size:13px">
                                 [${i+1}] ${(s.cups||'N/A').substring(0,30)}...
                                 <div style="font-size:11px;opacity:0.9;margin-top:3px">Tipo: ${s.tariff} | Días: ${eb.dias} días | CUPS: [${i+1}]</div>
+                                <div style="font-size:11px;opacity:0.95;margin-top:5px;background:rgba(0,0,0,0.15);padding:6px 10px;border-radius:4px">
+                                    <strong>TARIFA:</strong> ${s.offer?.name || 'N/A'} - ${s.offer?.description || 'N/A'}
+                                </div>
                             </div>
                             <div style="background:#f8fafc;padding:15px 20px;border:1px solid #e2e8f0;border-top:none">
                                 <div style="margin-bottom:12px">
@@ -12165,7 +12353,8 @@
                                 <div style="background:${accentColor};color:white;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:12px;font-weight:bold">POTENCIA</div>
                                 ${(eb.powerCosts||[]).map((pc, idx) => {
                                     const priceKey = idx === 0 ? 'p1_power_price' : 'p2_power_price';
-                                    const precio = s.offer?.[priceKey] || pc.price_euro_kw_day || 0;
+                                    // CORREGIDO: Usar priceDay como fallback además de price_euro_kw_day
+                                    const precio = s.offer?.[priceKey] || pc.priceDay || pc.price_euro_kw_day || 0;
                                     return `
                                     <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
                                         <span>P${pc.period||'?'} (${pc.power_kw||0} kW x ${eb.dias} x ${precio.toFixed(6)})</span>
@@ -12176,7 +12365,8 @@
                                 <div style="background:${accentColor};color:white;padding:8px 12px;margin:10px 0;border-radius:4px;font-size:12px;font-weight:bold">ENERGÍA</div>
                                 ${(eb.energyCosts||[]).map((ec, idx) => {
                                     const priceKey = `p${idx+1}_price`;
-                                    const precio = s.offer?.[priceKey] || ec.price_euro_kwh || 0;
+                                    // CORREGIDO: Usar price como fallback además de price_euro_kwh
+                                    const precio = s.offer?.[priceKey] || ec.price || ec.price_euro_kwh || 0;
                                     return `
                                     <div style="display:flex;justify-content:space-between;padding:5px 0;font-size:11px">
                                         <span>E${ec.period||'?'} (${ec.kwh||0} kWh x ${precio.toFixed(6)})</span>
@@ -12202,6 +12392,9 @@
                             <div style="background:${accentColor};color:white;padding:12px 20px;border-radius:8px 8px 0 0;font-weight:bold;font-size:13px">
                                 [${i+1}] ${(s.cups||'N/A').substring(0,30)}...
                                 <div style="font-size:11px;opacity:0.9;margin-top:3px">Tipo: ${s.tariff} | Días: ${gb.dias} días | CUPS: [${i+1}]</div>
+                                <div style="font-size:11px;opacity:0.95;margin-top:5px;background:rgba(0,0,0,0.15);padding:6px 10px;border-radius:4px">
+                                    <strong>TARIFA:</strong> ${s.offer?.name || 'N/A'} - ${s.offer?.description || 'N/A'}
+                                </div>
                             </div>
                             <div style="background:#f8fafc;padding:15px 20px;border:1px solid #e2e8f0;border-top:none">
                                 <div style="margin-bottom:12px">
@@ -12254,56 +12447,74 @@
 <body style="margin:0;padding:20px;font-family:Arial,sans-serif;background-color:#f5f5f5">
     <div style="max-width:800px;margin:0 auto;background:white;box-shadow:0 4px 20px rgba(0,0,0,0.1)">
         
-        <!-- BANNER CON LOGO -->
-        <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#7a8a9e 0%,#596875 100%);background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 1px,transparent 1px,transparent 4px),linear-gradient(135deg,#7a8a9e 0%,#596875 100%)">
+        <!-- BANNER CON LOGO (DISEÑO PROFESIONAL) -->
+        <table width="100%" cellpadding="0" cellspacing="0" style="background:${isPowerCup ? '#77846D' : '#6b7d8e'};background-image:repeating-linear-gradient(90deg,rgba(255,255,255,0.03) 0px,rgba(255,255,255,0.03) 2px,transparent 2px,transparent 4px)">
             <tr>
-                <td style="padding:25px 35px;vertical-align:middle">
+                <td style="padding:25px 35px;vertical-align:middle;width:50%">
                     <table cellpadding="0" cellspacing="0">
                         <tr>
                             <td style="padding-right:15px;vertical-align:middle">
+                                ${isPowerCup ? `
+                                <!-- Logo POWER CUP (Taza de café verde) -->
                                 <svg width="60" height="60" viewBox="0 0 60 60">
-                                    <circle cx="30" cy="30" r="30" fill="url(#grad1)"/>
-                                    <circle cx="30" cy="30" r="25" fill="white"/>
-                                    <defs>
-                                        <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                                            <stop offset="0%" style="stop-color:#4CAF50;stop-opacity:1" />
-                                            <stop offset="50%" style="stop-color:#2196F3;stop-opacity:1" />
-                                            <stop offset="100%" style="stop-color:#FFC107;stop-opacity:1" />
-                                        </linearGradient>
-                                    </defs>
+                                    <!-- Cuerpo de la taza -->
+                                    <rect x="15" y="20" width="30" height="20" rx="2" fill="#465028" opacity="0.9"/>
+                                    <!-- Interior café -->
+                                    <rect x="17" y="22" width="26" height="13" rx="1.5" fill="#5F6C50" opacity="0.9"/>
+                                    <!-- Asa -->
+                                    <path d="M 45 25 Q 52 30 45 35" stroke="#465028" stroke-width="3" fill="none"/>
+                                    <!-- Vapor 1 -->
+                                    <line x1="23" y1="15" x2="22" y2="10" stroke="#FFBE32" stroke-width="2" opacity="0.8"/>
+                                    <!-- Vapor 2 -->
+                                    <line x1="30" y1="14" x2="30" y2="8" stroke="#FFBE32" stroke-width="2" opacity="0.8"/>
+                                    <!-- Vapor 3 -->
+                                    <line x1="37" y1="15" x2="38" y2="10" stroke="#FFBE32" stroke-width="2" opacity="0.8"/>
                                 </svg>
+                                ` : `
+                                <!-- Logo DRK multicolor -->
+                                <svg width="60" height="60" viewBox="0 0 60 60">
+                                    <circle cx="30" cy="30" r="28" fill="#DB4437" opacity="0.8"/>
+                                    <circle cx="36" cy="24" r="28" fill="#4285F4" opacity="0.8"/>
+                                    <circle cx="24" cy="24" r="24" fill="#F4B400" opacity="0.8"/>
+                                    <circle cx="36" cy="36" r="24" fill="#0F9D58" opacity="0.8"/>
+                                    <circle cx="30" cy="30" r="12" fill="white"/>
+                                </svg>
+                                `}
                             </td>
                             <td style="vertical-align:middle">
-                                <h1 style="margin:0;font-size:28px;font-weight:900;letter-spacing:1px;color:white;line-height:1.1">${brandName}<br><span style="font-size:24px">ENERGÍA</span></h1>
-                                <p style="margin:3px 0 0 0;font-size:10px;color:white;opacity:0.9;line-height:1.2">Liderando el ahorro y la<br>eficiencia energética.</p>
+                                <h1 style="margin:0;font-size:32px;font-weight:900;letter-spacing:1px;color:white;line-height:1">${isPowerCup ? 'POWER CUP' : 'DRK'}</h1>
+                                <h2 style="margin:2px 0 0 0;font-size:28px;font-weight:900;letter-spacing:1px;color:white;line-height:1">ENERGÍA</h2>
+                                <p style="margin:8px 0 0 0;font-size:9px;color:white;opacity:0.9;line-height:1.3">Liderando el ahorro y la<br>eficiencia energética.</p>
                             </td>
                         </tr>
                     </table>
                 </td>
-                <td style="padding:25px 35px;text-align:right;vertical-align:middle">
-                    <p style="margin:0;font-size:11px;font-weight:700;color:white;letter-spacing:0.5px">ESTUDIO DE AHORRO</p>
-                    <p style="margin:1px 0 0 0;font-size:11px;font-weight:700;color:white;opacity:0.9;letter-spacing:0.5px">COMPARATIVA</p>
-                    <p style="margin:1px 0 0 0;font-size:11px;font-weight:700;color:white;letter-spacing:0.5px">PROFESIONAL</p>
+                <td style="padding:25px 35px;text-align:right;vertical-align:middle;width:50%">
+                    <p style="margin:0;font-size:11px;font-weight:700;color:rgba(40,60,80,0.9);letter-spacing:0.5px">ESTUDIO DE AHORRO</p>
+                    <p style="margin:8px 0 0 0;font-size:13px;font-weight:700;color:white;letter-spacing:0.5px">COMPARATIVA</p>
+                    <p style="margin:4px 0 0 0;font-size:11px;font-weight:700;color:rgba(100,120,140,0.9);letter-spacing:0.5px">PROFESIONAL</p>
                 </td>
             </tr>
         </table>
         
-        <!-- BANDA VERDE -->
-        <div style="background:#22c55e;color:white;padding:10px 35px">
-            <h2 style="margin:0;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px">ESTUDIO DE AHORRO</h2>
+        <!-- BANDA VERDE + INFO CLIENTE (DISEÑO PROFESIONAL) -->
+        <div style="background:#4caf50;color:white;padding:12px 35px;margin:20px 35px 0 35px;border-radius:8px 8px 0 0">
+            <h2 style="margin:0;font-size:11px;font-weight:bold;text-transform:uppercase;letter-spacing:0.8px">ESTUDIO DE AHORRO</h2>
         </div>
         
         <!-- RECUADRO INFO CLIENTE -->
-        <div style="margin:25px 35px;padding:18px;border:3px solid #64748b;border-radius:10px">
-            <h3 style="margin:0 0 10px 0;font-size:13px;font-weight:bold;color:#546e7a;text-transform:uppercase">COMPARATIVA PROFESIONAL - ${brandName}</h3>
+        <div style="margin:0 35px 25px 35px;padding:18px 20px;border:2px solid ${isPowerCup ? '#77846D' : '#64748b'};border-top:none;border-radius:0 0 8px 8px;background:white">
+            <h3 style="margin:0 0 10px 0;font-size:14px;font-weight:bold;color:${isPowerCup ? '#77846D' : '#64748b'};text-transform:uppercase">COMPARATIVA PROFESIONAL - ${brandName}</h3>
             <table width="100%" cellpadding="0" cellspacing="0">
                 <tr>
-                    <td style="vertical-align:top">
-                        <p style="margin:0 0 3px 0;font-size:11px;color:#64748b;line-height:1.6"><strong>CLIENTE:</strong> ${clientName}</p>
-                        <p style="margin:0;font-size:11px;color:#64748b;line-height:1.6"><strong>CUPS TOTALES:</strong> ${dualSupplies.length}</p>
+                    <td style="vertical-align:top;width:65%">
+                        <p style="margin:0 0 5px 0;font-size:11px;color:#303030;line-height:1.6"><strong>CLIENTE:</strong> ${clientName}</p>
+                        <p style="margin:0;font-size:11px;color:#303030;line-height:1.6"><strong>CUPS:</strong> ${dualSupplies[0].cups.substring(0,20)}...</p>
                     </td>
-                    <td style="text-align:right;vertical-align:top">
-                        <p style="margin:0;font-size:10px;color:#64748b"><strong>COMERCIAL:</strong> ${comercialCode}</p>
+                    <td style="text-align:right;vertical-align:top;width:35%">
+                        <div style="display:inline-block;background:${isPowerCup ? '#f0f5f0' : '#f0f5f8'};padding:6px 14px;border-radius:6px">
+                            <p style="margin:0;font-size:10px;color:${isPowerCup ? '#77846D' : '#64748b'};font-weight:bold">COMERCIAL: ${comercialCode}</p>
+                        </div>
                     </td>
                 </tr>
             </table>
@@ -12346,7 +12557,7 @@
         </table>
         
         <!-- BANDA VERDE: RESUMEN -->
-        <div style="background:#22c55e;color:white;padding:10px 35px;margin-top:25px">
+        <div style="background:#22c55e;color:white;padding:10px 35px;margin:25px 35px 0 35px;border-radius:8px">
             <h2 style="margin:0;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px">RESUMEN DE ${dualSupplies.length} SUMINISTROS</h2>
         </div>
         
@@ -12367,7 +12578,7 @@
         </table>
         
         <!-- BANDA VERDE: DESGLOSE DETALLADO -->
-        <div style="background:#22c55e;color:white;padding:10px 35px;margin-top:25px">
+        <div style="background:#22c55e;color:white;padding:10px 35px;margin:25px 35px 0 35px;border-radius:8px">
             <h2 style="margin:0;font-size:13px;font-weight:bold;text-transform:uppercase;letter-spacing:0.5px">DESGLOSE DETALLADO POR SUMINISTRO</h2>
         </div>
         
@@ -12578,11 +12789,16 @@
             
             const supply = {
                 type: type, // 'electricidad' o 'gas'
+                cups: data.cups || 'N/A', // CUPS del suministro
                 tariff: tariff,
                 data: data,
                 results: results,
                 description: description,
                 totalKwh: totalKwh,
+                // CRÍTICO: Calcular totalAnnual desde el resultado correspondiente (DRK o Power Cup)
+                totalAnnual: (results.drk.total_anual > 0) ? results.drk.total_anual : results.powercup.total_anual,
+                // CRÍTICO: Guardar factura original para cálculo de ahorro
+                originalBillAnnual: data.originalBillAnnual || 0,
                 timestamp: new Date().getTime()
             };
             
@@ -12837,6 +13053,7 @@
         // Función: Proceder a cálculo según configuración
         function proceedToGasCalculation() {
             // Validar inputs
+            const cups = document.getElementById('gas-cups').value.trim();
             const dias = parseFloat(document.getElementById('gas-dias').value);
             const kwh = parseFloat(document.getElementById('gas-kwh').value);
             const totalCliente = parseFloat(document.getElementById('gas-total-cliente').value);
@@ -12856,6 +13073,7 @@
             
             // Guardar parámetros (CRÍTICO: también en window para modo DUAL)
             gasCalculationParams = {
+                cups,
                 dias,
                 kwh,
                 totalCliente,
@@ -13006,6 +13224,11 @@
             // Actualizar UI
             updateGasSelectionUI();
             
+            // CRÍTICO: Verificar modo DUAL para ocultar/mostrar botón DUAL
+            if (window.checkDualMode) {
+                window.checkDualMode();
+            }
+            
             // Mostrar modal
             document.getElementById('gas-manual-input-modal').classList.remove('hidden');
             document.getElementById('gas-manual-input-modal').classList.add('flex');
@@ -13016,6 +13239,7 @@
             }
             
             console.log(`📋 Tarifa seleccionada: ${tariff} (buscará: ${tariff.toLowerCase()})`);
+            console.log(`🔍 Modo DUAL: ${window.dualMode}`);
         }
         
         // Función: Mostrar selector de tarifas manual
@@ -13078,8 +13302,12 @@
             hideAllScreens();
             document.getElementById('screen-gas-results').classList.add('active');
             
-            // Detectar modo DUAL y mostrar botón si corresponde
-            if (window.checkDualMode) window.checkDualMode();
+            // NO mostrar botón DUAL aquí - esta es la pantalla de selección manual
+            // Ocultar explícitamente el botón DUAL
+            const gasDualContainer = document.getElementById('gas-dual-button-container');
+            if (gasDualContainer) {
+                gasDualContainer.style.display = 'none';
+            }
         }
         
         // Función: Renderizar selector de tarifas con ordenamiento
@@ -13199,6 +13427,12 @@
             `;
             
             container.innerHTML = html;
+            
+            // Ocultar botón DUAL en selector manual
+            const gasDualContainer = document.getElementById('gas-dual-button-container');
+            if (gasDualContainer) {
+                gasDualContainer.style.display = 'none';
+            }
             
             // Guardar ordenamiento actual
             window.gasSortedTariffs = sortedTariffs;
@@ -13832,6 +14066,15 @@
                 return;
             }
             
+            // Pedir datos del cliente y comercial
+            const comercialCode = prompt('CÓDIGO COMERCIAL (Obligatorio):', 'D=00');
+            if (!comercialCode || comercialCode.trim() === '') {
+                alert('El código comercial es obligatorio');
+                return;
+            }
+            
+            const clientName = prompt('NOMBRE DEL CLIENTE:', '[NOMBRE COMPLETO CLIENTE]') || '[NOMBRE COMPLETO CLIENTE]';
+            
             const { results, dias, kwh, totalCliente, comparisonMode } = window.gasExportData;
             
             try {
@@ -13847,15 +14090,15 @@
                     const resFijo = results.find(r => !r.name.toUpperCase().includes('INDEX'));
                     
                     if (isPowerCup) {
-                        await generateGasPDF_Dual_PowerCup(resFijo, resIndexed, dias, kwh, totalCliente);
+                        await generateGasPDF_Dual_PowerCup(resFijo, resIndexed, dias, kwh, totalCliente, clientName, comercialCode);
                     } else {
-                        await generateGasPDF_Dual(resFijo, resIndexed, dias, kwh, totalCliente);
+                        await generateGasPDF_Dual(resFijo, resIndexed, dias, kwh, totalCliente, clientName, comercialCode);
                     }
                 } else {
                     if (isPowerCup) {
-                        await generateGasPDF_Simple_PowerCup(results[0], dias, kwh, totalCliente);
+                        await generateGasPDF_Simple_PowerCup(results[0], dias, kwh, totalCliente, clientName, comercialCode);
                     } else {
-                        await generateGasPDF_Simple(results[0], dias, kwh, totalCliente);
+                        await generateGasPDF_Simple(results[0], dias, kwh, totalCliente, clientName, comercialCode);
                     }
                 }
             } catch (error) {
@@ -14680,7 +14923,7 @@
 
         
         // PDF INDIVIDUAL
-        async function generateGasPDF_Simple(bestResult, dias, kwh, totalCliente) {
+        async function generateGasPDF_Simple(bestResult, dias, kwh, totalCliente, clientName = '[NOMBRE COMPLETO CLIENTE]', comercialCode = 'D=00') {
             window.showMessageModal("⏳ Generando PDF... Por favor espere.");
             
             const { jsPDF } = window.jspdf;
@@ -14740,7 +14983,7 @@
             // Texto derecha
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
-            doc.setTextColor(100, 120, 140);
+            doc.setTextColor(40, 60, 80);
             doc.text('ESTUDIO DE AHORRO', pageWidth - margin, 15, { align: 'right' });
             doc.setFontSize(16);
             doc.setTextColor(255, 255, 255);
@@ -14774,7 +15017,7 @@
             
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(9);
-            doc.text('CLIENTE: [NOMBRE COMPLETO CLIENTE]', margin + 5, yPos + 13);
+            doc.text('CLIENTE: ' + clientName, margin + 5, yPos + 13);
             doc.text('TARIFA: ' + currentGasTariff, margin + 5, yPos + 18);
             
             doc.setFont('helvetica', 'bold');
@@ -15075,7 +15318,7 @@
         }
         
         // PDF DUAL
-        async function generateGasPDF_Dual(resFijo, resIndexed, dias, kwh, totalCliente) {
+        async function generateGasPDF_Dual(resFijo, resIndexed, dias, kwh, totalCliente, clientName = '[NOMBRE COMPLETO CLIENTE]', comercialCode = 'D=00') {
             window.showMessageModal("⏳ Generando PDF comparativo...");
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
@@ -15113,46 +15356,72 @@
             doc.setFillColor(255, 255, 255); // Centro blanco
             doc.circle(logoX, logoY, logoR * 0.35, 'F');
             
-            // Texto DRK (izquierda del logo)
+            // Texto DRK ENERGÍA (derecha del logo)
             doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
+            doc.setFontSize(24);
+            doc.text('DRK', logoX + 15, 16);
             doc.setFontSize(22);
-            doc.text('DRK', logoX + 15, 18);
+            doc.text('ENERGÍA', logoX + 15, 25);
             
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(7);
-            doc.text('Liderando el ahorro y la', logoX + 15, 24);
-            doc.text('eficiencia energética.', logoX + 15, 28);
+            doc.text('Liderando el ahorro y la', logoX + 15, 30);
+            doc.text('eficiencia energética.', logoX + 15, 34);
             
             // Texto derecha del header
+            doc.setTextColor(40, 60, 80);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(9);
             doc.text('ESTUDIO DE AHORRO', pageWidth - 12, 12, { align: 'right' });
             
-            doc.setTextColor(200, 210, 220);
-            doc.setFontSize(10);
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(11);
             doc.text('COMPARATIVA', pageWidth - 12, 20, { align: 'right' });
             
-            doc.setTextColor(255, 255, 255);
+            doc.setTextColor(100, 120, 140);
             doc.setFontSize(9);
             doc.text('PROFESIONAL', pageWidth - 12, 28, { align: 'right' });
             
-            // TÍTULO Y INFO CLIENTE
-            y = 52;
-            doc.setTextColor(40, 50, 60);
+            // === INFORMACIÓN DEL CLIENTE (DISEÑO PROFESIONAL) ===
+            y = 50;
+            
+            // Barra superior verde
+            doc.setFillColor(76, 175, 80); // Verde
+            doc.roundedRect(12, y, 186, 8, 3, 3, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(14);
-            doc.text('COMPARATIVA PROFESIONAL - DRK', 12, y);
+            doc.text('ESTUDIO DE AHORRO', 17, y + 5.5);
             
-            y += 9;
+            // Caja blanca con borde
+            doc.setFillColor(255, 255, 255);
+            doc.setDrawColor(107, 125, 142);
+            doc.setLineWidth(1);
+            doc.roundedRect(12, y + 8, 186, 20, 3, 3, 'FD');
+            
+            // Título principal
+            doc.setTextColor(107, 125, 142);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('COMPARATIVA PROFESIONAL - DRK', 17, y + 14);
+            
+            // Info del cliente
+            doc.setTextColor(80, 80, 80);
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(8);
-            doc.setTextColor(100, 110, 120);
-            doc.text('CLIENTE: [NOMBRE COMPLETO CLIENTE]', 12, y);
-            y += 5;
-            doc.text('CUPS TOTALES: 1', 12, y);
+            doc.text(`CLIENTE: ${clientName}`, 17, y + 20);
+            doc.text(`CUPS: ${dualSupplies.length > 1 ? dualSupplies[0].cups.substring(0,20) + '...' : dualSupplies[0].cups}`, 17, y + 25);
             
-            y += 15;
+            // Comercial en caja destacada (derecha)
+            doc.setFillColor(240, 245, 248);
+            doc.roundedRect(pageWidth - 12 - 45, y + 17, 45, 8, 2, 2, 'F');
+            doc.setTextColor(107, 125, 142);
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8);
+            doc.text(`COMERCIAL: ${comercialCode}`, pageWidth - 12 - 43, y + 22.5);
+            
+            y += 35;
             
             // CAJA GRIS "LA MEJOR OPCIÓN"
             doc.setFillColor(107, 125, 142);
@@ -15605,7 +15874,7 @@
         // ============================================
         
         // PDF INDIVIDUAL POWER CUP
-        async function generateGasPDF_Simple_PowerCup(bestResult, dias, kwh, totalCliente) {
+        async function generateGasPDF_Simple_PowerCup(bestResult, dias, kwh, totalCliente, clientName = '[NOMBRE COMPLETO CLIENTE]', comercialCode = 'D=00') {
             window.showMessageModal("⏳ Generando PDF POWER CUP...");
             
             const { jsPDF } = window.jspdf;
@@ -15677,16 +15946,16 @@
             doc.text('eficiencia energética.', logoX + 30, 44.5);
             
             // TEXTO DERECHA DEL HEADER
-            doc.setTextColor(255, 255, 255);
+            doc.setTextColor(40, 60, 80);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(11);
             doc.text('ESTUDIO DE AHORRO', pageWidth - 12, 16, { align: 'right' });
             
-            doc.setTextColor(215, 230, 215);
+            doc.setTextColor(255, 255, 255);
             doc.setFontSize(13);
             doc.text('COMPARATIVA', pageWidth - 12, 27, { align: 'right' });
             
-            doc.setTextColor(255, 255, 255);
+            doc.setTextColor(100, 120, 140);
             doc.setFontSize(11);
             doc.text('PROFESIONAL', pageWidth - 12, 37, { align: 'right' });
             
@@ -15718,7 +15987,7 @@
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(8);
             doc.setTextColor(100, 110, 100);
-            doc.text('CLIENTE: [NOMBRE COMPLETO CLIENTE]', 25, y);
+            doc.text('CLIENTE: ' + clientName + '', 25, y);
             
             y += 5;
             doc.text('CUPS: ES0021000020679723GY', 25, y);
@@ -15726,7 +15995,7 @@
             // Texto "COMERCIAL: <cz" en la esquina derecha
             doc.setTextColor(130, 140, 130);
             doc.setFontSize(8);
-            doc.text('COMERCIAL: <cz', 185, y, { align: 'right' });
+            doc.text('COMERCIAL: ' + comercialCode + '', 185, y, { align: 'right' });
             
             y += 15;
             
@@ -15938,7 +16207,7 @@
         }
         
         // PDF DUAL POWER CUP
-        async function generateGasPDF_Dual_PowerCup(resFijo, resIndexed, dias, kwh, totalCliente) {
+        async function generateGasPDF_Dual_PowerCup(resFijo, resIndexed, dias, kwh, totalCliente, clientName = '[NOMBRE COMPLETO CLIENTE]', comercialCode = 'D=00') {
             window.showMessageModal("⏳ Generando PDF comparativo POWER CUP...");
             const { jsPDF} = window.jspdf;
             const doc = new jsPDF('p', 'mm', 'a4');
@@ -16008,58 +16277,59 @@
             doc.text('eficiencia energética.', logoX + 30, 44.5);
             
             // TEXTO DERECHA DEL HEADER
-            doc.setTextColor(255, 255, 255);
+            doc.setTextColor(40, 60, 80);
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(11);
             doc.text('ESTUDIO DE AHORRO', pageWidth - 12, 16, { align: 'right' });
             
-            doc.setTextColor(215, 230, 215);
+            doc.setTextColor(255, 255, 255);
             doc.setFontSize(13);
             doc.text('COMPARATIVA', pageWidth - 12, 27, { align: 'right' });
             
-            doc.setTextColor(255, 255, 255);
+            doc.setTextColor(100, 120, 140);
             doc.setFontSize(11);
             doc.text('PROFESIONAL', pageWidth - 12, 37, { align: 'right' });
             
             // Banner verde "ESTUDIO DE AHORRO"
             y = 63;
             doc.setFillColor(76, 175, 80);
-            doc.roundedRect(20, y, 170, 12, 4, 4, 'F');
+            doc.roundedRect(20, y, 170, 8, 3, 3, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(11);
-            doc.text('ESTUDIO DE AHORRO', 105, y + 8, { align: 'center' });
-            
-            // Recuadro con borde verde oliva para info del cliente
-            y += 18;
-            doc.setDrawColor(119, 132, 109);
-            doc.setLineWidth(2);
-            doc.roundedRect(20, y, 170, 25, 3, 3, 'D');
-            
-            doc.setFillColor(255, 255, 255);
-            doc.roundedRect(20, y, 170, 25, 3, 3, 'F');
+            doc.setFontSize(9);
+            doc.text('ESTUDIO DE AHORRO', 25, y + 5.5);
             
             y += 8;
-            doc.setTextColor(70, 80, 70);
+            
+            // Caja blanca con borde para info del cliente
+            doc.setFillColor(255, 255, 255);
+            doc.setDrawColor(119, 132, 109);
+            doc.setLineWidth(1);
+            doc.roundedRect(20, y, 170, 20, 3, 3, 'FD');
+            
+            // Título principal
+            doc.setTextColor(119, 132, 109);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(13);
-            doc.text('COMPARATIVA PROFESIONAL - POWER CUP', 25, y);
+            doc.setFontSize(12);
+            doc.text('COMPARATIVA PROFESIONAL - POWER CUP', 25, y + 6);
             
-            y += 7;
+            // Info del cliente
+            doc.setTextColor(80, 80, 80);
             doc.setFont('helvetica', 'normal');
+            doc.setFontSize(9);
+            doc.text('CLIENTE: ' + clientName, 25, y + 12);
+            doc.text('CUPS: ES0021000020679723GY', 25, y + 17);
+            
+            // Comercial en caja destacada (derecha)
+            doc.setFillColor(240, 245, 240);
+            doc.roundedRect(pageWidth - 20 - 45, y + 9, 45, 8, 2, 2, 'F');
+            doc.setTextColor(119, 132, 109);
+            doc.setFont('helvetica', 'bold');
             doc.setFontSize(8);
-            doc.setTextColor(100, 110, 100);
-            doc.text('CLIENTE: [NOMBRE COMPLETO CLIENTE]', 25, y);
+            doc.text('COMERCIAL: ' + comercialCode, pageWidth - 20 - 43, y + 14.5);
             
-            y += 5;
-            doc.text('CUPS: ES0021000020679723GY', 25, y);
+            y += 25;
             
-            // Texto "COMERCIAL: <cz" en la esquina derecha
-            doc.setTextColor(130, 140, 130);
-            doc.setFontSize(8);
-            doc.text('COMERCIAL: <cz', 185, y, { align: 'right' });
-            
-            y += 15;
             
             // Caja verde oliva "LA MEJOR OPCIÓN" (más grande)
             doc.setFillColor(119, 132, 109);
