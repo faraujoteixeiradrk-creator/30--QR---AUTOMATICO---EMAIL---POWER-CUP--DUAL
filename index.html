@@ -11936,8 +11936,8 @@
             
             dualSupplies.forEach(supply => {
                 if (supply.results) {
-                    totalDRK += supply.results.drk.total_anual || 0;
-                    totalPowerCup += supply.results.powercup.total_anual || 0;
+                    totalDRK += supply.results.drk?.total_anual || 0;
+                    totalPowerCup += supply.results.powercup?.total_anual || 0;
                     totalDaysWeighted += supply.data.dias || 30;
                 }
                 // Sumar factura original
@@ -13924,8 +13924,9 @@
                                 total_anual: totalAnual
                             },
                             powercup: {
-                                total: results.length > 1 ? results[1].total : 0,
-                                total_anual: results.length > 1 ? results[1].total_anual : 0
+                                // Para GAS, usar el mismo valor que DRK si no hay segunda tarifa
+                                total: results.length > 1 ? results[1].total : totalMensual,
+                                total_anual: results.length > 1 ? results[1].total_anual : totalAnual
                             }
                         }
                     };
