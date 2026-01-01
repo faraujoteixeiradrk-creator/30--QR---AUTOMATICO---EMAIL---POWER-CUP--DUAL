@@ -9634,6 +9634,7 @@
             console.log('dualMode:', window.dualMode);
             console.log('compareWithIndexed:', compareWithIndexed);
             console.log('lastComparisonResult exists:', !!lastComparisonResult);
+            console.log('comparisonMode:', comparisonMode);
             console.log('=================================================');
             
             // Cerrar modal de decisión
@@ -9647,6 +9648,55 @@
             }
             
             console.log('✅ lastComparisonResult OK, continuando...');
+            
+            // ⚡⚡⚡ INTERCEPTOR MODO DUAL - CRÍTICO PARA POWER CUP ⚡⚡⚡
+            if (window.dualMode === true) {
+                console.log('===== 🔥 MODO DUAL DETECTADO EN selectBestOptionDirect =====');
+                console.log('compareWithIndexed:', compareWithIndexed);
+                
+                try {
+                    const tariff = lastComparisonResult.tariffType || currentTariffType || '2.0TD';
+                    const data = extractDataFromResult(lastComparisonResult);
+                    
+                    const totalCost = lastComparisonResult.totalAnnual || 0;
+                    
+                    // DETECTAR si estamos en modo Power Cup o DRK
+                    const isPowerCupMode = comparisonMode === 'overall_best';
+                    console.log('🔍 Modo detectado:', isPowerCupMode ? 'POWER CUP' : 'DRK');
+                    console.log('Total cost:', totalCost);
+                    
+                    const results = {
+                        drk: isPowerCupMode ? {
+                            total: 0,
+                            total_anual: 0
+                        } : {
+                            total: totalCost / 12,
+                            total_anual: totalCost
+                        },
+                        powercup: isPowerCupMode ? {
+                            total: totalCost / 12,
+                            total_anual: totalCost
+                        } : {
+                            total: 0,
+                            total_anual: 0
+                        }
+                    };
+                    
+                    console.log('Datos preparados para DUAL:');
+                    console.log('  - tariff:', tariff);
+                    console.log('  - results.drk.total_anual:', results.drk.total_anual);
+                    console.log('  - results.powercup.total_anual:', results.powercup.total_anual);
+                    
+                    showDualConfirm('electricidad', tariff, data, results);
+                    
+                    console.log('✅✅✅ showDualConfirm ejecutada - SALIENDO de selectBestOptionDirect');
+                    return; // CRÍTICO: Salir aquí para evitar mostrar resultados individuales
+                } catch (error) {
+                    console.error('❌ ERROR en interceptor DUAL:', error);
+                    alert('Error al preparar confirmación DUAL: ' + error.message);
+                    return;
+                }
+            }
             
             // ═══════════════════════════════════════════════════════════════
             // ARREGLO: Cuando compareWithIndexed = true, calcular FIJO vs INDEXADO correctamente
