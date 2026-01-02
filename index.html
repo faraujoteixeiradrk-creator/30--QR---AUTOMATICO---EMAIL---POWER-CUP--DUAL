@@ -998,8 +998,8 @@
         
         <!-- 2. MultiCups Saga View (Intermediate Step) -->
         <div id="multicups-saga-view" class="fade-in hidden flex flex-col items-center justify-center min-h-[60vh] py-8">
-            <button onclick="resetToLanding()" class="mb-4 text-sm text-slate-500 hover:text-drk-600 flex items-center gap-1">
-                &larr; Volver a selección de modo
+            <button onclick="goBackFromMultiCupsSagaView()" class="mb-4 text-sm text-slate-500 hover:text-drk-600 flex items-center gap-1">
+                &larr; Volver a selección
             </button>
             
             <div class="bg-white p-6 md:p-8 rounded-3xl shadow-2xl w-full border-t-4 border-drk-500" id="multicups-saga-card">
@@ -2193,6 +2193,19 @@
             
             console.log('✅ Vuelto a landing-view sin resetear');
         };
+        
+        // NUEVA FUNCIÓN: Volver desde multicups-saga-view SIN hacer reset completo
+        window.goBackFromMultiCupsSagaView = function() {
+            console.log('🔙 goBackFromMultiCupsSagaView llamada');
+            
+            // Solo ocultar multicups-saga-view
+            document.getElementById('multicups-saga-view')?.classList.add('hidden');
+            
+            // Mostrar la pantalla de selección de tarifa (landing-view)
+            document.getElementById('landing-view')?.classList.remove('hidden');
+            
+            console.log('✅ Vuelto a landing-view desde MultiCups');
+        };
 
         function toggleMultiCupsInputPeriods(tariffType, prefix = 'input') {
             // Eliminamos la referencia a 6.1TD en la comprobación
@@ -2274,7 +2287,9 @@
                 // Mostrar/Ocultar inputs P3-P6/E4-E6
                 toggleMultiCupsInputPeriods(currentTariffType, 'input');
 
+                // CRÍTICO: Ocultar todas las vistas antes de mostrar initial-view
                 document.getElementById('landing-view').classList.add('hidden');
+                document.getElementById('multicups-saga-view').classList.add('hidden');
                 document.getElementById('initial-view').classList.remove('hidden');
                 
                 // Cargar tarifas al seleccionar tipo
