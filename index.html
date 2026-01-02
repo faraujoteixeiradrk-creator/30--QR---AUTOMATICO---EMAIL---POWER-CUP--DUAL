@@ -11329,229 +11329,336 @@
             overlay.classList.remove('hidden');
             overlay.classList.add('flex');
             progressMsg.textContent = 'Cargando imagen...';
-            attemptCounter.textContent = '0 / 10';
+            attemptCounter.textContent = '0 / 15';
+            
+            // TIMEOUT DE SEGURIDAD (30 segundos máximo)
+            let processingComplete = false;
+            const timeoutId = setTimeout(() => {
+                if (!processingComplete) {
+                    console.error('⏱️ TIMEOUT: Procesamiento tomó más de 30s');
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                    window.showErrorModal(
+                        "⏱️ El procesamiento tardó demasiado.\n\n" +
+                        "La imagen puede ser muy grande.\n\n" +
+                        "💡 Intenta:\n" +
+                        "• Recortar solo el QR antes de subir\n" +
+                        "• Usar una imagen más pequeña\n" +
+                        "• Usar el ESCÁNER EN VIVO"
+                    );
+                }
+            }, 30000);
             
             const img = new Image();
             const url = URL.createObjectURL(imageFileOrBlob);
             
             img.onload = () => {
-                URL.revokeObjectURL(url);
-                
-                console.log(`📸 Imagen: ${img.width}x${img.height}`);
-                
-                // Canvas base
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-                canvas.width = img.width;
-                canvas.height = img.height;
-                ctx.drawImage(img, 0, 0);
-                
-                const baseImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                
-                // PASO CRÍTICO: Detectar y recortar región QR PRIMERO
-                progressMsg.textContent = '🔍 Detectando región QR...';
-                const croppedImageData = smartCropQRRegion(baseImageData);
-                
-                // Crear nuevo canvas con imagen recortada
-                const croppedCanvas = document.createElement('canvas');
-                const croppedCtx = croppedCanvas.getContext('2d');
-                croppedCanvas.width = croppedImageData.width;
-                croppedCanvas.height = croppedImageData.height;
-                croppedCtx.putImageData(croppedImageData, 0, 0);
-                
-                let attemptNum = 0;
-                
-                // FUNCIÓN PARA PROBAR UN ESCALADO
-                const tryScale = (scale, label, canvas = croppedCanvas) => {
-                    attemptNum++;
-                    console.log(`🔍 Intento ${attemptNum}: ${label} (escala ${scale}x)`);
+                try {
+                    URL.revokeObjectURL(url);
                     
-                    // Actualizar UI
-                    progressMsg.textContent = label;
-                    attemptCounter.textContent = `${attemptNum} / 10`;
+                    console.log(`📸 Imagen: ${img.width}x${img.height}`);
                     
-                    try {
-                        // Escalar desde la imagen proporcionada
-                        const scaledCanvas = document.createElement('canvas');
-                        const scaledCtx = scaledCanvas.getContext('2d');
-                        scaledCanvas.width = Math.floor(canvas.width * scale);
-                        scaledCanvas.height = Math.floor(canvas.height * scale);
-                        
-                        scaledCtx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
-                        const scaledData = scaledCtx.getImageData(0, 0, scaledCanvas.width, scaledCanvas.height);
-                        
-                        // Intentar detectar
-                        const code = jsQR(scaledData.data, scaledData.width, scaledData.height, {
-                            inversionAttempts: "attemptBoth"
-                        });
-                        
-                        if (code) {
-                            console.log(`✅ ¡QR ENCONTRADO! en intento ${attemptNum}`);
-                            progressMsg.textContent = '✅ ¡QR Detectado!';
-                            setTimeout(() => {
-                                overlay.classList.add('hidden');
-                                overlay.classList.remove('flex');
-                                handleQRRead(code.data);
-                            }, 500);
-                            return true;
-                        }
-                    } catch (e) {
-                        console.warn(`Error en ${label}:`, e);
-                    }
-                    return false;
-                };
-                
-                // SECUENCIA DE INTENTOS
-                const runAttempts = () => {
-                    // Intento 1: Región recortada original
-                    if (tryScale(1.0, "📷 Región QR detectada")) return;
+                    // Canvas base
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    ctx.drawImage(img, 0, 0);
                     
-                    setTimeout(() => {
-                        // Intento 2: 2x
-                        if (tryScale(2.0, "🔍 Región 2x escalada")) return;
+                    const baseImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    
+                    // PASO CRÍTICO: Detectar y recortar región QR PRIMERO
+                    progressMsg.textContent = '🔍 Detectando región QR...';
+                    const croppedImageData = smartCropQRRegion(baseImageData);
+                    
+                    // Crear nuevo canvas con imagen recortada
+                    const croppedCanvas = document.createElement('canvas');
+                    const croppedCtx = croppedCanvas.getContext('2d');
+                    croppedCanvas.width = croppedImageData.width;
+                    croppedCanvas.height = croppedImageData.height;
+                    croppedCtx.putImageData(croppedImageData, 0, 0);
+                    
+                    let attemptNum = 0;
+                    
+                    // FUNCIÓN PARA PROBAR UN ESCALADO CON PROTECCIÓN
+                    const tryScale = (scale, label, canvas = croppedCanvas) => {
+                        attemptNum++;
+                        console.log(`🔍 Intento ${attemptNum}: ${label} (escala ${scale}x)`);
                         
-                        setTimeout(() => {
-                            // Intento 3: 3x
-                            if (tryScale(3.0, "🔎 Región 3x escalada")) return;
+                        // Actualizar UI
+                        progressMsg.textContent = label;
+                        attemptCounter.textContent = `${attemptNum} / 15`;
+                        
+                        try {
+                            // Calcular tamaño resultante
+                            const targetWidth = Math.floor(canvas.width * scale);
+                            const targetHeight = Math.floor(canvas.height * scale);
                             
-                            setTimeout(() => {
-                                // Intento 4: 4x
-                                if (tryScale(4.0, "🔬 Región 4x escalada")) return;
-                                
+                            // LÍMITE DE SEGURIDAD: No más de 8000x8000
+                            if (targetWidth > 8000 || targetHeight > 8000) {
+                                console.warn(`⚠️ Escalado ${scale}x demasiado grande, limitando a 8000px`);
+                                const limitScale = Math.min(8000 / canvas.width, 8000 / canvas.height);
+                                return tryScaleSafe(limitScale, label, canvas);
+                            }
+                            
+                            return tryScaleSafe(scale, label, canvas);
+                        } catch (e) {
+                            console.error(`❌ Error en ${label}:`, e);
+                            return false;
+                        }
+                    };
+                    
+                    // Función interna segura
+                    const tryScaleSafe = (scale, label, canvas) => {
+                        try {
+                            const scaledCanvas = document.createElement('canvas');
+                            const scaledCtx = scaledCanvas.getContext('2d');
+                            scaledCanvas.width = Math.floor(canvas.width * scale);
+                            scaledCanvas.height = Math.floor(canvas.height * scale);
+                            
+                            scaledCtx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+                            const scaledData = scaledCtx.getImageData(0, 0, scaledCanvas.width, scaledCanvas.height);
+                            
+                            // Intentar detectar
+                            const code = jsQR(scaledData.data, scaledData.width, scaledData.height, {
+                                inversionAttempts: "attemptBoth"
+                            });
+                            
+                            if (code) {
+                                processingComplete = true;
+                                clearTimeout(timeoutId);
+                                console.log(`✅ ¡QR ENCONTRADO! en intento ${attemptNum}`);
+                                progressMsg.textContent = '✅ ¡QR Detectado!';
                                 setTimeout(() => {
-                                    // Intento 5: 5x
-                                    if (tryScale(5.0, "🎯 Región 5x escalada")) return;
+                                    overlay.classList.add('hidden');
+                                    overlay.classList.remove('flex');
+                                    handleQRRead(code.data);
+                                }, 500);
+                                return true;
+                            }
+                            return false;
+                        } catch (e) {
+                            console.error('Error en tryScaleSafe:', e);
+                            return false;
+                        }
+                    };
+                    
+                    // SECUENCIA DE INTENTOS ULTRA AGRESIVA
+                    const runAttempts = () => {
+                        try {
+                            // Intento 1: Región original
+                            if (tryScale(1.0, "📷 Región QR")) return;
+                            
+                            setTimeout(() => { try {
+                                // Intento 2: 2x
+                                if (tryScale(2.0, "🔍 2x")) return;
+                                
+                                setTimeout(() => { try {
+                                    // Intento 3: 3x
+                                    if (tryScale(3.0, "🔎 3x")) return;
                                     
-                                    setTimeout(() => {
-                                        // Intento 6: 6x
-                                        if (tryScale(6.0, "🚀 Región 6x escalada")) return;
+                                    setTimeout(() => { try {
+                                        // Intento 4: 4x
+                                        if (tryScale(4.0, "🔬 4x")) return;
                                         
-                                        setTimeout(() => {
-                                            // Intento 7: 8x
-                                            if (tryScale(8.0, "💪 Región 8x escalada")) return;
+                                        setTimeout(() => { try {
+                                            // Intento 5: 6x (QR pequeños)
+                                            if (tryScale(6.0, "🎯 6x")) return;
                                             
-                                            setTimeout(() => {
-                                                // NUEVO: Intento 8 - Reducir resolución (para fotos DESENFOCADAS)
-                                                attemptNum++;
-                                                progressMsg.textContent = '🔧 Reduciendo resolución...';
-                                                attemptCounter.textContent = '8 / 10';
+                                            setTimeout(() => { try {
+                                                // Intento 6: 8x
+                                                if (tryScale(8.0, "🚀 8x")) return;
                                                 
-                                                try {
-                                                    // Reducir a la mitad para fotos borrosas
-                                                    const reducedCanvas = document.createElement('canvas');
-                                                    const reducedCtx = reducedCanvas.getContext('2d');
-                                                    reducedCanvas.width = Math.floor(croppedCanvas.width / 2);
-                                                    reducedCanvas.height = Math.floor(croppedCanvas.height / 2);
-                                                    reducedCtx.drawImage(croppedCanvas, 0, 0, reducedCanvas.width, reducedCanvas.height);
+                                                setTimeout(() => { try {
+                                                    // Intento 7: 10x (QR MUY pequeños)
+                                                    if (tryScale(10.0, "💪 10x (QR pequeño)")) return;
                                                     
-                                                    const reducedData = reducedCtx.getImageData(0, 0, reducedCanvas.width, reducedCanvas.height);
-                                                    const code = jsQR(reducedData.data, reducedData.width, reducedData.height, {
-                                                        inversionAttempts: "attemptBoth"
-                                                    });
-                                                    
-                                                    if (code) {
-                                                        console.log('✅ QR encontrado con reducción de resolución (foto desenfocada)');
-                                                        progressMsg.textContent = '✅ ¡QR Detectado!';
-                                                        setTimeout(() => {
-                                                            overlay.classList.add('hidden');
-                                                            overlay.classList.remove('flex');
-                                                            handleQRRead(code.data);
-                                                        }, 500);
-                                                        return;
-                                                    }
-                                                } catch (e) {
-                                                    console.error('Error en reducción:', e);
-                                                }
-                                                
-                                                setTimeout(() => {
-                                                    // Intento 9: Imagen original SIN recorte
-                                                    attemptNum++;
-                                                    progressMsg.textContent = '📸 Probando imagen completa...';
-                                                    attemptCounter.textContent = '9 / 10';
-                                                    
-                                                    try {
-                                                        const code = jsQR(baseImageData.data, baseImageData.width, baseImageData.height, {
-                                                            inversionAttempts: "attemptBoth"
-                                                        });
+                                                    setTimeout(() => { try {
+                                                        // Intento 8: 12x (QR microscópicos)
+                                                        if (tryScale(12.0, "🔥 12x (QR microscópico)")) return;
                                                         
-                                                        if (code) {
-                                                            console.log('✅ QR encontrado en imagen completa');
-                                                            progressMsg.textContent = '✅ ¡QR Detectado!';
-                                                            setTimeout(() => {
-                                                                overlay.classList.add('hidden');
-                                                                overlay.classList.remove('flex');
-                                                                handleQRRead(code.data);
-                                                            }, 500);
-                                                            return;
-                                                        }
-                                                    } catch (e) {
-                                                        console.error('Error en imagen completa:', e);
-                                                    }
-                                                    
-                                                    setTimeout(() => {
-                                                        // Intento 10: Imagen completa reducida (último recurso para desenfoque)
-                                                        attemptNum++;
-                                                        progressMsg.textContent = '🔧 Último intento (desenfoque)...';
-                                                        attemptCounter.textContent = '10 / 10';
-                                                        
-                                                        try {
-                                                            const finalCanvas = document.createElement('canvas');
-                                                            const finalCtx = finalCanvas.getContext('2d');
-                                                            finalCanvas.width = Math.floor(canvas.width / 3);
-                                                            finalCanvas.height = Math.floor(canvas.height / 3);
-                                                            finalCtx.drawImage(canvas, 0, 0, finalCanvas.width, finalCanvas.height);
+                                                        setTimeout(() => { try {
+                                                            // Intento 9: 15x (MÁXIMO para QR minúsculos)
+                                                            if (tryScale(15.0, "⚡ 15x (QR minúsculo)")) return;
                                                             
-                                                            const finalData = finalCtx.getImageData(0, 0, finalCanvas.width, finalCanvas.height);
-                                                            const code = jsQR(finalData.data, finalData.width, finalData.height, {
-                                                                inversionAttempts: "attemptBoth"
-                                                            });
-                                                            
-                                                            if (code) {
-                                                                console.log('✅ QR encontrado con reducción extrema (desenfoque severo)');
-                                                                progressMsg.textContent = '✅ ¡QR Detectado!';
-                                                                setTimeout(() => {
-                                                                    overlay.classList.add('hidden');
-                                                                    overlay.classList.remove('flex');
-                                                                    handleQRRead(code.data);
-                                                                }, 500);
-                                                                return;
-                                                            }
-                                                        } catch (e) {
-                                                            console.error('Error en reducción final:', e);
-                                                        }
-                                                        
-                                                        // NO ENCONTRADO
-                                                        console.log('❌ QR no detectado después de 10 intentos');
-                                                        overlay.classList.add('hidden');
-                                                        overlay.classList.remove('flex');
-                                                        window.showErrorModal(
-                                                            "❌ No se detectó el código QR.\n\n" +
-                                                            "💡 Consejos importantes:\n\n" +
-                                                            "📸 DISTANCIA: Saca la foto desde 20-30cm\n" +
-                                                            "   (no muy cerca o saldrá desenfocada)\n\n" +
-                                                            "💡 LUZ: Asegura buena iluminación\n\n" +
-                                                            "🎯 MEJOR OPCIÓN:\n" +
-                                                            "   Usa el ESCÁNER EN VIVO (funciona mejor)"
-                                                        );
-                                                    }, 300);
-                                                }, 300);
-                                            }, 300);
-                                        }, 300);
-                                    }, 300);
-                                }, 300);
-                            }, 300);
-                        }, 300);
-                    }, 300);
-                };
-                
-                runAttempts();
+                                                            setTimeout(() => { try {
+                                                                // Intento 10: Reducir desenfoque
+                                                                attemptNum++;
+                                                                progressMsg.textContent = '🔧 Reduciendo desenfoque...';
+                                                                attemptCounter.textContent = '10 / 15';
+                                                                
+                                                                const reducedCanvas = document.createElement('canvas');
+                                                                const reducedCtx = reducedCanvas.getContext('2d');
+                                                                reducedCanvas.width = Math.floor(croppedCanvas.width / 2);
+                                                                reducedCanvas.height = Math.floor(croppedCanvas.height / 2);
+                                                                reducedCtx.drawImage(croppedCanvas, 0, 0, reducedCanvas.width, reducedCanvas.height);
+                                                                
+                                                                const reducedData = reducedCtx.getImageData(0, 0, reducedCanvas.width, reducedCanvas.height);
+                                                                const code = jsQR(reducedData.data, reducedData.width, reducedData.height, {
+                                                                    inversionAttempts: "attemptBoth"
+                                                                });
+                                                                
+                                                                if (code) {
+                                                                    processingComplete = true;
+                                                                    clearTimeout(timeoutId);
+                                                                    progressMsg.textContent = '✅ ¡QR Detectado!';
+                                                                    setTimeout(() => {
+                                                                        overlay.classList.add('hidden');
+                                                                        overlay.classList.remove('flex');
+                                                                        handleQRRead(code.data);
+                                                                    }, 500);
+                                                                    return;
+                                                                }
+                                                                
+                                                                setTimeout(() => { try {
+                                                                    // Intento 11-13: Imagen completa con escalados
+                                                                    attemptNum++;
+                                                                    progressMsg.textContent = '📸 Imagen completa 3x...';
+                                                                    attemptCounter.textContent = '11 / 15';
+                                                                    
+                                                                    if (tryScale(3.0, "Completa 3x", canvas)) return;
+                                                                    
+                                                                    setTimeout(() => { try {
+                                                                        if (tryScale(6.0, "Completa 6x", canvas)) return;
+                                                                        
+                                                                        setTimeout(() => { try {
+                                                                            if (tryScale(10.0, "Completa 10x", canvas)) return;
+                                                                            
+                                                                            setTimeout(() => { try {
+                                                                                // Intento 14: Imagen original sin procesar
+                                                                                attemptNum++;
+                                                                                progressMsg.textContent = '📷 Original...';
+                                                                                attemptCounter.textContent = '14 / 15';
+                                                                                
+                                                                                const code = jsQR(baseImageData.data, baseImageData.width, baseImageData.height, {
+                                                                                    inversionAttempts: "attemptBoth"
+                                                                                });
+                                                                                
+                                                                                if (code) {
+                                                                                    processingComplete = true;
+                                                                                    clearTimeout(timeoutId);
+                                                                                    progressMsg.textContent = '✅ ¡QR Detectado!';
+                                                                                    setTimeout(() => {
+                                                                                        overlay.classList.add('hidden');
+                                                                                        overlay.classList.remove('flex');
+                                                                                        handleQRRead(code.data);
+                                                                                    }, 500);
+                                                                                    return;
+                                                                                }
+                                                                                
+                                                                                setTimeout(() => { try {
+                                                                                    // Intento 15: Reducción extrema (último recurso)
+                                                                                    attemptNum++;
+                                                                                    progressMsg.textContent = '🔧 Último intento...';
+                                                                                    attemptCounter.textContent = '15 / 15';
+                                                                                    
+                                                                                    const finalCanvas = document.createElement('canvas');
+                                                                                    const finalCtx = finalCanvas.getContext('2d');
+                                                                                    finalCanvas.width = Math.floor(canvas.width / 3);
+                                                                                    finalCanvas.height = Math.floor(canvas.height / 3);
+                                                                                    finalCtx.drawImage(canvas, 0, 0, finalCanvas.width, finalCanvas.height);
+                                                                                    
+                                                                                    const finalData = finalCtx.getImageData(0, 0, finalCanvas.width, finalCanvas.height);
+                                                                                    const code = jsQR(finalData.data, finalData.width, finalData.height, {
+                                                                                        inversionAttempts: "attemptBoth"
+                                                                                    });
+                                                                                    
+                                                                                    processingComplete = true;
+                                                                                    clearTimeout(timeoutId);
+                                                                                    
+                                                                                    if (code) {
+                                                                                        progressMsg.textContent = '✅ ¡QR Detectado!';
+                                                                                        setTimeout(() => {
+                                                                                            overlay.classList.add('hidden');
+                                                                                            overlay.classList.remove('flex');
+                                                                                            handleQRRead(code.data);
+                                                                                        }, 500);
+                                                                                    } else {
+                                                                                        // NO ENCONTRADO DESPUÉS DE TODO
+                                                                                        console.log('❌ QR no detectado después de 15 intentos');
+                                                                                        overlay.classList.add('hidden');
+                                                                                        overlay.classList.remove('flex');
+                                                                                        window.showErrorModal(
+                                                                                            "❌ No se detectó el código QR.\n\n" +
+                                                                                            "Se probaron 15 técnicas diferentes.\n\n" +
+                                                                                            "💡 Para QR muy pequeños:\n\n" +
+                                                                                            "📸 Saca foto desde 20-30cm\n" +
+                                                                                            "🔍 Asegura que el QR esté NÍTIDO\n" +
+                                                                                            "💡 Usa buena iluminación\n" +
+                                                                                            "✂️ Recorta solo el QR si puedes\n\n" +
+                                                                                            "🎯 ESCÁNER EN VIVO funciona mejor"
+                                                                                        );
+                                                                                    }
+                                                                                } catch (e) { handleFinalError(e); }
+                                                                                }, 200);
+                                                                            } catch (e) { handleFinalError(e); }
+                                                                            }, 200);
+                                                                        } catch (e) { handleFinalError(e); }
+                                                                        }, 200);
+                                                                    } catch (e) { handleFinalError(e); }
+                                                                    }, 200);
+                                                                } catch (e) { handleFinalError(e); }
+                                                                }, 200);
+                                                            } catch (e) { handleFinalError(e); }
+                                                            }, 200);
+                                                        } catch (e) { handleFinalError(e); }
+                                                        }, 200);
+                                                    } catch (e) { handleFinalError(e); }
+                                                    }, 200);
+                                                } catch (e) { handleFinalError(e); }
+                                                }, 200);
+                                            } catch (e) { handleFinalError(e); }
+                                            }, 200);
+                                        } catch (e) { handleFinalError(e); }
+                                        }, 200);
+                                    } catch (e) { handleFinalError(e); }
+                                    }, 200);
+                                } catch (e) { handleFinalError(e); }
+                                }, 200);
+                            } catch (e) { handleFinalError(e); }
+                            }, 200);
+                        } catch (e) {
+                            handleFinalError(e);
+                        }
+                    };
+                    
+                    // Función para manejar errores finales
+                    const handleFinalError = (e) => {
+                        processingComplete = true;
+                        clearTimeout(timeoutId);
+                        console.error('❌ Error crítico en procesamiento:', e);
+                        overlay.classList.add('hidden');
+                        overlay.classList.remove('flex');
+                        window.showErrorModal(
+                            "❌ Error al procesar la imagen.\n\n" +
+                            "La imagen puede estar corrupta o ser demasiado grande.\n\n" +
+                            "💡 Intenta:\n" +
+                            "• Usar una imagen diferente\n" +
+                            "• Hacer una nueva foto\n" +
+                            "• Usar el ESCÁNER EN VIVO"
+                        );
+                    };
+                    
+                    runAttempts();
+                    
+                } catch (e) {
+                    processingComplete = true;
+                    clearTimeout(timeoutId);
+                    URL.revokeObjectURL(url);
+                    console.error('❌ Error al cargar imagen:', e);
+                    overlay.classList.add('hidden');
+                    overlay.classList.remove('flex');
+                    window.showErrorModal("❌ Error al procesar la imagen.");
+                }
             };
             
             img.onerror = () => {
+                processingComplete = true;
+                clearTimeout(timeoutId);
                 URL.revokeObjectURL(url);
                 overlay.classList.add('hidden');
                 overlay.classList.remove('flex');
-                window.showErrorModal("Error al cargar la imagen.");
+                window.showErrorModal("❌ No se pudo cargar la imagen.");
             };
             
             img.src = url;
@@ -11644,7 +11751,7 @@
             scanLoopCount++;
             
             // === FASE 1: RÁPIDA (siempre) ===
-            // Los primeros 30 frames (1 segundo) solo hacen detección básica rápida
+            // Los primeros 15 frames (0.5 seg) solo hacen detección básica rápida
             
             // PASO 1: Lectura normal ultra rápida
             code = jsQR(imageData.data, imageData.width, imageData.height, {
@@ -11680,11 +11787,11 @@
             // Añadir procesamiento pesado después de 30 frames
             if (!code && scanLoopCount > 30) {
                 try {
-                    // PASO 4: Escalado completo con nitidez (para QR muy pequeños o borrosos)
+                    // PASO 4: Escalado 3x con nitidez (para QR pequeños)
                     const scaledFull = preprocessImage(imageData, { 
-                        scale: 2.5, 
+                        scale: 3.0, 
                         contrast: 1.4,
-                        sharpen: true // Ahora sí, con nitidez completa
+                        sharpen: true
                     });
                     code = jsQR(scaledFull.data, scaledFull.width, scaledFull.height, {
                         inversionAttempts: "attemptBoth"
@@ -11702,13 +11809,43 @@
                 } catch (e) {}
             }
             
+            // === FASE 4: AGRESIVA (después de 1.5 segundos) - QR MUY PEQUEÑOS ===
             if (!code && scanLoopCount > 45) {
                 try {
-                    // PASO 6: Ultra procesado (último recurso para QR muy difíciles)
+                    // PASO 6: Escalado 5x para QR muy pequeños
+                    const scaled5x = preprocessImage(imageData, { 
+                        scale: 5.0, 
+                        contrast: 1.5, 
+                        sharpen: true 
+                    });
+                    code = jsQR(scaled5x.data, scaled5x.width, scaled5x.height, {
+                        inversionAttempts: "attemptBoth"
+                    });
+                } catch (e) {}
+            }
+            
+            // === FASE 5: ULTRA AGRESIVA (después de 2 segundos) - QR MICROSCÓPICOS ===
+            if (!code && scanLoopCount > 60) {
+                try {
+                    // PASO 7: Escalado 8x para QR microscópicos (último recurso)
+                    const scaled8x = preprocessImage(imageData, { 
+                        scale: 8.0, 
+                        contrast: 1.6, 
+                        sharpen: true 
+                    });
+                    code = jsQR(scaled8x.data, scaled8x.width, scaled8x.height, {
+                        inversionAttempts: "attemptBoth"
+                    });
+                } catch (e) {}
+            }
+            
+            if (!code && scanLoopCount > 60) {
+                try {
+                    // PASO 8: Ultra procesado con max contraste
                     const ultraProcessed = preprocessImage(imageData, { 
-                        scale: 2.5, 
-                        contrast: 2.0, 
-                        brightness: 0.2,
+                        scale: 4.0, 
+                        contrast: 2.5, 
+                        brightness: 0.3,
                         sharpen: true 
                     });
                     code = jsQR(ultraProcessed.data, ultraProcessed.width, ultraProcessed.height, {
