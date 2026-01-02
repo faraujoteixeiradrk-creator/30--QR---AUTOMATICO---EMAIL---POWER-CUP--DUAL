@@ -11773,6 +11773,29 @@
                 canvas.height = video.videoHeight; 
             }
             
+            // ========================================
+            // AUTO-CAPTURA: Después de 3 segundos, procesar como FOTO
+            // ========================================
+            if (scanLoopCount === 90 && !frameFrozen) { // 90 frames = 3 segundos
+                console.log('⚡ Auto-captura activada: procesando frame como foto...');
+                
+                // Capturar frame actual
+                canvasCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Convertir a Blob
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        console.log('📸 Frame capturado, procesando con motor de fotos...');
+                        stopScanner(); // Detener escáner
+                        
+                        // Procesar con el motor de FOTOS que funciona perfecto
+                        decodeQRFromImage(blob);
+                    }
+                }, 'image/jpeg', 0.95);
+                
+                return; // Salir del loop
+            }
+            
             // Si el frame está congelado, usar el frame guardado
             let imageData;
             if (frameFrozen && frozenImageData) {
@@ -11810,14 +11833,18 @@
                 powerBar.style.width = '40%';
                 powerLabel.textContent = 'Escalando 3x...';
                 powerBar.className = 'bg-gradient-to-r from-green-400 to-green-600 h-full transition-all duration-500';
-            } else if (smartCropApplied) {
-                powerBar.style.width = '100%';
-                powerLabel.textContent = '🎯 REGIÓN QR DETECTADA';
-                powerBar.className = 'bg-gradient-to-r from-green-500 to-green-700 h-full transition-all duration-500';
-            } else {
-                powerBar.style.width = '60%';
+            } else if (scanLoopCount <= 60) {
+                powerBar.style.width = '70%';
                 powerLabel.textContent = 'Buscando región...';
                 powerBar.className = 'bg-gradient-to-r from-yellow-400 to-yellow-600 h-full transition-all duration-500';
+            } else if (scanLoopCount <= 85) {
+                powerBar.style.width = '90%';
+                powerLabel.textContent = 'Preparando captura...';
+                powerBar.className = 'bg-gradient-to-r from-orange-400 to-orange-600 h-full transition-all duration-500';
+            } else {
+                powerBar.style.width = '100%';
+                powerLabel.textContent = '📸 Capturando...';
+                powerBar.className = 'bg-gradient-to-r from-red-500 to-red-700 h-full transition-all duration-500';
             }
             
             // ========================================
@@ -11826,7 +11853,6 @@
             if (!smartCropApplied && scanLoopCount === 30) {
                 try {
                     console.log('🔍 Aplicando smartCropQRRegion al video...');
-                    powerLabel.textContent = '🔍 Detectando región QR...';
                     
                     // Aplicar smartCrop al frame actual
                     const croppedImageData = smartCropQRRegion(imageData);
@@ -11842,8 +11868,9 @@
                             height: croppedImageData.height
                         };
                         console.log(`✅ Región QR detectada: ${smartCropRegion.width}x${smartCropRegion.height}`);
+                        powerLabel.textContent = '🎯 Región detectada';
                     } else {
-                        console.log('⚠️ SmartCrop no encontró región específica, usando full frame');
+                        console.log('⚠️ SmartCrop no encontró región específica');
                     }
                 } catch (e) {
                     console.error('Error en smartCrop:', e);
