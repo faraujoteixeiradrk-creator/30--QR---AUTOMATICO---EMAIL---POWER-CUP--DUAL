@@ -1122,10 +1122,29 @@
                 </div>
             </div>
             
+            <!-- Controles avanzados -->
+            <div class="flex gap-2 mb-3">
+                <button id="freeze-frame-btn" class="flex-1 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all">
+                    <span class="text-xl">⏸️</span>
+                    <span class="text-sm">CONGELAR</span>
+                </button>
+                <button id="toggle-zoom-btn" class="flex-1 bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-bold py-3 rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all">
+                    <span class="text-xl">🔍</span>
+                    <span class="text-sm" id="zoom-label">ZOOM ON</span>
+                </button>
+            </div>
+            
             <div class="relative w-full aspect-[3/4] bg-black rounded-2xl overflow-hidden shadow-2xl mb-4">
                 <div id="interactive" class="viewport w-full h-full"></div>
+                <!-- Canvas oculto para zoom preview -->
+                <canvas id="zoom-preview-canvas" class="hidden absolute top-4 right-4 border-4 border-green-400 rounded-lg shadow-xl" width="200" height="200"></canvas>
                 <div id="scanner-guide" class="absolute inset-0 border-2 border-drk-500 opacity-50 m-8 rounded-lg pointer-events-none"></div>
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><div class="w-64 h-1 bg-red-500 opacity-50"></div></div>
+                <!-- Indicador de frame congelado -->
+                <div id="frozen-indicator" class="hidden absolute top-4 left-4 bg-purple-600 text-white px-3 py-1 rounded-lg font-bold text-sm flex items-center gap-2">
+                    <span>⏸️</span>
+                    <span>ANALIZANDO...</span>
+                </div>
             </div>
             <p class="text-center text-sm text-slate-600 mb-2 font-semibold">📱 Centra el código QR en el recuadro</p>
             <div class="bg-amber-50 border-2 border-amber-200 rounded-xl p-3 mb-3">
@@ -1701,6 +1720,11 @@
         let scannerRunning = false;
         let scanLoopCount = 0; // Contador de frames para procesamiento progresivo
         let stream = null, video = null, canvas = null, canvasCtx = null, animationFrameId = null;
+        let zoomEnabled = true; // Zoom digital activado por defecto
+        let frameFrozen = false; // Frame congelado para análisis profundo
+        let frozenImageData = null; // ImageData del frame congelado
+        let frameBuffer = []; // Buffer para acumular frames (mejora con blur)
+        const MAX_FRAME_BUFFER = 3; // Número de frames a promediar
         
         // Protección anti-duplicados para compareOffers
         let lastCompareOffersCall = 0;
@@ -10903,6 +10927,8 @@
             
             document.getElementById('start-scan-btn').onclick = startScanner;
             document.getElementById('capture-photo-btn').onclick = capturePhoto;
+            document.getElementById('freeze-frame-btn').onclick = toggleFreezeFrame;
+            document.getElementById('toggle-zoom-btn').onclick = toggleZoom;
             
             // Modificación del botón de volver para la vista de entrada
             document.querySelector('#initial-view button:first-child').onclick = () => {
@@ -11745,60 +11771,111 @@
                 canvas.height = video.videoHeight; 
             }
             
-            canvasCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = canvasCtx.getImageData(0, 0, canvas.width, canvas.height);
+            // Si el frame está congelado, usar el frame guardado
+            let imageData;
+            if (frameFrozen && frozenImageData) {
+                imageData = frozenImageData;
+                scanLoopCount++; // Seguir incrementando para aumentar potencia
+            } else {
+                // Capturar frame actual
+                canvasCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                imageData = canvasCtx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                // Acumular frames en buffer para promediar (reduce blur)
+                frameBuffer.push(imageData);
+                if (frameBuffer.length > MAX_FRAME_BUFFER) {
+                    frameBuffer.shift();
+                }
+                
+                scanLoopCount++;
+            }
             
             let code = null;
-            scanLoopCount++;
             
             // Actualizar indicador visual de potencia
             const powerBar = document.getElementById('scan-power-bar');
             const powerLabel = document.getElementById('scan-power-label');
             
-            if (scanLoopCount <= 10) {
+            if (frameFrozen) {
+                powerBar.style.width = '100%';
+                powerLabel.textContent = '⏸️ ANALIZANDO PROFUNDO';
+                powerBar.className = 'bg-gradient-to-r from-purple-500 to-purple-700 h-full transition-all duration-500';
+            } else if (scanLoopCount <= 10) {
                 powerBar.style.width = '20%';
                 powerLabel.textContent = 'Estándar';
                 powerBar.className = 'bg-gradient-to-r from-blue-400 to-blue-600 h-full transition-all duration-500';
             } else if (scanLoopCount <= 20) {
                 powerBar.style.width = '40%';
-                powerLabel.textContent = 'Escalando 3x...';
+                powerLabel.textContent = 'Zoom 3x...';
                 powerBar.className = 'bg-gradient-to-r from-green-400 to-green-600 h-full transition-all duration-500';
             } else if (scanLoopCount <= 30) {
                 powerBar.style.width = '60%';
-                powerLabel.textContent = 'Escalando 5-8x...';
+                powerLabel.textContent = 'Zoom 6x...';
                 powerBar.className = 'bg-gradient-to-r from-yellow-400 to-yellow-600 h-full transition-all duration-500';
             } else if (scanLoopCount <= 45) {
                 powerBar.style.width = '80%';
-                powerLabel.textContent = 'Alta potencia 10x...';
+                powerLabel.textContent = 'Zoom 10x...';
                 powerBar.className = 'bg-gradient-to-r from-orange-400 to-orange-600 h-full transition-all duration-500';
             } else {
                 powerBar.style.width = '100%';
-                powerLabel.textContent = 'MÁXIMA 12x';
+                powerLabel.textContent = 'MÁXIMO 15x';
                 powerBar.className = 'bg-gradient-to-r from-red-500 to-red-700 h-full transition-all duration-500';
             }
             
-            // === FASE 1: RÁPIDA (siempre) ===
+            // TÉCNICA 1: ZOOM DIGITAL EN CENTRO (si está activado)
+            let workingData = imageData;
+            if (zoomEnabled) {
+                try {
+                    // Extraer centro 50% de la imagen
+                    const centerSize = Math.min(canvas.width, canvas.height) * 0.5;
+                    const centerX = (canvas.width - centerSize) / 2;
+                    const centerY = (canvas.height - centerSize) / 2;
+                    
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = centerSize;
+                    tempCanvas.height = centerSize;
+                    
+                    tempCtx.drawImage(canvas, centerX, centerY, centerSize, centerSize, 0, 0, centerSize, centerSize);
+                    workingData = tempCtx.getImageData(0, 0, centerSize, centerSize);
+                    
+                    // Mostrar preview del zoom
+                    const previewCanvas = document.getElementById('zoom-preview-canvas');
+                    if (previewCanvas) {
+                        const previewCtx = previewCanvas.getContext('2d');
+                        previewCtx.drawImage(tempCanvas, 0, 0, 200, 200);
+                    }
+                } catch (e) {
+                    console.warn('Error en zoom:', e);
+                }
+            }
             
-            // PASO 1: Lectura normal ultra rápida
-            code = jsQR(imageData.data, imageData.width, imageData.height, {
+            // TÉCNICA 2: PROMEDIADO DE FRAMES (si tenemos suficientes)
+            if (!frameFrozen && frameBuffer.length >= 2) {
+                try {
+                    workingData = averageFrames(frameBuffer);
+                } catch (e) {
+                    console.warn('Error promediando frames:', e);
+                }
+            }
+            
+            // === FASE 1: DETECCIÓN RÁPIDA (siempre) ===
+            code = jsQR(workingData.data, workingData.width, workingData.height, {
                 inversionAttempts: "dontInvert"
             });
             
             if (!code) {
-                // PASO 2: Con inversiones
-                code = jsQR(imageData.data, imageData.width, imageData.height, {
+                code = jsQR(workingData.data, workingData.width, workingData.height, {
                     inversionAttempts: "attemptBoth"
                 });
             }
             
-            // === FASE 2: AGRESIVA INMEDIATA (después de 0.3s) ===
-            // Para QR pequeños, empezar agresivo RÁPIDO
+            // === FASE 2: ESCALADO 3X (después de 0.3s) ===
             if (!code && scanLoopCount > 10) {
                 try {
-                    // PASO 3: Escalado 3x (QR pequeños) - MÁS RÁPIDO que antes
-                    const scaled3x = preprocessImage(imageData, { 
+                    const scaled3x = preprocessImage(workingData, { 
                         scale: 3.0, 
-                        contrast: 1.3,
+                        contrast: 1.4,
                         sharpen: true
                     });
                     code = jsQR(scaled3x.data, scaled3x.width, scaled3x.height, {
@@ -11807,83 +11884,48 @@
                 } catch (e) {}
             }
             
-            // === FASE 3: MUY AGRESIVA (después de 0.5s) ===
-            if (!code && scanLoopCount > 15) {
-                try {
-                    // PASO 4: Escalado 5x (QR muy pequeños)
-                    const scaled5x = preprocessImage(imageData, { 
-                        scale: 5.0, 
-                        contrast: 1.4,
-                        sharpen: true
-                    });
-                    code = jsQR(scaled5x.data, scaled5x.width, scaled5x.height, {
-                        inversionAttempts: "attemptBoth"
-                    });
-                } catch (e) {}
-            }
-            
-            // === FASE 4: DETECCIÓN EN CENTRO (después de 0.7s) ===
-            // Para papel que el usuario centra en pantalla
+            // === FASE 3: ESCALADO 6X (después de 0.7s) ===
             if (!code && scanLoopCount > 20) {
                 try {
-                    // PASO 5: Recortar centro 60% y escalar 8x
-                    const centerCanvas = document.createElement('canvas');
-                    const centerCtx = centerCanvas.getContext('2d');
-                    
-                    const cropSize = Math.min(canvas.width, canvas.height) * 0.6;
-                    const cropX = (canvas.width - cropSize) / 2;
-                    const cropY = (canvas.height - cropSize) / 2;
-                    
-                    centerCanvas.width = cropSize;
-                    centerCanvas.height = cropSize;
-                    centerCtx.drawImage(canvas, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
-                    
-                    const centerData = centerCtx.getImageData(0, 0, centerCanvas.width, centerCanvas.height);
-                    const scaledCenter = preprocessImage(centerData, { 
-                        scale: 8.0, 
+                    const scaled6x = preprocessImage(workingData, { 
+                        scale: 6.0, 
                         contrast: 1.5,
                         sharpen: true
                     });
-                    
-                    code = jsQR(scaledCenter.data, scaledCenter.width, scaledCenter.height, {
+                    code = jsQR(scaled6x.data, scaled6x.width, scaled6x.height, {
                         inversionAttempts: "attemptBoth"
                     });
                 } catch (e) {}
             }
             
-            // === FASE 5: ULTRA AGRESIVA (después de 1s) ===
+            // === FASE 4: BINARIZACIÓN ADAPTATIVA (después de 1s) ===
             if (!code && scanLoopCount > 30) {
                 try {
-                    // PASO 6: Escalado 8x completo (QR microscópicos)
-                    const scaled8x = preprocessImage(imageData, { 
-                        scale: 8.0, 
-                        contrast: 1.5, 
-                        sharpen: true 
-                    });
-                    code = jsQR(scaled8x.data, scaled8x.width, scaled8x.height, {
+                    const binarized = applyAdaptiveBinarization(workingData);
+                    code = jsQR(binarized.data, binarized.width, binarized.height, {
                         inversionAttempts: "attemptBoth"
                     });
                 } catch (e) {}
             }
             
+            // === FASE 5: BINARIZACIÓN + ESCALADO 4X (después de 1s) ===
             if (!code && scanLoopCount > 30) {
                 try {
-                    // PASO 7: Alto contraste
-                    const highContrast = increaseContrast(imageData, 2.2);
-                    code = jsQR(highContrast.data, highContrast.width, highContrast.height, {
+                    const binarized = applyAdaptiveBinarization(workingData);
+                    const scaled = preprocessImage(binarized, { scale: 4.0 });
+                    code = jsQR(scaled.data, scaled.width, scaled.height, {
                         inversionAttempts: "attemptBoth"
                     });
                 } catch (e) {}
             }
             
-            // === FASE 6: EXTREMA (después de 1.5s) ===
+            // === FASE 6: ESCALADO 10X (después de 1.5s) ===
             if (!code && scanLoopCount > 45) {
                 try {
-                    // PASO 8: Escalado 10x para QR minúsculos
-                    const scaled10x = preprocessImage(imageData, { 
+                    const scaled10x = preprocessImage(workingData, { 
                         scale: 10.0, 
-                        contrast: 1.6, 
-                        sharpen: true 
+                        contrast: 1.6,
+                        sharpen: true
                     });
                     code = jsQR(scaled10x.data, scaled10x.width, scaled10x.height, {
                         inversionAttempts: "attemptBoth"
@@ -11891,59 +11933,191 @@
                 } catch (e) {}
             }
             
-            // === FASE 7: MÁXIMA (después de 2s) ===
-            if (!code && scanLoopCount > 60) {
+            // === FASE 7: ALTO CONTRASTE + ESCALADO (después de 1.5s) ===
+            if (!code && scanLoopCount > 45) {
                 try {
-                    // PASO 9: Centro 60% con escalado 12x (MÁXIMO)
-                    const centerCanvas = document.createElement('canvas');
-                    const centerCtx = centerCanvas.getContext('2d');
-                    
-                    const cropSize = Math.min(canvas.width, canvas.height) * 0.6;
-                    const cropX = (canvas.width - cropSize) / 2;
-                    const cropY = (canvas.height - cropSize) / 2;
-                    
-                    centerCanvas.width = cropSize;
-                    centerCanvas.height = cropSize;
-                    centerCtx.drawImage(canvas, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
-                    
-                    const centerData = centerCtx.getImageData(0, 0, centerCanvas.width, centerCanvas.height);
-                    const scaledMax = preprocessImage(centerData, { 
-                        scale: 12.0, 
-                        contrast: 1.8,
-                        sharpen: true
-                    });
-                    
-                    code = jsQR(scaledMax.data, scaledMax.width, scaledMax.height, {
+                    const highContrast = increaseContrast(workingData, 2.5);
+                    const scaled = preprocessImage(highContrast, { scale: 5.0, sharpen: true });
+                    code = jsQR(scaled.data, scaled.width, scaled.height, {
                         inversionAttempts: "attemptBoth"
                     });
                 } catch (e) {}
             }
             
+            // === FASE 8: MÁXIMO - ESCALADO 15X (después de 2s) ===
             if (!code && scanLoopCount > 60) {
                 try {
-                    // PASO 10: Ultra procesado extremo
-                    const ultraProcessed = preprocessImage(imageData, { 
-                        scale: 6.0, 
-                        contrast: 2.5, 
-                        brightness: 0.4,
-                        sharpen: true 
+                    const scaled15x = preprocessImage(workingData, { 
+                        scale: 15.0, 
+                        contrast: 1.8,
+                        sharpen: true
                     });
-                    code = jsQR(ultraProcessed.data, ultraProcessed.width, ultraProcessed.height, {
+                    code = jsQR(scaled15x.data, scaled15x.width, scaled15x.height, {
+                        inversionAttempts: "attemptBoth"
+                    });
+                } catch (e) {}
+            }
+            
+            // === FASE 9: ULTRA - BINARIZACIÓN + 15X (después de 2.5s) ===
+            if (!code && scanLoopCount > 75) {
+                try {
+                    const binarized = applyAdaptiveBinarization(workingData);
+                    const scaled = preprocessImage(binarized, { 
+                        scale: 15.0,
+                        sharpen: true
+                    });
+                    code = jsQR(scaled.data, scaled.width, scaled.height, {
                         inversionAttempts: "attemptBoth"
                     });
                 } catch (e) {}
             }
             
             if (code) { 
-                console.log('✅ QR detectado en frame', scanLoopCount);
-                scanLoopCount = 0; // Reset counter
-                // Reset visual
+                console.log(`✅ QR detectado en frame ${scanLoopCount}${frameFrozen ? ' (CONGELADO)' : ''}`);
+                scanLoopCount = 0;
+                frameBuffer = [];
+                frameFrozen = false;
+                frozenImageData = null;
+                // Reset UI
+                document.getElementById('frozen-indicator').classList.add('hidden');
+                const btn = document.getElementById('freeze-frame-btn');
+                btn.innerHTML = '<span class="text-xl">⏸️</span><span class="text-sm">CONGELAR</span>';
+                btn.className = btn.className.replace('from-green', 'from-purple').replace('to-green', 'to-purple');
                 powerBar.style.width = '20%';
                 powerLabel.textContent = 'Estándar';
                 handleQRRead(code.data); 
             } else { 
                 animationFrameId = requestAnimationFrame(scanLoop); 
             }
+        }
+        
+        // FUNCIONES AVANZADAS DEL ESCÁNER
+        
+        function toggleZoom() {
+            zoomEnabled = !zoomEnabled;
+            const btn = document.getElementById('zoom-label');
+            const preview = document.getElementById('zoom-preview-canvas');
+            
+            if (zoomEnabled) {
+                btn.textContent = 'ZOOM ON';
+                preview.classList.remove('hidden');
+                console.log('🔍 Zoom digital ACTIVADO');
+            } else {
+                btn.textContent = 'ZOOM OFF';
+                preview.classList.add('hidden');
+                console.log('🔍 Zoom digital DESACTIVADO');
+            }
+        }
+        
+        function toggleFreezeFrame() {
+            frameFrozen = !frameFrozen;
+            const indicator = document.getElementById('frozen-indicator');
+            const btn = document.getElementById('freeze-frame-btn');
+            
+            if (frameFrozen) {
+                // Congelar frame actual
+                indicator.classList.remove('hidden');
+                btn.innerHTML = '<span class="text-xl">▶️</span><span class="text-sm">CONTINUAR</span>';
+                btn.className = btn.className.replace('from-purple', 'from-green').replace('to-purple', 'to-green');
+                
+                // Guardar frame actual
+                if (canvas && canvas.width > 0) {
+                    frozenImageData = canvasCtx.getImageData(0, 0, canvas.width, canvas.height);
+                    console.log('⏸️ Frame CONGELADO - Analizando profundamente...');
+                }
+            } else {
+                // Descongelar
+                indicator.classList.add('hidden');
+                btn.innerHTML = '<span class="text-xl">⏸️</span><span class="text-sm">CONGELAR</span>';
+                btn.className = btn.className.replace('from-green', 'from-purple').replace('to-green', 'to-purple');
+                frozenImageData = null;
+                frameBuffer = [];
+                scanLoopCount = 0;
+                console.log('▶️ Frame DESCONGELADO - Continuando...');
+            }
+        }
+        
+        // Función para aplicar binarización adaptativa (Otsu mejorado)
+        function applyAdaptiveBinarization(imageData) {
+            const data = imageData.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            
+            // Convertir a grayscale
+            const gray = new Uint8ClampedArray(width * height);
+            for (let i = 0; i < data.length; i += 4) {
+                gray[i / 4] = Math.floor(0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]);
+            }
+            
+            // Calcular threshold Otsu
+            const histogram = new Array(256).fill(0);
+            for (let i = 0; i < gray.length; i++) {
+                histogram[gray[i]]++;
+            }
+            
+            let sum = 0;
+            for (let i = 0; i < 256; i++) {
+                sum += i * histogram[i];
+            }
+            
+            let sumB = 0, wB = 0, wF = 0;
+            let maxVariance = 0, threshold = 0;
+            const total = gray.length;
+            
+            for (let t = 0; t < 256; t++) {
+                wB += histogram[t];
+                if (wB === 0) continue;
+                
+                wF = total - wB;
+                if (wF === 0) break;
+                
+                sumB += t * histogram[t];
+                const mB = sumB / wB;
+                const mF = (sum - sumB) / wF;
+                const variance = wB * wF * (mB - mF) * (mB - mF);
+                
+                if (variance > maxVariance) {
+                    maxVariance = variance;
+                    threshold = t;
+                }
+            }
+            
+            // Aplicar threshold
+            const output = new ImageData(width, height);
+            for (let i = 0; i < gray.length; i++) {
+                const val = gray[i] > threshold ? 255 : 0;
+                output.data[i * 4] = val;
+                output.data[i * 4 + 1] = val;
+                output.data[i * 4 + 2] = val;
+                output.data[i * 4 + 3] = 255;
+            }
+            
+            return output;
+        }
+        
+        // Función para promediar múltiples frames (reduce blur)
+        function averageFrames(frames) {
+            if (frames.length === 0) return null;
+            if (frames.length === 1) return frames[0];
+            
+            const width = frames[0].width;
+            const height = frames[0].height;
+            const output = new ImageData(width, height);
+            
+            for (let i = 0; i < output.data.length; i += 4) {
+                let r = 0, g = 0, b = 0;
+                for (let f = 0; f < frames.length; f++) {
+                    r += frames[f].data[i];
+                    g += frames[f].data[i + 1];
+                    b += frames[f].data[i + 2];
+                }
+                output.data[i] = r / frames.length;
+                output.data[i + 1] = g / frames.length;
+                output.data[i + 2] = b / frames.length;
+                output.data[i + 3] = 255;
+            }
+            
+            return output;
         }
         
         // Función mejorada para aumentar contraste
