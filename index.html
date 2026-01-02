@@ -1725,6 +1725,8 @@
         let frozenImageData = null; // ImageData del frame congelado
         let frameBuffer = []; // Buffer para acumular frames (mejora con blur)
         const MAX_FRAME_BUFFER = 3; // Número de frames a promediar
+        let smartCropApplied = false; // Flag para smartCrop (solo una vez)
+        let smartCropRegion = null; // Región QR detectada {x, y, width, height}
         
         // Protección anti-duplicados para compareOffers
         let lastCompareOffersCall = 0;
@@ -11802,29 +11804,79 @@
                 powerBar.className = 'bg-gradient-to-r from-purple-500 to-purple-700 h-full transition-all duration-500';
             } else if (scanLoopCount <= 10) {
                 powerBar.style.width = '20%';
-                powerLabel.textContent = 'Estándar';
+                powerLabel.textContent = 'Básico';
                 powerBar.className = 'bg-gradient-to-r from-blue-400 to-blue-600 h-full transition-all duration-500';
-            } else if (scanLoopCount <= 20) {
-                powerBar.style.width = '40%';
-                powerLabel.textContent = 'Zoom 3x...';
-                powerBar.className = 'bg-gradient-to-r from-green-400 to-green-600 h-full transition-all duration-500';
             } else if (scanLoopCount <= 30) {
-                powerBar.style.width = '60%';
-                powerLabel.textContent = 'Zoom 6x...';
-                powerBar.className = 'bg-gradient-to-r from-yellow-400 to-yellow-600 h-full transition-all duration-500';
-            } else if (scanLoopCount <= 45) {
-                powerBar.style.width = '80%';
-                powerLabel.textContent = 'Zoom 10x...';
-                powerBar.className = 'bg-gradient-to-r from-orange-400 to-orange-600 h-full transition-all duration-500';
-            } else {
+                powerBar.style.width = '40%';
+                powerLabel.textContent = 'Escalando 3x...';
+                powerBar.className = 'bg-gradient-to-r from-green-400 to-green-600 h-full transition-all duration-500';
+            } else if (smartCropApplied) {
                 powerBar.style.width = '100%';
-                powerLabel.textContent = 'MÁXIMO 15x';
-                powerBar.className = 'bg-gradient-to-r from-red-500 to-red-700 h-full transition-all duration-500';
+                powerLabel.textContent = '🎯 REGIÓN QR DETECTADA';
+                powerBar.className = 'bg-gradient-to-r from-green-500 to-green-700 h-full transition-all duration-500';
+            } else {
+                powerBar.style.width = '60%';
+                powerLabel.textContent = 'Buscando región...';
+                powerBar.className = 'bg-gradient-to-r from-yellow-400 to-yellow-600 h-full transition-all duration-500';
             }
             
-            // TÉCNICA 1: ZOOM DIGITAL EN CENTRO (si está activado)
+            // ========================================
+            // CLAVE: APLICAR SMARTCROP DESPUÉS DE 1 SEGUNDO
+            // ========================================
+            if (!smartCropApplied && scanLoopCount === 30) {
+                try {
+                    console.log('🔍 Aplicando smartCropQRRegion al video...');
+                    powerLabel.textContent = '🔍 Detectando región QR...';
+                    
+                    // Aplicar smartCrop al frame actual
+                    const croppedImageData = smartCropQRRegion(imageData);
+                    
+                    // Si el crop es diferente del original, guardamos la región
+                    if (croppedImageData.width < imageData.width * 0.9) {
+                        smartCropApplied = true;
+                        // Calcular coordenadas de la región detectada
+                        smartCropRegion = {
+                            x: (canvas.width - croppedImageData.width) / 2,
+                            y: (canvas.height - croppedImageData.height) / 2,
+                            width: croppedImageData.width,
+                            height: croppedImageData.height
+                        };
+                        console.log(`✅ Región QR detectada: ${smartCropRegion.width}x${smartCropRegion.height}`);
+                    } else {
+                        console.log('⚠️ SmartCrop no encontró región específica, usando full frame');
+                    }
+                } catch (e) {
+                    console.error('Error en smartCrop:', e);
+                }
+            }
+            
+            // USAR LA REGIÓN DETECTADA para todos los procesamientos
             let workingData = imageData;
-            if (zoomEnabled) {
+            
+            if (smartCropApplied && smartCropRegion) {
+                try {
+                    // Extraer solo la región QR detectada
+                    const regionCanvas = document.createElement('canvas');
+                    const regionCtx = regionCanvas.getContext('2d');
+                    regionCanvas.width = smartCropRegion.width;
+                    regionCanvas.height = smartCropRegion.height;
+                    
+                    regionCtx.drawImage(
+                        canvas,
+                        smartCropRegion.x, smartCropRegion.y,
+                        smartCropRegion.width, smartCropRegion.height,
+                        0, 0,
+                        smartCropRegion.width, smartCropRegion.height
+                    );
+                    
+                    workingData = regionCtx.getImageData(0, 0, regionCanvas.width, regionCanvas.height);
+                } catch (e) {
+                    console.error('Error extrayendo región:', e);
+                }
+            }
+            
+            // TÉCNICA 1: ZOOM DIGITAL EN CENTRO (si está activado y NO hay smartCrop)
+            if (zoomEnabled && !smartCropApplied) {
                 try {
                     // Extraer centro 50% de la imagen
                     const centerSize = Math.min(canvas.width, canvas.height) * 0.5;
@@ -11850,8 +11902,8 @@
                 }
             }
             
-            // TÉCNICA 2: PROMEDIADO DE FRAMES (si tenemos suficientes)
-            if (!frameFrozen && frameBuffer.length >= 2) {
+            // TÉCNICA 2: PROMEDIADO DE FRAMES (si tenemos suficientes y NO hay smartCrop aplicado)
+            if (!frameFrozen && frameBuffer.length >= 2 && !smartCropApplied) {
                 try {
                     workingData = averageFrames(frameBuffer);
                 } catch (e) {
@@ -11884,8 +11936,8 @@
                 } catch (e) {}
             }
             
-            // === FASE 3: ESCALADO 6X (después de 0.7s) ===
-            if (!code && scanLoopCount > 20) {
+            // === FASE 3: ESCALADO 6X (después de 0.7s o inmediatamente si hay smartCrop) ===
+            if (!code && (scanLoopCount > 20 || smartCropApplied)) {
                 try {
                     const scaled6x = preprocessImage(workingData, { 
                         scale: 6.0, 
@@ -11898,29 +11950,8 @@
                 } catch (e) {}
             }
             
-            // === FASE 4: BINARIZACIÓN ADAPTATIVA (después de 1s) ===
-            if (!code && scanLoopCount > 30) {
-                try {
-                    const binarized = applyAdaptiveBinarization(workingData);
-                    code = jsQR(binarized.data, binarized.width, binarized.height, {
-                        inversionAttempts: "attemptBoth"
-                    });
-                } catch (e) {}
-            }
-            
-            // === FASE 5: BINARIZACIÓN + ESCALADO 4X (después de 1s) ===
-            if (!code && scanLoopCount > 30) {
-                try {
-                    const binarized = applyAdaptiveBinarization(workingData);
-                    const scaled = preprocessImage(binarized, { scale: 4.0 });
-                    code = jsQR(scaled.data, scaled.width, scaled.height, {
-                        inversionAttempts: "attemptBoth"
-                    });
-                } catch (e) {}
-            }
-            
-            // === FASE 6: ESCALADO 10X (después de 1.5s) ===
-            if (!code && scanLoopCount > 45) {
+            // === FASE 4: ESCALADO 10X (después de 1s o inmediatamente si hay smartCrop) ===
+            if (!code && (scanLoopCount > 30 || smartCropApplied)) {
                 try {
                     const scaled10x = preprocessImage(workingData, { 
                         scale: 10.0, 
@@ -11933,19 +11964,32 @@
                 } catch (e) {}
             }
             
-            // === FASE 7: ALTO CONTRASTE + ESCALADO (después de 1.5s) ===
-            if (!code && scanLoopCount > 45) {
+            // === FASE 5: BINARIZACIÓN ADAPTATIVA (después de 1s o con smartCrop) ===
+            if (!code && (scanLoopCount > 30 || smartCropApplied)) {
                 try {
-                    const highContrast = increaseContrast(workingData, 2.5);
-                    const scaled = preprocessImage(highContrast, { scale: 5.0, sharpen: true });
+                    const binarized = applyAdaptiveBinarization(workingData);
+                    code = jsQR(binarized.data, binarized.width, binarized.height, {
+                        inversionAttempts: "attemptBoth"
+                    });
+                } catch (e) {}
+            }
+            
+            // === FASE 6: BINARIZACIÓN + ESCALADO 8X ===
+            if (!code && (scanLoopCount > 30 || smartCropApplied)) {
+                try {
+                    const binarized = applyAdaptiveBinarization(workingData);
+                    const scaled = preprocessImage(binarized, { 
+                        scale: 8.0,
+                        sharpen: true
+                    });
                     code = jsQR(scaled.data, scaled.width, scaled.height, {
                         inversionAttempts: "attemptBoth"
                     });
                 } catch (e) {}
             }
             
-            // === FASE 8: MÁXIMO - ESCALADO 15X (después de 2s) ===
-            if (!code && scanLoopCount > 60) {
+            // === FASE 7: ESCALADO 15X (después de 1.5s) ===
+            if (!code && scanLoopCount > 45) {
                 try {
                     const scaled15x = preprocessImage(workingData, { 
                         scale: 15.0, 
@@ -11958,8 +12002,19 @@
                 } catch (e) {}
             }
             
-            // === FASE 9: ULTRA - BINARIZACIÓN + 15X (después de 2.5s) ===
-            if (!code && scanLoopCount > 75) {
+            // === FASE 8: ALTO CONTRASTE + ESCALADO ===
+            if (!code && scanLoopCount > 45) {
+                try {
+                    const highContrast = increaseContrast(workingData, 2.5);
+                    const scaled = preprocessImage(highContrast, { scale: 8.0, sharpen: true });
+                    code = jsQR(scaled.data, scaled.width, scaled.height, {
+                        inversionAttempts: "attemptBoth"
+                    });
+                } catch (e) {}
+            }
+            
+            // === FASE 9: BINARIZACIÓN + 15X (máximo) ===
+            if (!code && scanLoopCount > 60) {
                 try {
                     const binarized = applyAdaptiveBinarization(workingData);
                     const scaled = preprocessImage(binarized, { 
@@ -11973,18 +12028,20 @@
             }
             
             if (code) { 
-                console.log(`✅ QR detectado en frame ${scanLoopCount}${frameFrozen ? ' (CONGELADO)' : ''}`);
+                console.log(`✅ QR detectado en frame ${scanLoopCount}${smartCropApplied ? ' (CON SMARTCROP)' : ''}${frameFrozen ? ' (CONGELADO)' : ''}`);
                 scanLoopCount = 0;
                 frameBuffer = [];
                 frameFrozen = false;
                 frozenImageData = null;
+                smartCropApplied = false;
+                smartCropRegion = null;
                 // Reset UI
                 document.getElementById('frozen-indicator').classList.add('hidden');
                 const btn = document.getElementById('freeze-frame-btn');
                 btn.innerHTML = '<span class="text-xl">⏸️</span><span class="text-sm">CONGELAR</span>';
                 btn.className = btn.className.replace('from-green', 'from-purple').replace('to-green', 'to-purple');
                 powerBar.style.width = '20%';
-                powerLabel.textContent = 'Estándar';
+                powerLabel.textContent = 'Básico';
                 handleQRRead(code.data); 
             } else { 
                 animationFrameId = requestAnimationFrame(scanLoop); 
@@ -12137,6 +12194,11 @@
         function stopScanner() {
             scannerRunning = false;
             scanLoopCount = 0; // Reset del contador de frames
+            frameBuffer = [];
+            smartCropApplied = false;
+            smartCropRegion = null;
+            frameFrozen = false;
+            frozenImageData = null;
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             if (stream) stream.getTracks().forEach(t => t.stop());
             video = null; stream = null;
