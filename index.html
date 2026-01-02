@@ -11895,6 +11895,10 @@
                     const annualPrice = supply.totalAnnual.toFixed(2);
                     const displayInfo = supply.cups || `${monthlyPrice}€/mes`;
                     
+                    // Calcular ahorro
+                    const ahorro = (supply.originalBillAnnual || 0) - (supply.totalAnnual || 0);
+                    const tieneAhorro = ahorro > 0;
+                    
                     return `
                     <div class="flex items-center justify-between p-3 bg-slate-50 rounded-lg border border-slate-200">
                         <div class="flex items-center gap-3 flex-1">
@@ -11902,11 +11906,12 @@
                             <div class="flex-1">
                                 <p class="text-sm font-bold text-slate-800">${supply.type === 'electricidad' ? 'Electricidad' : 'Gas'} - ${supply.tariff}</p>
                                 <p class="text-xs text-slate-500">${displayInfo}</p>
+                                ${!tieneAhorro ? '<p class="text-xs text-slate-400 mt-1">No hay ahorro</p>' : ''}
                             </div>
                         </div>
                         <div class="text-right">
                             <p class="text-sm font-bold text-blue-600">${monthlyPrice}€/mes</p>
-                            <p class="text-xs text-slate-500">${annualPrice}€/año</p>
+                            <p class="text-xs ${tieneAhorro ? 'text-green-600' : 'text-slate-400'}">${annualPrice}€/año</p>
                         </div>
                     </div>
                 `;
