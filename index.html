@@ -10969,23 +10969,23 @@
                 gray[idx] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
             }
             
-            // Binarizar (threshold adaptativo simple)
+            // Binarizar con threshold adaptativo más sensible
             const binary = new Uint8ClampedArray(width * height);
-            const threshold = 128;
+            const threshold = 140; // Más sensible para detectar QR pequeños
             for (let i = 0; i < gray.length; i++) {
                 binary[i] = gray[i] < threshold ? 0 : 255;
             }
             
             // Encontrar límites del contenido (no blanco)
             let minX = width, maxX = 0, minY = height, maxY = 0;
-            let hasContent = false;
+            let darkPixels = 0;
             
             for (let y = 0; y < height; y++) {
                 for (let x = 0; x < width; x++) {
                     const idx = y * width + x;
                     // Si el píxel es oscuro (parte del QR)
                     if (binary[idx] < 128) {
-                        hasContent = true;
+                        darkPixels++;
                         if (x < minX) minX = x;
                         if (x > maxX) maxX = x;
                         if (y < minY) minY = y;
@@ -10994,14 +10994,16 @@
                 }
             }
             
-            // Si no hay contenido oscuro, devolver imagen original
-            if (!hasContent || maxX <= minX || maxY <= minY) {
+            // Si no hay suficiente contenido oscuro, devolver imagen original
+            const darkPixelRatio = darkPixels / (width * height);
+            if (darkPixels === 0 || maxX <= minX || maxY <= minY || darkPixelRatio < 0.01) {
+                console.log('🔍 No hay suficiente contenido oscuro para recortar');
                 return imageData;
             }
             
-            // Añadir margen del 10% alrededor del QR detectado
-            const marginX = Math.floor((maxX - minX) * 0.1);
-            const marginY = Math.floor((maxY - minY) * 0.1);
+            // Añadir margen más generoso (15% para screenshots)
+            const marginX = Math.floor((maxX - minX) * 0.15);
+            const marginY = Math.floor((maxY - minY) * 0.15);
             
             minX = Math.max(0, minX - marginX);
             maxX = Math.min(width - 1, maxX + marginX);
@@ -11011,8 +11013,10 @@
             const cropWidth = maxX - minX + 1;
             const cropHeight = maxY - minY + 1;
             
-            // Si el recorte es muy pequeño (< 20% de la imagen), probablemente sea ruido
-            if (cropWidth < width * 0.2 || cropHeight < height * 0.2) {
+            // Para screenshots: aceptar recortes más pequeños (5% en lugar de 20%)
+            const minSize = Math.min(width, height) * 0.05;
+            if (cropWidth < minSize || cropHeight < minSize) {
+                console.log('🔍 Recorte demasiado pequeño, usando imagen completa');
                 return imageData;
             }
             
@@ -11033,7 +11037,8 @@
             
             const croppedData = croppedCtx.getImageData(0, 0, cropWidth, cropHeight);
             
-            console.log(`📐 QR detectado y recortado: ${width}x${height} → ${cropWidth}x${cropHeight} (${Math.round(cropWidth*cropHeight/(width*height)*100)}% del original)`);
+            const reductionPercent = Math.round((1 - (cropWidth*cropHeight)/(width*height)) * 100);
+            console.log(`📐 QR recortado: ${width}x${height} → ${cropWidth}x${cropHeight} (-${reductionPercent}% área)`);
             
             return croppedData;
         }
@@ -11102,7 +11107,7 @@
         }
 
         function decodeQRFromImage(imageFileOrBlob) {
-            document.getElementById('loading-status').textContent = "🔍 Cargando imagen...";
+            document.getElementById('loading-status').textContent = "🔍 Procesando...";
             document.getElementById('loading-status').classList.remove('hidden');
             
             const img = new Image();
@@ -11111,122 +11116,192 @@
             img.onload = () => {
                 URL.revokeObjectURL(url);
                 
-                console.log(`📸 Imagen cargada: ${img.width}x${img.height}`);
+                console.log(`📸 Foto: ${img.width}x${img.height}`);
                 
-                // IMPORTANTE: Corregir orientación EXIF (fotos de iPhone suelen tenerla)
+                // Preparar imagen
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
-                
-                // Por defecto, asumir orientación correcta
                 canvas.width = img.width;
                 canvas.height = img.height;
                 ctx.drawImage(img, 0, 0);
                 
-                // Obtener la imagen corregida
-                const correctedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                console.log(`📸 Imagen preparada para análisis: ${canvas.width}x${canvas.height}`);
+                const baseImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 
-                // ESTRATEGIA OPTIMIZADA: Solo los intentos más efectivos
+                // ESTRATEGIA ULTRA AGRESIVA PARA FOTOS GUARDADAS
+                let attemptIndex = 0;
+                
                 const attempts = [
-                    // Intento 1: Original simple (funciona el 60% de las veces)
-                    { 
-                        scale: 1.0, 
-                        label: "original" 
+                    // 1. ESCALADO EXTREMO 8X - Fuerza bruta máxima
+                    () => {
+                        console.log('🔍 Intento 1: Escalado 8x extremo');
+                        document.getElementById('loading-status').textContent = '🔍 1/6: Escalado 8x...';
+                        const scaled = preprocessImage(baseImageData, { scale: 8.0, contrast: 1.3, sharpen: true });
+                        return jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
                     },
                     
-                    // Intento 2: Escalado 2x (para QR pequeños - muy efectivo)
-                    { 
-                        scale: 2.0, 
-                        contrast: 1.2,
-                        label: "2x escalado" 
+                    // 2. ESCALADO 6X - Muy efectivo
+                    () => {
+                        console.log('🔍 Intento 2: Escalado 6x');
+                        document.getElementById('loading-status').textContent = '🔍 2/6: Escalado 6x...';
+                        const scaled = preprocessImage(baseImageData, { scale: 6.0, contrast: 1.4, sharpen: true });
+                        return jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
                     },
                     
-                    // Intento 3: Recorte automático + binarización (para fotos con mucho blanco)
-                    { 
-                        autoCrop: true, 
-                        binarize: true, 
-                        scale: 1.5, 
-                        label: "recorte + binarización" 
+                    // 3. CENTRO 10X - Zona central escalada al máximo
+                    () => {
+                        console.log('🔍 Intento 3: Centro 10x');
+                        document.getElementById('loading-status').textContent = '🔍 3/6: Centro 10x...';
+                        const w = baseImageData.width;
+                        const h = baseImageData.height;
+                        const centerX = Math.floor(w * 0.2);
+                        const centerY = Math.floor(h * 0.2);
+                        const centerW = Math.floor(w * 0.6);
+                        const centerH = Math.floor(h * 0.6);
+                        
+                        const tempCanvas = document.createElement('canvas');
+                        const tempCtx = tempCanvas.getContext('2d');
+                        tempCanvas.width = w;
+                        tempCanvas.height = h;
+                        tempCtx.putImageData(baseImageData, 0, 0);
+                        
+                        const regionCanvas = document.createElement('canvas');
+                        const regionCtx = regionCanvas.getContext('2d');
+                        regionCanvas.width = centerW;
+                        regionCanvas.height = centerH;
+                        regionCtx.drawImage(tempCanvas, centerX, centerY, centerW, centerH, 0, 0, centerW, centerH);
+                        
+                        const centerData = regionCtx.getImageData(0, 0, centerW, centerH);
+                        const scaled = preprocessImage(centerData, { scale: 10.0, contrast: 1.5, sharpen: true });
+                        return jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
                     },
                     
-                    // Intento 4: Escalado 3x con nitidez (QR muy pequeños)
-                    { 
-                        scale: 3.0, 
-                        contrast: 1.3, 
-                        sharpen: true, 
-                        label: "3x escalado" 
+                    // 4. BINARIZACIÓN + 6X
+                    () => {
+                        console.log('🔍 Intento 4: Binarización + 6x');
+                        document.getElementById('loading-status').textContent = '🔍 4/6: Binarización + 6x...';
+                        const binarized = enhanceQRContrast(baseImageData);
+                        const scaled = preprocessImage(binarized, { scale: 6.0, sharpen: true });
+                        return jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
                     },
                     
-                    // Intento 5: Alto contraste (mala iluminación)
-                    { 
-                        scale: 2.0, 
-                        brightness: 0.2, 
-                        contrast: 2.0, 
-                        sharpen: true, 
-                        label: "alto contraste" 
+                    // 5. ESCALADO 4X simple
+                    () => {
+                        console.log('🔍 Intento 5: Escalado 4x');
+                        document.getElementById('loading-status').textContent = '🔍 5/6: Escalado 4x...';
+                        const scaled = preprocessImage(baseImageData, { scale: 4.0, contrast: 1.2 });
+                        return jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
+                    },
+                    
+                    // 6. ORIGINAL
+                    () => {
+                        console.log('🔍 Intento 6: Original');
+                        document.getElementById('loading-status').textContent = '🔍 6/6: Original...';
+                        return jsQR(baseImageData.data, baseImageData.width, baseImageData.height, { inversionAttempts: "attemptBoth" });
                     }
                 ];
                 
-                let attemptIndex = 0;
-                
-                const tryDecode = () => {
+                const tryNextAttempt = () => {
                     if (attemptIndex >= attempts.length) {
-                        document.getElementById('loading-status').classList.add('hidden');
-                        window.showErrorModal(
-                            "❌ No se pudo detectar un código QR.\n\n" +
-                            "💡 Sugerencias:\n" +
-                            "• Asegúrate de que el QR sea visible y completo\n" +
-                            "• Intenta con una foto más clara o cercana\n" +
-                            "• Usa el escáner en tiempo real (funciona mejor)"
-                        );
+                        // ÚLTIMO RECURSO: Dividir en 9 cuadrículas y probar cada una con 12x
+                        tryGridSearch();
                         return;
                     }
                     
-                    const config = attempts[attemptIndex];
-                    document.getElementById('loading-status').textContent = 
-                        `🔍 Intento ${attemptIndex + 1}/${attempts.length}: ${config.label}...`;
-                    
                     setTimeout(() => {
                         try {
-                            let imageData = correctedImageData;
-                            
-                            // PASO 1: Recorte automático (si está habilitado)
-                            if (config.autoCrop) {
-                                imageData = detectAndCropQR(imageData);
-                            }
-                            
-                            // PASO 2: Binarización (si está habilitada)
-                            if (config.binarize) {
-                                imageData = enhanceQRContrast(imageData);
-                            }
-                            
-                            // PASO 3: Preprocesar (escalado, contraste, etc.)
-                            if (config.scale !== 1.0 || config.brightness || config.contrast || config.sharpen) {
-                                imageData = preprocessImage(imageData, config);
-                            }
-                            
-                            // PASO 4: Intentar decodificar
-                            let code = jsQR(imageData.data, imageData.width, imageData.height, {
-                                inversionAttempts: "attemptBoth"
-                            });
+                            const code = attempts[attemptIndex]();
                             
                             if (code) {
                                 document.getElementById('loading-status').classList.add('hidden');
-                                console.log(`✅ QR detectado en intento ${attemptIndex + 1} (${config.label})`);
+                                console.log(`✅ QR encontrado en intento ${attemptIndex + 1}`);
                                 handleQRRead(code.data);
                             } else {
                                 attemptIndex++;
-                                tryDecode();
+                                tryNextAttempt();
                             }
                         } catch (e) {
-                            console.error('Error en intento ' + attemptIndex, e);
+                            console.error('Error:', e);
                             attemptIndex++;
-                            tryDecode();
+                            tryNextAttempt();
                         }
-                    }, 30); // Reducido de 50ms a 30ms
+                    }, 10); // Muy rápido
                 };
                 
-                tryDecode();
+                // BÚSQUEDA EN CUADRÍCULA (último recurso)
+                const tryGridSearch = () => {
+                    console.log('🔍 ÚLTIMO RECURSO: Búsqueda en cuadrícula 3x3');
+                    document.getElementById('loading-status').textContent = '🔍 Búsqueda exhaustiva...';
+                    
+                    const w = baseImageData.width;
+                    const h = baseImageData.height;
+                    
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+                    tempCanvas.width = w;
+                    tempCanvas.height = h;
+                    tempCtx.putImageData(baseImageData, 0, 0);
+                    
+                    // Dividir en 9 regiones (3x3)
+                    const gridSize = 3;
+                    const cellW = Math.floor(w / gridSize);
+                    const cellH = Math.floor(h / gridSize);
+                    
+                    let gridIndex = 0;
+                    const totalCells = gridSize * gridSize;
+                    
+                    const tryNextCell = () => {
+                        if (gridIndex >= totalCells) {
+                            document.getElementById('loading-status').classList.add('hidden');
+                            window.showErrorModal(
+                                "❌ No se pudo detectar el QR.\n\n" +
+                                "💡 Soluciones:\n" +
+                                "• Haz foto MÁS CERCA del QR\n" +
+                                "• Asegúrate que el QR ocupe más espacio\n" +
+                                "• Prueba el escáner en vivo (botón verde)"
+                            );
+                            return;
+                        }
+                        
+                        setTimeout(() => {
+                            try {
+                                const row = Math.floor(gridIndex / gridSize);
+                                const col = gridIndex % gridSize;
+                                const x = col * cellW;
+                                const y = row * cellH;
+                                
+                                console.log(`🔍 Celda ${gridIndex + 1}/${totalCells} (${row},${col})`);
+                                
+                                const cellCanvas = document.createElement('canvas');
+                                const cellCtx = cellCanvas.getContext('2d');
+                                cellCanvas.width = cellW;
+                                cellCanvas.height = cellH;
+                                cellCtx.drawImage(tempCanvas, x, y, cellW, cellH, 0, 0, cellW, cellH);
+                                
+                                const cellData = cellCtx.getImageData(0, 0, cellW, cellH);
+                                const scaled = preprocessImage(cellData, { scale: 12.0, contrast: 1.6, sharpen: true });
+                                
+                                const code = jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
+                                
+                                if (code) {
+                                    document.getElementById('loading-status').classList.add('hidden');
+                                    console.log(`✅ QR encontrado en celda ${gridIndex + 1}`);
+                                    handleQRRead(code.data);
+                                } else {
+                                    gridIndex++;
+                                    tryNextCell();
+                                }
+                            } catch (e) {
+                                console.error('Error en celda:', e);
+                                gridIndex++;
+                                tryNextCell();
+                            }
+                        }, 10);
+                    };
+                    
+                    tryNextCell();
+                };
+                
+                tryNextAttempt();
             };
             
             img.onerror = () => {
