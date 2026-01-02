@@ -5881,15 +5881,27 @@
                             </div>
                             
                             <div style="background-color: #FEE2E2; border-radius: 12px; padding: 16px; margin-top: 16px;">
+                                <h3 style="color: #991B1B; margin-bottom: 12px;">📊 TU COSTE ACTUAL CONSOLIDADO</h3>
                                 <table style="width: 100%; border-collapse: collapse;">
-                                    <tr>
-                                        <td style="padding: 8px; font-weight: bold; color: #991B1B;">TU COSTE ACTUAL CONSOLIDADO</td>
+                                    <tr style="border-bottom: 1px solid #FCA5A5;">
+                                        <td style="padding: 8px; font-weight: bold;">Periodo analizado:</td>
+                                        <td style="padding: 8px; text-align: right;">${gasData.dias} días</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #FCA5A5;">
+                                        <td style="padding: 8px; font-weight: bold;">Tipo de tarifa GAS:</td>
+                                        <td style="padding: 8px; text-align: right;">${gasData.tariffType}</td>
+                                    </tr>
+                                    <tr style="border-bottom: 2px solid #DC2626;">
+                                        <td style="padding: 8px; font-weight: bold;">Consumo total:</td>
+                                        <td style="padding: 8px; text-align: right; font-weight: bold;">${gasData.kwh} kWh</td>
+                                    </tr>
+                                    <tr style="background-color: #FECACA;">
+                                        <td style="padding: 12px; font-size: 18px; font-weight: bold; color: #991B1B;">Total factura:</td>
+                                        <td style="padding: 12px; font-size: 24px; text-align: right; color: #991B1B; font-weight: bold;">${gasData.totalCliente.toFixed(2)} €</td>
                                     </tr>
                                     <tr>
-                                        <td style="padding: 8px; font-size: 24px; color: #991B1B; font-weight: bold;">Total factura: ${gasData.totalCliente.toFixed(2)} €</td>
-                                    </tr>
-                                    <tr>
-                                        <td style="padding: 8px; font-size: 18px; color: #991B1B; font-weight: bold;">Estimación anual: ${(gasData.totalCliente * 365 / gasData.dias).toFixed(2)} €/año</td>
+                                        <td style="padding: 12px; font-size: 16px; font-weight: bold; color: #991B1B;">Estimación anual:</td>
+                                        <td style="padding: 12px; font-size: 20px; text-align: right; color: #991B1B; font-weight: bold;">${(gasData.totalCliente * 365 / gasData.dias).toFixed(2)} €/año</td>
                                     </tr>
                                 </table>
                             </div>
@@ -5942,15 +5954,31 @@ ${i + 1}. ${r.name}
                                 </div>
                                 
                                 <div style="background-color: ${isDrk ? '#f0f9ff' : '#f7fee7'}; border-radius: 12px; padding: 16px; margin-top: 16px;">
+                                    <h3 style="color: ${brandColor}; margin-bottom: 12px;">📊 TU COSTE ACTUAL CONSOLIDADO</h3>
                                     <table style="width: 100%; border-collapse: collapse;">
-                                        <tr>
-                                            <td style="padding: 8px; font-weight: bold; color: ${isDrk ? '#0c4a6e' : '#365314'};">TU COSTE ACTUAL CONSOLIDADO</td>
+                                        <tr style="border-bottom: 1px solid ${isDrk ? '#bfdbfe' : '#d9f99d'};">
+                                            <td style="padding: 8px; font-weight: bold;">Periodo analizado:</td>
+                                            <td style="padding: 8px; text-align: right;">${lastComparisonResult.dias_facturados || 0} días</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid ${isDrk ? '#bfdbfe' : '#d9f99d'};">
+                                            <td style="padding: 8px; font-weight: bold;">CUPS:</td>
+                                            <td style="padding: 8px; text-align: right; font-family: monospace; font-size: 11px;">${lastComparisonResult.cups || 'N/A'}</td>
+                                        </tr>
+                                        <tr style="border-bottom: 1px solid ${isDrk ? '#bfdbfe' : '#d9f99d'};">
+                                            <td style="padding: 8px; font-weight: bold;">Tipo de tarifa:</td>
+                                            <td style="padding: 8px; text-align: right;">${lastComparisonResult.tariffType || 'N/A'}</td>
+                                        </tr>
+                                        <tr style="border-bottom: 2px solid ${brandColor};">
+                                            <td style="padding: 8px; font-weight: bold;">Consumo total energía:</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: bold;">${lastComparisonResult.energyCosts ? lastComparisonResult.energyCosts.reduce((sum, e) => sum + e.kwh, 0).toFixed(0) : 0} kWh</td>
+                                        </tr>
+                                        <tr style="background-color: ${isDrk ? '#dbeafe' : '#ecfccb'};">
+                                            <td style="padding: 12px; font-size: 18px; font-weight: bold; color: ${isDrk ? '#0c4a6e' : '#365314'};">Total periodo:</td>
+                                            <td style="padding: 12px; font-size: 24px; text-align: right; color: ${isDrk ? '#0c4a6e' : '#365314'}; font-weight: bold;">${(lastComparisonResult.importe_total || 0).toFixed(2)} €</td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 8px; font-size: 24px; color: ${isDrk ? '#0c4a6e' : '#365314'}; font-weight: bold;">Total periodo: ${(lastComparisonResult.importe_total || 0).toFixed(2)} €</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding: 8px; font-size: 18px; color: ${isDrk ? '#0c4a6e' : '#365314'}; font-weight: bold;">Estimación anual: ${(lastComparisonResult.originalBillAnnual || 0).toFixed(2)} €/año</td>
+                                            <td style="padding: 12px; font-size: 16px; font-weight: bold; color: ${isDrk ? '#0c4a6e' : '#365314'};">Estimación anual:</td>
+                                            <td style="padding: 12px; font-size: 20px; text-align: right; color: ${isDrk ? '#0c4a6e' : '#365314'}; font-weight: bold;">${(lastComparisonResult.originalBillAnnual || 0).toFixed(2)} €/año</td>
                                         </tr>
                                     </table>
                                 </div>
@@ -5993,15 +6021,20 @@ DATOS DEL CLIENTE:
 - Email: ${email || 'No proporcionado'}
 ${observations ? `- Observaciones: ${observations}` : ''}
 
-RECORDATORIO: Por favor adjuntar las facturas del cliente.
+⚠️ IMPORTANTE - FACTURAS A ADJUNTAR:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1. La factura UTILIZADA para realizar este estudio
+2. La factura MÁS ACTUALIZADA del cliente
+   (Si es la misma factura que la del estudio, adjuntar solo una vez)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 -------------------------------------------
 COMPARATIVO:
 -------------------------------------------
 
-${htmlContent.replace(/<[^>]*>/g, '').substring(0, 1000)}...
+${htmlContent.replace(/<[^>]*>/g, '').substring(0, 1500)}...
 
-(Ver versión completa HTML en el email)
+(Ver versión completa HTML pegando el contenido copiado al portapapeles)
 
 -------------------------------------------
 DESGLOSE DETALLADO DE CÁLCULOS:
@@ -6035,9 +6068,19 @@ ${desglose}
                             ${observations ? `<li><strong>Observaciones:</strong> ${observations}</li>` : ''}
                         </ul>
                         
-                        <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px; margin: 16px 0;">
-                            <p style="margin: 0; font-weight: bold;">📎 RECORDATORIO:</p>
-                            <p style="margin: 4px 0 0 0;">Por favor adjuntar las facturas del cliente.</p>
+                        <div style="background-color: #FEF3C7; border: 2px solid #F59E0B; border-radius: 8px; padding: 16px; margin: 20px 0;">
+                            <h3 style="margin: 0 0 12px 0; color: #92400E; font-size: 18px;">⚠️ IMPORTANTE - FACTURAS A ADJUNTAR:</h3>
+                            <div style="background-color: white; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+                                <p style="margin: 0; font-weight: bold; color: #92400E;">📄 1. La factura UTILIZADA para realizar este estudio</p>
+                                <p style="margin: 4px 0 0 0; font-size: 13px; color: #78350F;">Esta es la factura que el comercial ha analizado para hacer la comparativa</p>
+                            </div>
+                            <div style="background-color: white; padding: 12px; border-radius: 6px;">
+                                <p style="margin: 0; font-weight: bold; color: #92400E;">📄 2. La factura MÁS ACTUALIZADA del cliente</p>
+                                <p style="margin: 4px 0 0 0; font-size: 13px; color: #78350F;">Si es la misma factura que la del estudio, adjuntar solo una vez</p>
+                            </div>
+                            <p style="margin: 12px 0 0 0; font-size: 12px; color: #92400E; font-style: italic;">
+                                ℹ️ Estas facturas son necesarias para que Back Office pueda verificar los datos y mejorar el comparativo
+                            </p>
                         </div>
                         
                         <hr style="margin: 24px 0;">
@@ -6075,10 +6118,19 @@ Se ha abierto su cliente de correo con:
 - Destinatarios: F.araujo@drk.es, rguerra@drk.es, l.grande@drk.es
 - Asunto ya incluido
 
-Por favor:
-1. Pegue (Ctrl+V) el contenido completo en el cuerpo del email
-2. Adjunte las facturas del cliente
-3. Envíe el email`);
+PASOS A SEGUIR:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+1️⃣ Pegue (Ctrl+V) el contenido completo en el cuerpo del email
+
+2️⃣ ADJUNTE OBLIGATORIAMENTE:
+   📄 La factura UTILIZADA para el estudio
+   📄 La factura MÁS ACTUALIZADA del cliente
+   (Si ambas son la misma, adjuntar solo una vez)
+
+3️⃣ Envíe el email
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+⚠️ SIN LAS FACTURAS, Back Office NO podrá procesar la solicitud.`);
                     
                     // Cerrar modal
                     document.getElementById('request-improvement-modal').classList.add('hidden');
