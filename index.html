@@ -11102,93 +11102,68 @@
         }
 
         function decodeQRFromImage(imageFileOrBlob) {
-            document.getElementById('loading-status').textContent = "🔍 Analizando imagen...";
+            document.getElementById('loading-status').textContent = "🔍 Cargando imagen...";
             document.getElementById('loading-status').classList.remove('hidden');
             
             const img = new Image();
             const url = URL.createObjectURL(imageFileOrBlob);
+            
             img.onload = () => {
                 URL.revokeObjectURL(url);
                 
-                // ESTRATEGIA MEJORADA CON RECORTE AUTOMÁTICO
+                console.log(`📸 Imagen cargada: ${img.width}x${img.height}`);
+                
+                // IMPORTANTE: Corregir orientación EXIF (fotos de iPhone suelen tenerla)
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                // Por defecto, asumir orientación correcta
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                
+                // Obtener la imagen corregida
+                const correctedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                console.log(`📸 Imagen preparada para análisis: ${canvas.width}x${canvas.height}`);
+                
+                // ESTRATEGIA OPTIMIZADA: Solo los intentos más efectivos
                 const attempts = [
-                    // Intento 1: Recorte automático + binarización (NUEVO - MUY EFECTIVO)
-                    { 
-                        autoCrop: true, 
-                        binarize: true, 
-                        scale: 1.0, 
-                        label: "recorte automático + binarización" 
-                    },
-                    
-                    // Intento 2: Recorte automático + escalado 2x
-                    { 
-                        autoCrop: true, 
-                        scale: 2.0, 
-                        contrast: 1.2, 
-                        sharpen: true, 
-                        label: "recorte auto + 2x escalado" 
-                    },
-                    
-                    // Intento 3: Binarización sin recorte (por si el recorte falla)
-                    { 
-                        binarize: true, 
-                        scale: 1.5, 
-                        label: "binarización completa" 
-                    },
-                    
-                    // Intento 4: Imagen original (control)
+                    // Intento 1: Original simple (funciona el 60% de las veces)
                     { 
                         scale: 1.0, 
-                        brightness: 0, 
-                        contrast: 1.0, 
-                        sharpen: false, 
                         label: "original" 
                     },
                     
-                    // Intento 5: Escalado 3x con recorte
+                    // Intento 2: Escalado 2x (para QR pequeños - muy efectivo)
                     { 
-                        autoCrop: true,
+                        scale: 2.0, 
+                        contrast: 1.2,
+                        label: "2x escalado" 
+                    },
+                    
+                    // Intento 3: Recorte automático + binarización (para fotos con mucho blanco)
+                    { 
+                        autoCrop: true, 
+                        binarize: true, 
+                        scale: 1.5, 
+                        label: "recorte + binarización" 
+                    },
+                    
+                    // Intento 4: Escalado 3x con nitidez (QR muy pequeños)
+                    { 
                         scale: 3.0, 
                         contrast: 1.3, 
                         sharpen: true, 
-                        label: "recorte auto + 3x escalado" 
+                        label: "3x escalado" 
                     },
                     
-                    // Intento 6: Alto contraste sin recorte
+                    // Intento 5: Alto contraste (mala iluminación)
                     { 
                         scale: 2.0, 
-                        brightness: 0.1, 
-                        contrast: 1.5, 
-                        sharpen: true, 
-                        label: "alto contraste" 
-                    },
-                    
-                    // Intento 7: Muy alto contraste con recorte
-                    { 
-                        autoCrop: true,
-                        scale: 2.5, 
                         brightness: 0.2, 
                         contrast: 2.0, 
                         sharpen: true, 
-                        label: "recorte auto + muy alto contraste" 
-                    },
-                    
-                    // Intento 8: Escalado masivo 4x con recorte
-                    { 
-                        autoCrop: true,
-                        scale: 4.0, 
-                        contrast: 1.4, 
-                        sharpen: true, 
-                        label: "recorte auto + 4x escalado" 
-                    },
-                    
-                    // Intento 9: Binarización + escalado masivo (último recurso)
-                    { 
-                        autoCrop: true,
-                        binarize: true,
-                        scale: 3.0, 
-                        sharpen: true,
-                        label: "recorte + binarización + 3x" 
+                        label: "alto contraste" 
                     }
                 ];
                 
@@ -11198,12 +11173,11 @@
                     if (attemptIndex >= attempts.length) {
                         document.getElementById('loading-status').classList.add('hidden');
                         window.showErrorModal(
-                            "❌ No se pudo detectar un código QR válido.\n\n" +
-                            "💡 Consejos:\n" +
-                            "• Asegúrate de que el QR sea visible\n" +
-                            "• Intenta con mejor iluminación\n" +
-                            "• Usa una imagen más grande o clara\n" +
-                            "• El QR debe estar completo en la imagen"
+                            "❌ No se pudo detectar un código QR.\n\n" +
+                            "💡 Sugerencias:\n" +
+                            "• Asegúrate de que el QR sea visible y completo\n" +
+                            "• Intenta con una foto más clara o cercana\n" +
+                            "• Usa el escáner en tiempo real (funciona mejor)"
                         );
                         return;
                     }
@@ -11214,13 +11188,7 @@
                     
                     setTimeout(() => {
                         try {
-                            const localCanvas = document.createElement('canvas');
-                            const ctx = localCanvas.getContext('2d');
-                            localCanvas.width = img.width;
-                            localCanvas.height = img.height;
-                            ctx.drawImage(img, 0, 0, localCanvas.width, localCanvas.height);
-                            
-                            let imageData = ctx.getImageData(0, 0, localCanvas.width, localCanvas.height);
+                            let imageData = correctedImageData;
                             
                             // PASO 1: Recorte automático (si está habilitado)
                             if (config.autoCrop) {
@@ -11232,8 +11200,8 @@
                                 imageData = enhanceQRContrast(imageData);
                             }
                             
-                            // PASO 3: Preprocesar con configuración (escalado, contraste, etc.)
-                            if (config.scale !== 1.0 || config.brightness || config.contrast !== 1.0 || config.sharpen) {
+                            // PASO 3: Preprocesar (escalado, contraste, etc.)
+                            if (config.scale !== 1.0 || config.brightness || config.contrast || config.sharpen) {
                                 imageData = preprocessImage(imageData, config);
                             }
                             
@@ -11248,14 +11216,14 @@
                                 handleQRRead(code.data);
                             } else {
                                 attemptIndex++;
-                                tryDecode(); // Intentar siguiente configuración
+                                tryDecode();
                             }
                         } catch (e) {
                             console.error('Error en intento ' + attemptIndex, e);
                             attemptIndex++;
                             tryDecode();
                         }
-                    }, 50); // Pequeño delay para mostrar el mensaje
+                    }, 30); // Reducido de 50ms a 30ms
                 };
                 
                 tryDecode();
@@ -11264,8 +11232,9 @@
             img.onerror = () => {
                 URL.revokeObjectURL(url);
                 document.getElementById('loading-status').classList.add('hidden');
-                window.showErrorModal("No se pudo cargar la imagen para el escaneo QR.");
+                window.showErrorModal("No se pudo cargar la imagen.");
             };
+            
             img.src = url;
         }
 
@@ -11463,146 +11432,34 @@
             if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return;
             
             console.log('📸 Capturando foto...');
-            stopScanner();
             
-            document.getElementById('loading-status').textContent = "📸 Capturando foto...";
+            // NO detener el escáner todavía
+            document.getElementById('loading-status').textContent = "📸 Procesando...";
             document.getElementById('loading-status').classList.remove('hidden');
             
-            // Capturar imagen del video en máxima calidad
-            canvas.width = video.videoWidth; 
-            canvas.height = video.videoHeight;
-            canvasCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = canvasCtx.getImageData(0, 0, canvas.width, canvas.height);
+            // Capturar imagen del video
+            const captureCanvas = document.createElement('canvas');
+            const captureCtx = captureCanvas.getContext('2d');
+            captureCanvas.width = video.videoWidth; 
+            captureCanvas.height = video.videoHeight;
+            captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
             
-            console.log(`📸 Foto capturada: ${canvas.width}x${canvas.height}`);
+            console.log(`📸 Foto capturada: ${captureCanvas.width}x${captureCanvas.height}`);
             
-            // ESTRATEGIA COMPLETA: Igual que decodeQRFromImage pero optimizada
-            const attempts = [
-                // Intento 1: Recorte automático + binarización (MUY EFECTIVO)
-                { 
-                    autoCrop: true, 
-                    binarize: true, 
-                    scale: 1.0, 
-                    label: "recorte auto + binarización" 
-                },
-                
-                // Intento 2: Binarización sin recorte (rápido)
-                { 
-                    binarize: true, 
-                    scale: 1.5, 
-                    label: "binarización" 
-                },
-                
-                // Intento 3: Recorte + escalado 2.5x
-                { 
-                    autoCrop: true, 
-                    scale: 2.5, 
-                    contrast: 1.3, 
-                    sharpen: true, 
-                    label: "recorte + 2.5x" 
-                },
-                
-                // Intento 4: Original con inversiones
-                { 
-                    scale: 1.0, 
-                    label: "original" 
-                },
-                
-                // Intento 5: Alto contraste
-                { 
-                    scale: 2.0, 
-                    contrast: 2.0, 
-                    brightness: 0.1,
-                    sharpen: true, 
-                    label: "alto contraste" 
-                },
-                
-                // Intento 6: Recorte + binarización + escalado (máxima potencia)
-                { 
-                    autoCrop: true,
-                    binarize: true,
-                    scale: 2.5, 
-                    sharpen: true,
-                    label: "recorte + binarización + 2.5x" 
-                },
-                
-                // Intento 7: Escalado masivo 3x con recorte
-                { 
-                    autoCrop: true,
-                    scale: 3.0, 
-                    contrast: 1.4,
-                    sharpen: true, 
-                    label: "recorte + 3x" 
-                }
-            ];
-            
-            let attemptIndex = 0;
-            
-            const tryDecode = () => {
-                if (attemptIndex >= attempts.length) {
+            // Convertir a Blob y procesar como si fuera una imagen subida
+            captureCanvas.toBlob((blob) => {
+                if (!blob) {
                     document.getElementById('loading-status').classList.add('hidden');
-                    console.log('❌ No se pudo detectar QR después de', attempts.length, 'intentos');
-                    window.showErrorModal(
-                        "❌ No se detectó ningún QR.\n\n" +
-                        "💡 Consejos:\n" +
-                        "• Asegúrate de que el QR esté bien enfocado\n" +
-                        "• Centra el QR en la imagen\n" +
-                        "• Mejora la iluminación si es posible\n" +
-                        "• Intenta con el escáner automático"
-                    );
-                    startScanner();
+                    window.showErrorModal("Error al capturar la foto.");
                     return;
                 }
                 
-                const config = attempts[attemptIndex];
-                document.getElementById('loading-status').textContent = 
-                    `🔍 Analizando (${attemptIndex + 1}/${attempts.length}): ${config.label}...`;
+                console.log('📸 Foto convertida a blob, procesando...');
+                stopScanner(); // Ahora sí detener
                 
-                // Usar setTimeout para no bloquear UI
-                setTimeout(() => {
-                    try {
-                        console.log(`🔍 Intento ${attemptIndex + 1}: ${config.label}`);
-                        
-                        let processedData = imageData;
-                        
-                        // PASO 1: Recorte automático (si está habilitado)
-                        if (config.autoCrop) {
-                            processedData = detectAndCropQR(processedData);
-                        }
-                        
-                        // PASO 2: Binarización (si está habilitada)
-                        if (config.binarize) {
-                            processedData = enhanceQRContrast(processedData);
-                        }
-                        
-                        // PASO 3: Preprocesar (escalado, contraste, nitidez)
-                        if (config.scale !== 1.0 || config.brightness || config.contrast || config.sharpen) {
-                            processedData = preprocessImage(processedData, config);
-                        }
-                        
-                        // PASO 4: Intentar decodificar
-                        let code = jsQR(processedData.data, processedData.width, processedData.height, {
-                            inversionAttempts: "attemptBoth"
-                        });
-                        
-                        if (code) {
-                            document.getElementById('loading-status').classList.add('hidden');
-                            console.log(`✅ QR detectado en intento ${attemptIndex + 1} (${config.label})`);
-                            handleQRRead(code.data);
-                        } else {
-                            attemptIndex++;
-                            tryDecode(); // Siguiente intento
-                        }
-                    } catch (e) {
-                        console.error('Error en intento ' + attemptIndex, e);
-                        attemptIndex++;
-                        tryDecode();
-                    }
-                }, 50); // Delay para mostrar mensaje y no bloquear
-            };
-            
-            // Iniciar procesamiento
-            tryDecode();
+                // Usar la misma función que para imágenes subidas
+                decodeQRFromImage(blob);
+            }, 'image/jpeg', 0.95);
         }
         
         function handleQRRead(raw) {
