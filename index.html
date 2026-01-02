@@ -1149,16 +1149,16 @@
                     100% { top: 100%; opacity: 0; }
                 }
             </style>
-            <p class="text-center text-sm text-slate-600 mb-2 font-semibold">📱 Centra el código QR en el recuadro</p>
-            <div class="bg-green-50 border-2 border-green-200 rounded-xl p-3 mb-3">
-                <p class="text-center text-xs text-green-800 font-bold mb-1">⚡ MODO GOOGLE LENS ACTIVADO</p>
-                <p class="text-center text-xs text-green-700">
-                    • Apunta al QR y mantén quieto<br>
-                    • Auto-captura en 2 segundos<br>
-                    • Procesamiento automático potente
+            <p class="text-center text-sm text-slate-600 mb-2 font-semibold">📱 Apunta al código QR</p>
+            <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-3">
+                <p class="text-center text-xs text-blue-800 font-bold mb-1">⚡ DETECCIÓN AUTOMÁTICA</p>
+                <p class="text-center text-xs text-blue-700">
+                    • Verás un marco azul cuando detecte el QR<br>
+                    • El botón se pondrá verde ✅<br>
+                    • Pulsa el botón para capturar
                 </p>
             </div>
-            <p class="text-center text-xs text-slate-500 mb-4">O pulsa "Capturar Ahora" en cualquier momento</p>
+            <p class="text-center text-xs text-slate-500 mb-4">Estilo Google Lens - Tú decides cuándo capturar</p>
             <button id="capture-photo-btn" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105">
                 <span class="text-2xl">📸</span>
                 <span>Capturar Foto</span>
@@ -11780,27 +11780,21 @@
             const powerBar = document.getElementById('scan-power-bar');
             const powerLabel = document.getElementById('scan-power-label');
             
-            if (scanLoopCount <= 30) {
-                powerBar.style.width = '30%';
+            if (!qrRegionDetected) {
+                const progress = Math.min(80, (scanLoopCount / 60) * 80);
+                powerBar.style.width = progress + '%';
                 powerLabel.textContent = 'Buscando QR...';
                 powerBar.className = 'bg-gradient-to-r from-blue-400 to-blue-600 h-full transition-all duration-500';
-            } else if (scanLoopCount <= 60) {
-                powerBar.style.width = '70%';
-                powerLabel.textContent = 'Localizando...';
-                powerBar.className = 'bg-gradient-to-r from-yellow-400 to-yellow-600 h-full transition-all duration-500';
-            } else {
-                powerBar.style.width = '100%';
-                powerLabel.textContent = '📸 Capturando...';
-                powerBar.className = 'bg-gradient-to-r from-green-500 to-green-700 h-full transition-all duration-500';
             }
             
-            // ⚡ DETECCIÓN EN TIEMPO REAL (como Google Lens)
+            // ⚡ DETECCIÓN EN TIEMPO REAL con jsQR (como Google Lens)
             let code = jsQR(imageData.data, imageData.width, imageData.height, {
                 inversionAttempts: "attemptBoth"
             });
             
             const frame = document.getElementById('qr-detection-frame');
             const container = document.getElementById('interactive');
+            const captureBtn = document.getElementById('capture-photo-btn');
             
             // Si detecta el QR → Mostrar marco en su posición exacta
             if (code && code.location && frame && container) {
@@ -11831,69 +11825,32 @@
                 frame.style.height = (qrHeight * scaleY) + 'px';
                 frame.classList.remove('hidden');
                 
-                // Guardar región detectada
+                // Guardar región detectada para cuando usuario pulse botón
                 if (!qrRegionDetected) {
                     qrRegionDetected = { x: qrX, y: qrY, width: qrWidth, height: qrHeight };
-                    qrDetectionFrame = scanLoopCount;
-                    console.log('🎯 QR localizado en frame', scanLoopCount);
-                    powerLabel.textContent = '🎯 QR Localizado';
-                    powerBar.className = 'bg-gradient-to-r from-green-400 to-green-600 h-full transition-all duration-500';
+                    console.log('🎯 QR localizado - Usuario puede capturar cuando quiera');
                 }
                 
-                // AUTO-CAPTURA: 1 segundo después de detectar el QR
-                if (qrRegionDetected && (scanLoopCount - qrDetectionFrame >= 30)) {
-                    console.log('📸 Auto-captura de región QR activada');
-                    
-                    // Crear canvas de la región QR
-                    const regionCanvas = document.createElement('canvas');
-                    const regionCtx = regionCanvas.getContext('2d');
-                    regionCanvas.width = qrRegionDetected.width;
-                    regionCanvas.height = qrRegionDetected.height;
-                    
-                    // Extraer solo la región del QR
-                    regionCtx.drawImage(
-                        canvas,
-                        qrRegionDetected.x, qrRegionDetected.y,
-                        qrRegionDetected.width, qrRegionDetected.height,
-                        0, 0,
-                        qrRegionDetected.width, qrRegionDetected.height
-                    );
-                    
-                    console.log(`📸 Región capturada: ${regionCanvas.width}x${regionCanvas.height}`);
-                    
-                    // Convertir región a blob y procesar
-                    regionCanvas.toBlob((blob) => {
-                        if (blob) {
-                            console.log('📸 Procesando región QR con motor potente...');
-                            frame.classList.add('hidden');
-                            stopScanner();
-                            decodeQRFromImage(blob);
-                        }
-                    }, 'image/jpeg', 0.95);
-                    
-                    return;
+                // Actualizar UI para indicar que se detectó QR
+                powerBar.style.width = '100%';
+                powerLabel.textContent = '✅ QR DETECTADO';
+                powerBar.className = 'bg-gradient-to-r from-green-500 to-green-600 h-full transition-all duration-300';
+                
+                // Cambiar botón a verde brillante con animación
+                if (captureBtn) {
+                    captureBtn.className = 'w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105 animate-pulse';
+                    captureBtn.innerHTML = '<span class="text-2xl">✅</span><span>CAPTURAR QR DETECTADO</span>';
                 }
             } else {
                 // No detecta QR → Ocultar marco y resetear
                 if (frame) frame.classList.add('hidden');
                 qrRegionDetected = null;
-                qrDetectionFrame = 0;
-            }
-            
-            // FALLBACK: Si después de 3s no detectó nada, capturar frame completo
-            if (scanLoopCount >= 90 && !qrRegionDetected) {
-                console.log('📸 Fallback: Capturando frame completo después de 3s');
                 
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        console.log('📸 Procesando frame completo con motor potente...');
-                        if (frame) frame.classList.add('hidden');
-                        stopScanner();
-                        decodeQRFromImage(blob);
-                    }
-                }, 'image/jpeg', 0.95);
-                
-                return;
+                // Restaurar botón normal
+                if (captureBtn && captureBtn.innerHTML.includes('DETECTADO')) {
+                    captureBtn.className = 'w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105';
+                    captureBtn.innerHTML = '<span class="text-2xl">📸</span><span>Capturar Foto</span>';
+                }
             }
             
             animationFrameId = requestAnimationFrame(scanLoop);
@@ -11933,31 +11890,64 @@
         function capturePhoto() {
             if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) return;
             
-            console.log('📸 Capturando foto...');
+            console.log('📸 Usuario pulsó capturar');
             
-            // Capturar imagen del video
-            const captureCanvas = document.createElement('canvas');
-            const captureCtx = captureCanvas.getContext('2d');
-            captureCanvas.width = video.videoWidth; 
-            captureCanvas.height = video.videoHeight;
-            captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+            // Capturar frame actual del video
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = video.videoWidth;
+            tempCanvas.height = video.videoHeight;
+            tempCtx.drawImage(video, 0, 0, tempCanvas.width, tempCanvas.height);
             
-            console.log(`📸 Foto capturada: ${captureCanvas.width}x${captureCanvas.height}`);
+            let captureCanvas, captureCtx;
             
-            // Convertir a Blob y procesar (usará el overlay automáticamente)
+            // Si hay región QR detectada, capturar solo esa región
+            if (qrRegionDetected) {
+                console.log('📸 Capturando región QR detectada');
+                
+                captureCanvas = document.createElement('canvas');
+                captureCtx = captureCanvas.getContext('2d');
+                
+                // Añadir margen 30% para asegurar captura completa
+                const marginX = qrRegionDetected.width * 0.3;
+                const marginY = qrRegionDetected.height * 0.3;
+                const captureX = Math.max(0, qrRegionDetected.x - marginX);
+                const captureY = Math.max(0, qrRegionDetected.y - marginY);
+                const captureWidth = Math.min(tempCanvas.width - captureX, qrRegionDetected.width + marginX * 2);
+                const captureHeight = Math.min(tempCanvas.height - captureY, qrRegionDetected.height + marginY * 2);
+                
+                captureCanvas.width = captureWidth;
+                captureCanvas.height = captureHeight;
+                
+                // Extraer región con margen
+                captureCtx.drawImage(
+                    tempCanvas,
+                    captureX, captureY, captureWidth, captureHeight,
+                    0, 0, captureWidth, captureHeight
+                );
+                
+                console.log(`📸 Región QR capturada: ${captureWidth}x${captureHeight}px`);
+            } else {
+                // Capturar frame completo
+                console.log('📸 Capturando frame completo (no hay región detectada)');
+                captureCanvas = tempCanvas;
+            }
+            
+            // Convertir a Blob y procesar
             captureCanvas.toBlob((blob) => {
                 if (!blob) {
                     window.showErrorModal("Error al capturar la foto.");
                     return;
                 }
                 
-                console.log('📸 Foto convertida a blob, procesando...');
+                console.log('📸 Procesando con motor potente (12 intentos)...');
                 stopScanner(); // Detener escáner
                 
-                // Usar la misma función que para imágenes subidas
+                // Usar el motor de fotos que funciona perfecto
                 decodeQRFromImage(blob);
             }, 'image/jpeg', 0.95);
         }
+        
         
         function handleQRRead(raw) {
             stopScanner();
