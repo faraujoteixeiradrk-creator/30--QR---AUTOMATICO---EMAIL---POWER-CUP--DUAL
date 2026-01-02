@@ -12000,66 +12000,12 @@
             // Calcular ahorro total
             const isPowerCupMode = comparisonMode === 'overall_best';
             const totalNew = isPowerCupMode ? totalPowerCup : totalDRK;
-            const totalSavings = totalOriginalBill - totalNew;
+            const totalSavings = Math.max(0, totalOriginalBill - totalNew); // Siempre >= 0
             
             console.log('📊 Análisis de ahorros:');
             console.log('- Con ahorro:', suppliesWithSavings.length);
             console.log('- Sin ahorro:', suppliesWithoutSavings.length);
             console.log('- Ahorro total:', totalSavings.toFixed(2), '€');
-            
-            // NUEVO: Manejo inteligente de casos sin ahorro
-            if (totalSavings <= 0) {
-                // Ningún suministro tiene ahorro
-                if (suppliesWithSavings.length === 0) {
-                    const elecSupply = dualSupplies.find(s => s.type === 'electricidad');
-                    const gasSupply = dualSupplies.find(s => s.type === 'gas');
-                    
-                    window.showErrorModal(
-                        `⚠️ ACTUALMENTE NO HAY AHORRO EN NINGÚN SUMINISTRO\n\n` +
-                        `📊 Análisis:\n` +
-                        `${elecSupply ? `⚡ Electricidad: Sin ahorro` : ''}\n` +
-                        `${gasSupply ? `🔥 Gas: Sin ahorro` : ''}\n\n` +
-                        `💡 Sugerencias:\n` +
-                        `• Revisa que los datos introducidos sean correctos\n` +
-                        `• Verifica los consumos y potencias\n` +
-                        `• Puede que tu tarifa actual ya sea competitiva`,
-                        '⚠️ Sin ahorro detectado'
-                    );
-                    return;
-                }
-                
-                // Hay ahorro en algunos suministros pero no en total
-                const elecWithSavings = suppliesWithSavings.filter(s => s.type === 'electricidad');
-                const gasWithSavings = suppliesWithSavings.filter(s => s.type === 'gas');
-                
-                if (elecWithSavings.length > 0 && gasWithSavings.length === 0) {
-                    // Solo electricidad tiene ahorro
-                    window.showErrorModal(
-                        `⚡ SOLO ELECTRICIDAD TIENE AHORRO\n\n` +
-                        `El suministro de GAS no genera ahorro actualmente.\n\n` +
-                        `💡 Opciones:\n` +
-                        `1. Continuar solo con ELECTRICIDAD\n` +
-                        `2. Revisar los datos del GAS\n` +
-                        `3. Añadir otro suministro de GAS diferente`,
-                        '⚠️ Sin ahorro en GAS'
-                    );
-                    return;
-                }
-                
-                if (gasWithSavings.length > 0 && elecWithSavings.length === 0) {
-                    // Solo gas tiene ahorro
-                    window.showErrorModal(
-                        `🔥 SOLO GAS TIENE AHORRO\n\n` +
-                        `El suministro de ELECTRICIDAD no genera ahorro actualmente.\n\n` +
-                        `💡 Opciones:\n` +
-                        `1. Continuar solo con GAS\n` +
-                        `2. Revisar los datos de ELECTRICIDAD\n` +
-                        `3. Añadir otro suministro de ELECTRICIDAD diferente`,
-                        '⚠️ Sin ahorro en ELECTRICIDAD'
-                    );
-                    return;
-                }
-            }
             
             // Guardar resultados globales (incluyendo análisis de ahorros)
             window.dualGlobalResults = {
@@ -12151,7 +12097,7 @@
                                     
                                     <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200">
                                         <span class="text-xs text-slate-600">Factura actual: ${formatEuro(originalBill / 12)}/mes</span>
-                                        <span class="text-xs font-semibold text-green-600">Ahorro: ${formatEuro(savings)}/año</span>
+                                        <span class="text-xs font-semibold ${savings > 0 ? 'text-green-600' : 'text-slate-500'}">Ahorro: ${formatEuro(Math.max(0, savings))}/año</span>
                                     </div>
                                 </div>
                             `;
@@ -12199,7 +12145,7 @@
                                     
                                     <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-200">
                                         <span class="text-xs text-slate-600">Factura actual: ${formatEuro(originalBill / 12)}/mes</span>
-                                        <span class="text-xs font-semibold text-green-600">Ahorro: ${formatEuro(savings)}/año</span>
+                                        <span class="text-xs font-semibold ${savings > 0 ? 'text-green-600' : 'text-slate-500'}">Ahorro: ${formatEuro(Math.max(0, savings))}/año</span>
                                     </div>
                                 </div>
                             `;
@@ -12217,7 +12163,7 @@
                                 </div>
                                 <div class="flex items-center justify-between">
                                     <span class="text-xs text-slate-700 font-medium">${tariffName}</span>
-                                    <span class="text-xs font-semibold text-green-600">Ahorro: ${formatEuro(savings)}</span>
+                                    <span class="text-xs font-semibold ${savings > 0 ? 'text-green-600' : 'text-slate-500'}">Ahorro: ${formatEuro(Math.max(0, savings))}</span>
                                 </div>
                             </div>
                         `;
@@ -12400,7 +12346,7 @@ Confirmo mi aceptación de la oferta energética DUAL que detallo a continuació
                 const emoji = isElec ? '⚡' : '🔥';
                 const tipo = isElec ? 'ELECTRICIDAD' : 'GAS';
                 const currentCost = isPowerCup ? (supply.results.powercup?.total_anual || 0) : (supply.results.drk?.total_anual || 0);
-                const ahorro = (supply.originalBillAnnual || 0) - currentCost;
+                const ahorro = Math.max(0, (supply.originalBillAnnual || 0) - currentCost); // Mostrar 0 si negativo
                 
                 // Construir nombre completo de tarifa: COMERCIALIZADORA - TARIFA
                 const comercializadora = supply.offer?.name || '';
@@ -12471,44 +12417,26 @@ ${clientName}
             const primaryColor = isPowerCup ? '#4d7c0f' : '#546e7a';
             const accentColor = isPowerCup ? '#84cc16' : '#607d8b';
             
-            // NUEVO: Filtrar suministros con ahorro para el PDF/HTML
-            const suppliesToShow = dualSupplies.filter(s => {
+            // CAMBIO: Mostrar TODOS los suministros, no filtrar
+            // Pero calcular ahorros correctamente (máximo 0 si es negativo)
+            let totalOriginalBill = 0;
+            let totalNew = 0;
+            
+            dualSupplies.forEach(s => {
                 const currentCost = isPowerCup ? (s.results.powercup?.total_anual || 0) : (s.results.drk?.total_anual || 0);
-                const originalBill = s.originalBillAnnual || 0;
-                const savings = originalBill - currentCost;
-                return savings > 0; // Solo incluir si tiene ahorro
+                totalOriginalBill += s.originalBillAnnual || 0;
+                totalNew += currentCost;
             });
             
-            // Si no hay ningún suministro con ahorro, no generar documento
-            if (suppliesToShow.length === 0) {
-                alert('No hay suministros con ahorro para generar el documento.');
-                return null;
-            }
+            const totalSavings = Math.max(0, totalOriginalBill - totalNew); // Máximo 0
             
-            // Recalcular totales solo con suministros que tienen ahorro
-            let totalOriginalBillFiltered = 0;
-            let totalNewFiltered = 0;
-            
-            suppliesToShow.forEach(s => {
-                const currentCost = isPowerCup ? (s.results.powercup?.total_anual || 0) : (s.results.drk?.total_anual || 0);
-                totalOriginalBillFiltered += s.originalBillAnnual || 0;
-                totalNewFiltered += currentCost;
-            });
-            
-            const totalSavingsFiltered = totalOriginalBillFiltered - totalNewFiltered;
-            
-            // Usar valores filtrados para el documento
-            const totalSavings = totalSavingsFiltered;
-            const totalOriginalBill = totalOriginalBillFiltered;
-            const totalNew = totalNewFiltered;
-            
-            console.log('📊 Suministros en documento:', suppliesToShow.length, 'de', dualSupplies.length);
-            console.log('💰 Ahorro total filtrado:', totalSavings.toFixed(2), '€');
+            console.log('📊 Suministros en documento:', dualSupplies.length);
+            console.log('💰 Ahorro total:', totalSavings.toFixed(2), '€');
             
             const eur = n => new Intl.NumberFormat('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(n || 0) + ' €';
             
-            // Generar desgloses detallados (USAR suppliesToShow en lugar de dualSupplies)
-            const desgloses = suppliesToShow.map((s, i) => {
+            // Generar desgloses detallados (USAR dualSupplies - TODOS)
+            const desgloses = dualSupplies.map((s, i) => {
                 // Construir nombre completo de tarifa: COMERCIALIZADORA - TARIFA
                 const comercializadora = s.offer?.name || '';
                 const tarifa = s.offer?.description || '';
@@ -12697,8 +12625,8 @@ ${clientName}
                     </tr>
                 </thead>
                 <tbody>
-                ${suppliesToShow.map((s, i) => {
-                    const ahorro = (s.originalBillAnnual||0) - (s.totalAnnual||0);
+                ${dualSupplies.map((s, i) => {
+                    const ahorro = Math.max(0, (s.originalBillAnnual||0) - (s.totalAnnual||0)); // Mostrar 0 si es negativo
                     const emoji = s.type === 'electricidad' ? '⚡' : '🔥';
                     const tipo = s.type === 'electricidad' ? 'Electricidad' : 'Gas';
                     return `
@@ -12707,7 +12635,7 @@ ${clientName}
                         <td style="padding:12px 8px;font-size:9px;color:#64748b">${s.cups.substring(0,17)}...</td>
                         <td style="padding:12px 8px;font-size:10px;color:#1e293b;text-align:center">${emoji} ${tipo}</td>
                         <td style="padding:12px 8px;font-size:11px;color:#1e293b;text-align:center;font-weight:bold">${s.tariff}</td>
-                        <td style="padding:12px 8px;font-size:12px;color:#22c55e;text-align:right;font-weight:bold">${ahorro.toFixed(2)} €</td>
+                        <td style="padding:12px 8px;font-size:12px;color:${ahorro > 0 ? '#22c55e' : '#9ca3af'};text-align:right;font-weight:bold">${ahorro.toFixed(2)} €</td>
                     </tr>
                     `;
                 }).join('')}
@@ -12723,8 +12651,9 @@ ${clientName}
         
         <!-- AHORRO ANUAL - DISEÑO LIMPIO -->
         <div style="padding:50px 30px 20px 30px;margin:20px 0;background:#ffffff;text-align:center">
-            <p style="margin:0 0 20px 0;font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:1px">TU AHORRO ANUAL ESTIMADO</p>
-            <p style="margin:0;font-size:52px;color:#22c55e;font-weight:600;letter-spacing:-1px">${totalSavings.toFixed(2)} €</p>
+            <p style="margin:0 0 20px 0;font-size:13px;color:#9ca3af;font-weight:600;text-transform:uppercase;letter-spacing:1px">${totalSavings > 0 ? 'TU AHORRO ANUAL ESTIMADO' : 'RESULTADO DE LA COMPARATIVA'}</p>
+            <p style="margin:0;font-size:52px;color:${totalSavings > 0 ? '#22c55e' : '#9ca3af'};font-weight:600;letter-spacing:-1px">${totalSavings.toFixed(2)} €</p>
+            ${totalSavings === 0 ? '<p style="margin:10px 0 0 0;font-size:14px;color:#9ca3af;">Sin ahorro conseguido</p>' : ''}
         </div>
         
         <!-- TABLA COMPARATIVA - DISEÑO LIMPIO -->
@@ -12762,13 +12691,13 @@ ${clientName}
         
         <!-- DESGLOSES -->
         <div style="padding:0">
-            ${suppliesToShow.map((s, i) => {
+            ${dualSupplies.map((s, i) => {
                 const eb = s.electricityBreakdown;
                 const gb = s.gasBreakdown;
                 const isElec = s.type === 'electricidad';
                 const dias = isElec ? eb?.dias : gb?.dias || 30;
                 const totalPeriod = isElec ? eb?.totalPeriod : gb?.total || 0;
-                const ahorroAnual = (s.originalBillAnnual || 0) - (s.totalAnnual || 0);
+                const ahorroAnual = Math.max(0, (s.originalBillAnnual || 0) - (s.totalAnnual || 0)); // Mostrar 0 si negativo
                 
                 // Construir nombre completo de tarifa: COMERCIALIZADORA - TARIFA
                 const comercializadora = s.offer?.name || '';
@@ -12873,7 +12802,7 @@ ${clientName}
         <!-- FOOTER INSTRUCCIONES -->
         <div style="background:#546e7a;padding:20px 30px;margin-top:20px">
             <p style="margin:0 0 10px 0;font-size:11px;color:white;font-weight:bold">PARA FORMALIZAR ESTE CONTRATO:</p>
-            <p style="margin:0 0 8px 0;font-size:10px;color:white">Responde a este email adjuntando la documentación de los ${suppliesToShow.length} CUPS:</p>
+            <p style="margin:0 0 8px 0;font-size:10px;color:white">Responde a este email adjuntando la documentación de los ${dualSupplies.length} CUPS:</p>
             <ol style="margin:0;padding-left:20px;font-size:10px;color:white;line-height:1.6">
                 <li>Foto del DNI/CIF (anverso y reverso)</li>
                 <li>Última factura (menos de 3 meses de antigüedad)</li>
@@ -12894,7 +12823,7 @@ ${clientName}
             <p style="margin:0 0 20px 0;font-size:14px;color:#64748b;font-weight:bold">Adjunta la documentación requerida</p>
             <p style="margin:0 0 25px 0;font-size:14px;color:#64748b">Envía el email</p>
             
-            <a href="${generateMailtoLink(comercialCode, clientName, clientPhone, clientEmail, suppliesToShow, results, isPowerCup, brandName, totalSavings, totalOriginalBill, totalNew)}" 
+            <a href="${generateMailtoLink(comercialCode, clientName, clientPhone, clientEmail, dualSupplies, results, isPowerCup, brandName, totalSavings, totalOriginalBill, totalNew)}" 
                style="display:inline-block;background:#22c55e;color:white;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:bold;box-shadow:0 4px 6px rgba(34,197,94,0.3)">
                 ✅ CONFIRMAR Y ENVIAR
             </a>
