@@ -2497,12 +2497,15 @@
                     const currentCost = comparisonMode === 'overall_best' ? powercupCost : drkCost;
                     const originalBill = parseFloat(final.originalBillAnnual) || parseFloat(final.totalBillPeriod) * 12 || 0;
                     
+                    // CORRECCIÓN: Usar final.totalAnnual si existe (ya tiene la lógica de "Tu Tarifa Actual")
+                    const totalAnnualCost = final.totalAnnual || currentCost;
+                    
                     const newSupply = {
                         type: 'electricidad',
                         tariff: tariff,
                         cups: final.cups || 'CUPS-ELECTRICIDAD',
                         originalBillAnnual: originalBill,
-                        totalAnnual: currentCost,
+                        totalAnnual: totalAnnualCost, // Usar el valor correcto
                         offer: final.bestOffer || final.offer,
                         data: final,
                         electricityBreakdown: {
@@ -2517,7 +2520,7 @@
                             totalPeriod: final.totalPeriod || 0,
                             totalAnnual: final.totalAnnual || 0,
                             ahorro_mensual: (final.originalBillPeriod || 0) - (final.totalPeriod || 0),
-                            ahorro_anual: originalBill - currentCost,
+                            ahorro_anual: final.savings || (originalBill - totalAnnualCost), // Usar final.savings si existe
                             dias: final.dias_facturados || 30
                         },
                         results: results
@@ -2527,7 +2530,14 @@
                     dualSupplies.push(newSupply);
                     console.log('✅ Suministro ELECTRICIDAD añadido al array DUAL');
                     console.log('  - Total suministros:', dualSupplies.length);
-                    console.log('  - Ahorro:', (originalBill - currentCost).toFixed(2), '€/año');
+                    console.log('  - CUPS:', newSupply.cups);
+                    console.log('  - originalBillAnnual:', newSupply.originalBillAnnual);
+                    console.log('  - totalAnnual:', newSupply.totalAnnual);
+                    console.log('  - final.totalAnnual (source):', final.totalAnnual);
+                    console.log('  - final.savings:', final.savings);
+                    console.log('  - results.drk.total_anual:', newSupply.results.drk.total_anual);
+                    console.log('  - results.powercup.total_anual:', newSupply.results.powercup.total_anual);
+                    console.log('  - Ahorro:', (originalBill - totalAnnualCost).toFixed(2), '€/año');
                     
                     // Actualizar lista
                     updateDualSuppliesList();
@@ -12043,12 +12053,21 @@
                 <div class="bg-slate-50 rounded-xl p-4 mb-4">
                     <h3 class="text-sm font-bold text-slate-700 mb-3">Resumen de suministros</h3>
                     <div class="space-y-3">
-                        ${dualSupplies.map(s => {
-                            // CORREGIDO: Usar el coste correcto según el modo
+                        ${dualSupplies.map((s, idx) => {
+                            // CORREGIDO: Usar s.totalAnnual directamente (ya tiene la lógica correcta)
                             const isPowerCupMode = results.comparisonMode === 'overall_best';
-                            const currentCost = isPowerCupMode ? (s.results.powercup?.total_anual || 0) : (s.results.drk?.total_anual || 0);
+                            const currentCost = s.totalAnnual || 0; // Usar s.totalAnnual en lugar de results
                             const originalBill = s.originalBillAnnual || 0;
                             const savings = originalBill - currentCost;
+                            
+                            // DEBUG: Logging detallado
+                            console.log(`📊 Suministro ${idx + 1} (${s.type}):`);
+                            console.log('  - originalBillAnnual:', s.originalBillAnnual);
+                            console.log('  - s.totalAnnual (USADO):', s.totalAnnual);
+                            console.log('  - currentCost:', currentCost);
+                            console.log('  - results.drk.total_anual:', s.results.drk?.total_anual);
+                            console.log('  - results.powercup.total_anual:', s.results.powercup?.total_anual);
+                            console.log('  - savings calculado:', savings);
                             
                             // Construir nombre completo de tarifa: COMERCIALIZADORA - TARIFA
                             const comercializadora = s.offer?.name || '';
@@ -12418,12 +12437,12 @@ ${clientName}
             const accentColor = isPowerCup ? '#84cc16' : '#607d8b';
             
             // CAMBIO: Mostrar TODOS los suministros, no filtrar
-            // Pero calcular ahorros correctamente (máximo 0 si es negativo)
+            // Usar s.totalAnnual que ya tiene la lógica correcta
             let totalOriginalBill = 0;
             let totalNew = 0;
             
             dualSupplies.forEach(s => {
-                const currentCost = isPowerCup ? (s.results.powercup?.total_anual || 0) : (s.results.drk?.total_anual || 0);
+                const currentCost = s.totalAnnual || 0; // Usar s.totalAnnual directamente
                 totalOriginalBill += s.originalBillAnnual || 0;
                 totalNew += currentCost;
             });
