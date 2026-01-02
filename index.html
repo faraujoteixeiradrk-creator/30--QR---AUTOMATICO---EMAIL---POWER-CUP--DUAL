@@ -1053,7 +1053,7 @@
 
         <!-- 3. Initial Input View (Scan/Manual) -->
         <div id="initial-view" class="fade-in hidden">
-            <button onclick="currentTariffType === 'MULTICUPS' ? showMultiCupsSagaView() : resetToLanding()" class="mb-4 text-sm text-slate-500 hover:text-drk-600 flex items-center gap-1">
+            <button onclick="currentTariffType === 'MULTICUPS' ? showMultiCupsSagaView() : goBackFromInitialView()" class="mb-4 text-sm text-slate-500 hover:text-drk-600 flex items-center gap-1">
                 &larr; Volver <span id="back-button-label">a selección</span>
             </button>
 
@@ -2178,6 +2178,20 @@
             }
             
             console.log('✅ resetToLanding completada - screen-inicio activa');
+        };
+        
+        // NUEVA FUNCIÓN: Volver desde initial-view SIN hacer reset completo
+        window.goBackFromInitialView = function() {
+            console.log('🔙 goBackFromInitialView llamada');
+            stopScanner();
+            
+            // Solo ocultar initial-view
+            document.getElementById('initial-view')?.classList.add('hidden');
+            
+            // Mostrar la pantalla de selección de tarifa (landing-view)
+            document.getElementById('landing-view')?.classList.remove('hidden');
+            
+            console.log('✅ Vuelto a landing-view sin resetear');
         };
 
         function toggleMultiCupsInputPeriods(tariffType, prefix = 'input') {
@@ -10963,7 +10977,7 @@
             
             // Modificación del botón de volver para la vista de entrada
             document.querySelector('#initial-view button:first-child').onclick = () => {
-                currentTariffType === 'MULTICUPS' ? showMultiCupsSagaView() : resetToLanding();
+                currentTariffType === 'MULTICUPS' ? showMultiCupsSagaView() : goBackFromInitialView();
             };
             
             document.getElementById('upload-menu-btn').onclick = () => {
@@ -12588,14 +12602,16 @@
             document.getElementById('screen-dual-results').classList.remove('active');
             document.getElementById('screen-dual-confirm').classList.remove('active');
             
-            // Vistas del flujo normal (initial-view, scanner-view, results-view)
+            // Vistas del flujo normal (initial-view, scanner-view, results-view, multicups-saga-view)
             const initialView = document.getElementById('initial-view');
             const scannerView = document.getElementById('scanner-view');
             const resultsView = document.getElementById('results-view');
+            const multicupsSagaView = document.getElementById('multicups-saga-view');
             
             if (initialView) initialView.classList.add('hidden');
             if (scannerView) scannerView.classList.add('hidden');
             if (resultsView) resultsView.classList.add('hidden');
+            if (multicupsSagaView) multicupsSagaView.classList.add('hidden');
         }
 
         function goToInicio() {
