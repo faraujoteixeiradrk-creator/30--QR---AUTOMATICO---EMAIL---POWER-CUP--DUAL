@@ -2438,7 +2438,7 @@
                 
                 // NUEVO: Si estamos en modo DUAL, mostrar confirmación en lugar de resultados
                 if (window.dualMode === true) {
-                    console.log('Modo DUAL detectado - mostrando confirmación');
+                    console.log('Modo DUAL detectado - añadiendo suministro al array');
                     
                     // Extraer datos para DUAL
                     const tariff = final.tariffType || currentTariffType || '2.0TD';
@@ -2493,7 +2493,51 @@
                         }
                     };
                     
-                    showDualConfirm('electricidad', tariff, data, results);
+                    // NUEVO FLUJO DUAL: Añadir suministro directamente al array
+                    const currentCost = comparisonMode === 'overall_best' ? powercupCost : drkCost;
+                    const originalBill = parseFloat(final.originalBillAnnual) || parseFloat(final.totalBillPeriod) * 12 || 0;
+                    
+                    const newSupply = {
+                        type: 'electricidad',
+                        tariff: tariff,
+                        cups: final.cups || 'CUPS-ELECTRICIDAD',
+                        originalBillAnnual: originalBill,
+                        totalAnnual: currentCost,
+                        offer: final.bestOffer || final.offer,
+                        data: final,
+                        electricityBreakdown: {
+                            energyCosts: final.energyCosts || [],
+                            powerCosts: final.powerCosts || [],
+                            subEnergy: final.subEnergyNet || 0,
+                            subPower: final.subPower || 0,
+                            subBase: final.subBase || 0,
+                            costIE: final.costIE || 0,
+                            baseImp: final.baseImp || 0,
+                            costIVA: final.costIVA || 0,
+                            totalPeriod: final.totalPeriod || 0,
+                            totalAnnual: final.totalAnnual || 0,
+                            ahorro_mensual: (final.originalBillPeriod || 0) - (final.totalPeriod || 0),
+                            ahorro_anual: originalBill - currentCost,
+                            dias: final.dias_facturados || 30
+                        },
+                        results: results
+                    };
+                    
+                    // Añadir al array
+                    dualSupplies.push(newSupply);
+                    console.log('✅ Suministro ELECTRICIDAD añadido al array DUAL');
+                    console.log('  - Total suministros:', dualSupplies.length);
+                    console.log('  - Ahorro:', (originalBill - currentCost).toFixed(2), '€/año');
+                    
+                    // Actualizar lista
+                    updateDualSuppliesList();
+                    
+                    // Volver al gestor DUAL
+                    hideAllScreens();
+                    document.getElementById('screen-dual').classList.add('active');
+                    
+                    console.log('✅ Usuario puede añadir más suministros o calcular');
+                
                 } else {
                     // Flujo normal - mostrar resultados
                     document.getElementById('results-view').classList.remove('hidden');
