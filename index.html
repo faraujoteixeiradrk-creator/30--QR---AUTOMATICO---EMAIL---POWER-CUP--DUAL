@@ -1138,6 +1138,16 @@
                     <div id="scan-line" class="absolute left-0 right-0" style="top: 0%; height: 3px; background: linear-gradient(90deg, transparent, #4285f4, #4285f4, transparent); box-shadow: 0 0 15px #4285f4, 0 0 30px rgba(66, 133, 244, 0.6); z-index: 110; animation: scanLineMove 2s ease-in-out infinite;"></div>
                 </div>
                 
+                <!-- Botón de captura flotante estilo Google Lens -->
+                <button id="capture-photo-btn" class="absolute bottom-6 left-1/2 transform -translate-x-1/2 w-20 h-20 rounded-full bg-white flex items-center justify-center shadow-2xl transition-all duration-300 hover:scale-110 active:scale-95" style="z-index: 200;">
+                    <div class="w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                    </div>
+                </button>
+                
                 <div class="absolute inset-0 flex items-center justify-center pointer-events-none"><div class="w-64 h-1 bg-red-500 opacity-30"></div></div>
             </div>
             
@@ -1179,20 +1189,7 @@
                     animation: buttonGlow 2s ease-in-out infinite;
                 }
             </style>
-            <p class="text-center text-sm text-slate-600 mb-2 font-semibold">📱 Apunta al código QR</p>
-            <div class="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 mb-3">
-                <p class="text-center text-xs text-blue-800 font-bold mb-1">⚡ DETECCIÓN AUTOMÁTICA</p>
-                <p class="text-center text-xs text-blue-700">
-                    • Verás un marco azul cuando detecte el QR<br>
-                    • El botón se pondrá verde ✅<br>
-                    • Pulsa el botón para capturar
-                </p>
-            </div>
-            <p class="text-center text-xs text-slate-500 mb-4">Estilo Google Lens - Tú decides cuándo capturar</p>
-            <button id="capture-photo-btn" class="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105">
-                <span class="text-2xl">📸</span>
-                <span>Capturar Foto</span>
-            </button>
+            <p class="text-center text-sm text-slate-600 mb-2 font-semibold">👆 Pulsa la lupa cuando veas el marco azul</p>
         </div>
 
         <!-- 5. Results View -->
@@ -1757,6 +1754,7 @@
         // Variables para detección Google Lens
         let qrRegionDetected = null; // Región del QR cuando se detecta: {x, y, width, height}
         let qrDetectionFrame = 0; // Frame en el que se detectó el QR
+        let qrStableFrames = 0; // Frames consecutivos con QR detectado (para estabilidad)
         
         // Protección anti-duplicados para compareOffers
         let lastCompareOffersCall = 0;
@@ -11826,64 +11824,91 @@
             const container = document.getElementById('interactive');
             const captureBtn = document.getElementById('capture-photo-btn');
             
-            // Si detecta el QR → Mostrar marco en su posición exacta
+            // Si detecta el QR → Incrementar contador de estabilidad
             if (code && code.location && frame && container) {
-                const rect = container.getBoundingClientRect();
-                const scaleX = rect.width / canvas.width;
-                const scaleY = rect.height / canvas.height;
+                qrStableFrames++;
                 
-                // Calcular bounding box del QR
-                const points = code.location;
-                const minX = Math.min(points.topLeftCorner.x, points.bottomLeftCorner.x);
-                const maxX = Math.max(points.topRightCorner.x, points.bottomRightCorner.x);
-                const minY = Math.min(points.topLeftCorner.y, points.topRightCorner.y);
-                const maxY = Math.max(points.bottomLeftCorner.y, points.bottomRightCorner.y);
-                
-                // Añadir margen 20%
-                const marginX = (maxX - minX) * 0.2;
-                const marginY = (maxY - minY) * 0.2;
-                
-                const qrX = Math.max(0, minX - marginX);
-                const qrY = Math.max(0, minY - marginY);
-                const qrWidth = (maxX - minX) + (marginX * 2);
-                const qrHeight = (maxY - minY) + (marginY * 2);
-                
-                // Posicionar marco exactamente donde está el QR
-                frame.style.left = (qrX * scaleX) + 'px';
-                frame.style.top = (qrY * scaleY) + 'px';
-                frame.style.width = (qrWidth * scaleX) + 'px';
-                frame.style.height = (qrHeight * scaleY) + 'px';
-                frame.style.opacity = '1';
-                frame.classList.remove('hidden');
-                
-                // Guardar región detectada para cuando usuario pulse botón
-                if (!qrRegionDetected) {
-                    qrRegionDetected = { x: qrX, y: qrY, width: qrWidth, height: qrHeight };
-                    console.log('🎯 QR localizado - Usuario puede capturar cuando quiera');
-                }
-                
-                // Actualizar UI para indicar que se detectó QR
-                powerBar.style.width = '100%';
-                powerLabel.textContent = '✅ QR DETECTADO';
-                powerBar.className = 'bg-gradient-to-r from-green-500 to-green-600 h-full transition-all duration-300';
-                
-                // Cambiar botón a verde brillante con animación suave
-                if (captureBtn) {
-                    captureBtn.className = 'w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-3 transition-all transform hover:scale-105 button-detected';
-                    captureBtn.innerHTML = '<span class="text-2xl">✅</span><span>CAPTURAR QR DETECTADO</span>';
+                // Solo actualizar UI si llevamos 5 frames consecutivos detectando (estabilidad)
+                if (qrStableFrames >= 5) {
+                    const rect = container.getBoundingClientRect();
+                    const scaleX = rect.width / canvas.width;
+                    const scaleY = rect.height / canvas.height;
+                    
+                    // Calcular bounding box del QR
+                    const points = code.location;
+                    const minX = Math.min(points.topLeftCorner.x, points.bottomLeftCorner.x);
+                    const maxX = Math.max(points.topRightCorner.x, points.bottomRightCorner.x);
+                    const minY = Math.min(points.topLeftCorner.y, points.topRightCorner.y);
+                    const maxY = Math.max(points.bottomLeftCorner.y, points.bottomRightCorner.y);
+                    
+                    // Añadir margen 20%
+                    const marginX = (maxX - minX) * 0.2;
+                    const marginY = (maxY - minY) * 0.2;
+                    
+                    const qrX = Math.max(0, minX - marginX);
+                    const qrY = Math.max(0, minY - marginY);
+                    const qrWidth = (maxX - minX) + (marginX * 2);
+                    const qrHeight = (maxY - minY) + (marginY * 2);
+                    
+                    // Posicionar marco exactamente donde está el QR
+                    frame.style.left = (qrX * scaleX) + 'px';
+                    frame.style.top = (qrY * scaleY) + 'px';
+                    frame.style.width = (qrWidth * scaleX) + 'px';
+                    frame.style.height = (qrHeight * scaleY) + 'px';
+                    frame.style.opacity = '1';
+                    frame.classList.remove('hidden');
+                    
+                    // Guardar región detectada para cuando usuario pulse botón
+                    if (!qrRegionDetected) {
+                        qrRegionDetected = { x: qrX, y: qrY, width: qrWidth, height: qrHeight };
+                        console.log('🎯 QR localizado estable - Listo para capturar');
+                    }
+                    
+                    // Actualizar UI para indicar que se detectó QR
+                    powerBar.style.width = '100%';
+                    powerLabel.textContent = '✅ QR DETECTADO';
+                    powerBar.className = 'bg-gradient-to-r from-green-500 to-green-600 h-full transition-all duration-300';
+                    
+                    // Cambiar botón flotante circular a verde
+                    if (captureBtn) {
+                        const innerCircle = captureBtn.querySelector('div');
+                        if (innerCircle) {
+                            innerCircle.className = 'w-16 h-16 rounded-full bg-gradient-to-r from-green-500 to-green-600 flex items-center justify-center button-detected';
+                            innerCircle.innerHTML = `
+                                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            `;
+                        }
+                    }
                 }
             } else {
-                // No detecta QR → Ocultar marco y resetear
-                if (frame) {
-                    frame.style.opacity = '0';
-                    setTimeout(() => frame.classList.add('hidden'), 300);
+                // No detecta QR → Resetear contador y ocultar UI
+                if (qrStableFrames > 0) {
+                    qrStableFrames--;  // Decrementar gradualmente
                 }
-                qrRegionDetected = null;
                 
-                // Restaurar botón normal
-                if (captureBtn && captureBtn.innerHTML.includes('DETECTADO')) {
-                    captureBtn.className = 'w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-3 transition-all transform hover:scale-105';
-                    captureBtn.innerHTML = '<span class="text-2xl">📸</span><span>Capturar Foto</span>';
+                // Solo resetear UI si perdimos la detección completamente
+                if (qrStableFrames === 0) {
+                    if (frame) {
+                        frame.style.opacity = '0';
+                        setTimeout(() => frame.classList.add('hidden'), 300);
+                    }
+                    qrRegionDetected = null;
+                    
+                    // Restaurar botón flotante circular a azul
+                    if (captureBtn) {
+                        const innerCircle = captureBtn.querySelector('div');
+                        if (innerCircle && innerCircle.className.includes('green')) {
+                            innerCircle.className = 'w-16 h-16 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center';
+                            innerCircle.innerHTML = `
+                                <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.35-4.35"></path>
+                                </svg>
+                            `;
+                        }
+                    }
                 }
             }
             
@@ -11911,6 +11936,7 @@
             // Reset variables de tracking QR
             qrRegionDetected = null;
             qrDetectionFrame = 0;
+            qrStableFrames = 0; // Reset contador de estabilidad
             
             // Ocultar marco Google Lens
             const frame = document.getElementById('qr-detection-frame');
