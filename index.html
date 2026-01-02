@@ -4028,6 +4028,9 @@
                 // Ocultar columnas de precios
                 document.getElementById('price-columns').style.display = 'none';
                 
+                // NUEVO: Mostrar botón para solicitar mejora a DRK
+                document.getElementById('request-improvement-btn').style.display = 'flex';
+                
                 newCostLabelEl.textContent = "TU COSTE ACTUAL";
                 
                 // Si no hay ahorro, el coste actual es el "bueno", sin tachar
@@ -4045,6 +4048,9 @@
                 
                 // Mostrar columnas de precios
                 document.getElementById('price-columns').style.display = 'grid';
+                
+                // Ocultar botón de solicitar mejora
+                document.getElementById('request-improvement-btn').style.display = 'none';
                 
                 newCostLabelEl.textContent = `TU NUEVO COSTE ${isDrk ? 'DRK' : 'POWER CUP'}`;
                 
