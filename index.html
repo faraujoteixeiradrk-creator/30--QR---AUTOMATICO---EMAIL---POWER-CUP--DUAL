@@ -591,6 +591,14 @@
                         <!-- Los resultados se insertarán aquí -->
                     </div>
                     
+                    <!-- NUEVO: Botón para solicitar mejora cuando no hay ahorro en GAS -->
+                    <div id="gas-request-improvement-container" style="display:none;" class="mt-6">
+                        <button id="gas-request-improvement-btn" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                            <span>SOLICITAR MEJORA A DRK</span>
+                        </button>
+                    </div>
+                    
                     <!-- NUEVO: Botón para añadir a DUAL (solo visible en modo DUAL) -->
                     <div id="gas-dual-button-container" style="display:none;" class="mt-6">
                         <button onclick="addCurrentGasToDual()" class="w-full text-white font-bold py-4 px-6 rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3" style="background: linear-gradient(135deg, #0ea5e9 0%, #84cc16 100%);">
@@ -5904,24 +5912,64 @@ ${i + 1}. ${r.name}
    - Ahorro anual: ${r.ahorro_anual.toFixed(2)} €
 `).join('')}`;
                 
-                // CASO 2: Datos de ELECTRICIDAD (código original)
-                } else if (hasElectricityData) {
-                    tipoSuministro = 'ELECTRICIDAD';
-                // CASO 2: Datos de ELECTRICIDAD (código original)
+                // CASO 2: Datos de ELECTRICIDAD
                 } else if (hasElectricityData) {
                     tipoSuministro = 'ELECTRICIDAD';
                     
-                    if (lastIndexedResult && compareWithIndexed) {
-                        if (lastComparisonResult.isMultiCups) {
-                            htmlContent = generateMultiDualStyledHtmlOffer(commercialCode);
-                        } else {
-                            htmlContent = generateDualStyledHtmlOffer(commercialCode, lastComparisonResult, lastIndexedResult);
-                        }
+                    // Verificar si hay ahorro o no
+                    const hasPositiveSavings = lastComparisonResult && lastComparisonResult.savings > 0;
+                    
+                    if (!hasPositiveSavings || lastComparisonResult.isNegativeSavings) {
+                        // NO HAY AHORRO: Generar HTML especial
+                        const brand = activeBrand;
+                        const isDrk = brand.NAME.includes('DRK');
+                        const brandColor = isDrk ? '#0ea5e9' : '#84cc16';
+                        const brandName = isDrk ? 'DRK' : 'POWER CUP';
+                        
+                        htmlContent = `
+                            <div style="font-family: Arial, sans-serif; max-width: 800px;">
+                                <h2 style="color: ${brandColor}; text-align: center;">⚡ RESULTADO COMPARATIVA ELECTRICIDAD</h2>
+                                <div style="background-color: ${isDrk ? '#f0f9ff' : '#f7fee7'}; border: 3px solid ${brandColor}; border-radius: 12px; padding: 24px; margin: 20px 0;">
+                                    <h3 style="color: ${brandColor}; text-align: center; font-size: 24px;">LA MEJOR OPCIÓN PARA TI ES</h3>
+                                    <h2 style="color: ${isDrk ? '#0c4a6e' : '#365314'}; text-align: center; font-size: 36px; margin: 16px 0;">Tu Tarifa Actual</h2>
+                                    <p style="text-align: center; color: ${brandColor}; font-size: 18px;">Es la mejor opción detectada</p>
+                                </div>
+                                
+                                <div style="background-color: white; border: 2px solid ${isDrk ? '#bfdbfe' : '#d9f99d'}; border-radius: 12px; padding: 20px; margin: 16px 0;">
+                                    <h4 style="color: ${brandColor}; text-align: center; font-size: 20px;">¡ENHORABUENA!</h4>
+                                    <p style="text-align: center; color: ${isDrk ? '#0c4a6e' : '#365314'}; font-weight: bold;">Actualmente estás en una buena tarifa.</p>
+                                    <p style="text-align: center; color: ${brandColor};">Seguiremos estudiando el mercado y te avisaremos cuando encontremos alguna tarifa que se adapte a tu perfil de consumo.</p>
+                                </div>
+                                
+                                <div style="background-color: ${isDrk ? '#f0f9ff' : '#f7fee7'}; border-radius: 12px; padding: 16px; margin-top: 16px;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <tr>
+                                            <td style="padding: 8px; font-weight: bold; color: ${isDrk ? '#0c4a6e' : '#365314'};">TU COSTE ACTUAL CONSOLIDADO</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px; font-size: 24px; color: ${isDrk ? '#0c4a6e' : '#365314'}; font-weight: bold;">Total periodo: ${(lastComparisonResult.importe_total || 0).toFixed(2)} €</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px; font-size: 18px; color: ${isDrk ? '#0c4a6e' : '#365314'}; font-weight: bold;">Estimación anual: ${(lastComparisonResult.originalBillAnnual || 0).toFixed(2)} €/año</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        `;
                     } else {
-                        if (lastComparisonResult.isMulti) {
-                            htmlContent = generateMultiStyledHtmlOffer(commercialCode);
+                        // SÍ HAY AHORRO: Usar funciones existentes
+                        if (lastIndexedResult && compareWithIndexed) {
+                            if (lastComparisonResult.isMultiCups) {
+                                htmlContent = generateMultiDualStyledHtmlOffer(commercialCode);
+                            } else {
+                                htmlContent = generateDualStyledHtmlOffer(commercialCode, lastComparisonResult, lastIndexedResult);
+                            }
                         } else {
-                            htmlContent = generateStyledHtmlOffer(commercialCode);
+                            if (lastComparisonResult.isMulti) {
+                                htmlContent = generateMultiStyledHtmlOffer(commercialCode);
+                            } else {
+                                htmlContent = generateStyledHtmlOffer(commercialCode);
+                            }
                         }
                     }
                     
@@ -11370,6 +11418,19 @@ Por favor:
                 }
             };
             
+            // NUEVO: Event listener para botón de solicitar mejora en GAS
+            const gasImprovementBtn = document.getElementById('gas-request-improvement-btn');
+            if (gasImprovementBtn) {
+                gasImprovementBtn.onclick = () => {
+                    if (window.lastGasComparisonResult) {
+                        document.getElementById('request-improvement-modal').classList.remove('hidden');
+                        document.getElementById('request-improvement-modal').classList.add('flex');
+                    } else {
+                        window.showErrorModal("Por favor, analice una factura primero.");
+                    }
+                };
+            }
+            
             document.getElementById('execute-improvement-request-btn').addEventListener('click', handleRequestImprovement);
 
             document.getElementById('qr-toggle-checkbox').addEventListener('change', (e) => {
@@ -15465,12 +15526,20 @@ ${clientName}
                 </div>
                 `;
                 
-                // Mostrar botón "SOLICITAR MEJORA A DRK"
-                document.getElementById('request-improvement-btn').style.display = 'flex';
+                // Mostrar botón "SOLICITAR MEJORA A DRK" para GAS
+                const gasImprovementContainer = document.getElementById('gas-request-improvement-container');
+                if (gasImprovementContainer) {
+                    gasImprovementContainer.style.display = 'block';
+                }
                 
             } else {
                 // HAY AHORRO: Mostrar comparativo normal
-                document.getElementById('request-improvement-btn').style.display = 'none';
+                
+                // Ocultar botón de solicitar mejora para GAS
+                const gasImprovementContainer = document.getElementById('gas-request-improvement-container');
+                if (gasImprovementContainer) {
+                    gasImprovementContainer.style.display = 'none';
+                }
                 
                 results.forEach((result, index) => {
                     const isPositiveSaving = result.ahorro_anual > 0;
