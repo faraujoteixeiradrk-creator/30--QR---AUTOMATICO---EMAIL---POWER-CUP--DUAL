@@ -1529,8 +1529,64 @@
         </div>
     </div>
     
+    <!-- Overlay de procesamiento QR - Grande y visible -->
+    <div id="qr-processing-overlay" class="fixed inset-0 bg-slate-900/95 hidden items-center justify-center z-[100] backdrop-blur-md">
+        <div class="text-center px-6">
+            <!-- Spinner grande animado -->
+            <div class="relative mx-auto mb-8">
+                <div class="w-32 h-32 border-8 border-green-500/20 border-t-green-500 rounded-full animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <svg class="w-16 h-16 text-green-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M12 12h-4.01M12 12V8m0 4l-4-4m4 4l4-4m0 0v4m0-4h-4"></path>
+                    </svg>
+                </div>
+            </div>
+            
+            <!-- Título grande -->
+            <h2 class="text-3xl font-bold text-white mb-3">
+                🔍 Analizando QR
+            </h2>
+            
+            <!-- Mensaje de progreso -->
+            <p id="qr-progress-message" class="text-xl text-green-400 font-semibold mb-6">
+                Procesando imagen...
+            </p>
+            
+            <!-- Contador de intentos -->
+            <div class="bg-white/10 rounded-xl px-6 py-4 inline-block">
+                <p class="text-white text-sm mb-2">Progreso de análisis</p>
+                <p id="qr-attempt-counter" class="text-2xl font-bold text-green-400">
+                    1 / 6
+                </p>
+            </div>
+            
+            <!-- Texto de ayuda -->
+            <p class="text-slate-400 text-sm mt-8 max-w-md mx-auto">
+                Estamos probando diferentes técnicas para detectar tu código QR. 
+                Esto puede tardar unos segundos...
+            </p>
+        </div>
+    </div>
+    
     <!-- Paste Catcher (Hidden element for capturing pasted image data) -->
     <textarea id="paste-catcher" aria-hidden="true" title="Área de pegado (invisible)"></textarea>
+
+    <style>
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        .animate-pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+    </style>
 
     <script>
         // Inicializar modo DUAL en false
@@ -11107,8 +11163,15 @@
         }
 
         function decodeQRFromImage(imageFileOrBlob) {
-            document.getElementById('loading-status').textContent = "🔍 Procesando foto...";
-            document.getElementById('loading-status').classList.remove('hidden');
+            // Mostrar overlay grande
+            const overlay = document.getElementById('qr-processing-overlay');
+            const progressMsg = document.getElementById('qr-progress-message');
+            const attemptCounter = document.getElementById('qr-attempt-counter');
+            
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            progressMsg.textContent = 'Cargando imagen...';
+            attemptCounter.textContent = '0 / 6';
             
             const img = new Image();
             const url = URL.createObjectURL(imageFileOrBlob);
@@ -11132,7 +11195,10 @@
                 const tryScale = (scale, label) => {
                     attemptNum++;
                     console.log(`🔍 Intento ${attemptNum}: ${label} (escala ${scale}x)`);
-                    document.getElementById('loading-status').textContent = `🔍 ${attemptNum}: ${label}...`;
+                    
+                    // Actualizar UI
+                    progressMsg.textContent = label;
+                    attemptCounter.textContent = `${attemptNum} / 6`;
                     
                     try {
                         // Escalar
@@ -11151,8 +11217,12 @@
                         
                         if (code) {
                             console.log(`✅ ¡QR ENCONTRADO! en intento ${attemptNum}`);
-                            document.getElementById('loading-status').classList.add('hidden');
-                            handleQRRead(code.data);
+                            progressMsg.textContent = '✅ ¡QR Detectado!';
+                            setTimeout(() => {
+                                overlay.classList.add('hidden');
+                                overlay.classList.remove('flex');
+                                handleQRRead(code.data);
+                            }, 500); // Pequeña pausa para mostrar el éxito
                             return true;
                         }
                     } catch (e) {
@@ -11164,32 +11234,33 @@
                 // SECUENCIA DE INTENTOS
                 const runAttempts = () => {
                     // Intento 1: Original
-                    if (tryScale(1.0, "Original")) return;
+                    if (tryScale(1.0, "📷 Imagen original")) return;
                     
                     setTimeout(() => {
                         // Intento 2: 2x
-                        if (tryScale(2.0, "2x escalado")) return;
+                        if (tryScale(2.0, "🔍 Escalado 2x")) return;
                         
                         setTimeout(() => {
                             // Intento 3: 3x
-                            if (tryScale(3.0, "3x escalado")) return;
+                            if (tryScale(3.0, "🔎 Escalado 3x")) return;
                             
                             setTimeout(() => {
                                 // Intento 4: 4x
-                                if (tryScale(4.0, "4x escalado")) return;
+                                if (tryScale(4.0, "🔬 Escalado 4x")) return;
                                 
                                 setTimeout(() => {
                                     // Intento 5: 5x
-                                    if (tryScale(5.0, "5x escalado")) return;
+                                    if (tryScale(5.0, "🎯 Escalado 5x")) return;
                                     
                                     setTimeout(() => {
                                         // Intento 6: 6x
-                                        if (tryScale(6.0, "6x escalado")) return;
+                                        if (tryScale(6.0, "🚀 Escalado 6x")) return;
                                         
                                         setTimeout(() => {
                                             // NO ENCONTRADO
                                             console.log('❌ QR no detectado después de 6 intentos');
-                                            document.getElementById('loading-status').classList.add('hidden');
+                                            overlay.classList.add('hidden');
+                                            overlay.classList.remove('flex');
                                             window.showErrorModal(
                                                 "❌ No se detectó el código QR en la foto.\n\n" +
                                                 "💡 Prueba mejor:\n" +
@@ -11198,12 +11269,12 @@
                                                 "• Mejor iluminación\n\n" +
                                                 "El escáner en vivo funciona mucho mejor que las fotos guardadas."
                                             );
-                                        }, 30);
-                                    }, 30);
-                                }, 30);
-                            }, 30);
-                        }, 30);
-                    }, 30);
+                                        }, 300);
+                                    }, 300);
+                                }, 300);
+                            }, 300);
+                        }, 300);
+                    }, 300);
                 };
                 
                 runAttempts();
@@ -11211,7 +11282,8 @@
             
             img.onerror = () => {
                 URL.revokeObjectURL(url);
-                document.getElementById('loading-status').classList.add('hidden');
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
                 window.showErrorModal("Error al cargar la imagen.");
             };
             
@@ -11413,10 +11485,6 @@
             
             console.log('📸 Capturando foto...');
             
-            // NO detener el escáner todavía
-            document.getElementById('loading-status').textContent = "📸 Procesando...";
-            document.getElementById('loading-status').classList.remove('hidden');
-            
             // Capturar imagen del video
             const captureCanvas = document.createElement('canvas');
             const captureCtx = captureCanvas.getContext('2d');
@@ -11426,16 +11494,15 @@
             
             console.log(`📸 Foto capturada: ${captureCanvas.width}x${captureCanvas.height}`);
             
-            // Convertir a Blob y procesar como si fuera una imagen subida
+            // Convertir a Blob y procesar (usará el overlay automáticamente)
             captureCanvas.toBlob((blob) => {
                 if (!blob) {
-                    document.getElementById('loading-status').classList.add('hidden');
                     window.showErrorModal("Error al capturar la foto.");
                     return;
                 }
                 
                 console.log('📸 Foto convertida a blob, procesando...');
-                stopScanner(); // Ahora sí detener
+                stopScanner(); // Detener escáner
                 
                 // Usar la misma función que para imágenes subidas
                 decodeQRFromImage(blob);
