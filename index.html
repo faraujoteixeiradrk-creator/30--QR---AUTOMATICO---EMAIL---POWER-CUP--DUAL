@@ -1724,6 +1724,10 @@
         let scanLoopCount = 0; // Contador de frames para procesamiento progresivo
         let stream = null, video = null, canvas = null, canvasCtx = null, animationFrameId = null;
         
+        // Variables para detección Google Lens
+        let qrRegionDetected = null; // Región del QR cuando se detecta: {x, y, width, height}
+        let qrDetectionFrame = 0; // Frame en el que se detectó el QR
+        
         // Protección anti-duplicados para compareOffers
         let lastCompareOffersCall = 0;
         let lastCompareOffersData = null;
@@ -11764,206 +11768,137 @@
             
             if (canvas.width !== video.videoWidth) { 
                 canvas.width = video.videoWidth; 
-                canvas.height = video.height;
-            }
-            
-            // ⚡ GOOGLE LENS: MOSTRAR MARCO A 1 SEGUNDO
-            if (scanLoopCount === 30) {
-                const frame = document.getElementById('qr-detection-frame');
-                if (frame) {
-                    const container = document.getElementById('interactive');
-                    const rect = container.getBoundingClientRect();
-                    const size = Math.min(rect.width, rect.height) * 0.6;
-                    const left = (rect.width - size) / 2;
-                    const top = (rect.height - size) / 2;
-                    
-                    frame.style.left = left + 'px';
-                    frame.style.top = top + 'px';
-                    frame.style.width = size + 'px';
-                    frame.style.height = size + 'px';
-                    frame.classList.remove('hidden');
-                    console.log('🎯 Marco Google Lens mostrado');
-                }
-            }
-            
-            // ⚡ GOOGLE LENS: AUTO-CAPTURA A 2 SEGUNDOS
-            if (scanLoopCount === 60) {
-                console.log('📸 Auto-captura Google Lens activada');
-                
-                // Capturar frame actual
-                canvasCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                
-                // Convertir a blob y procesar con motor de FOTOS
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        console.log('📸 Frame capturado, procesando con motor potente...');
-                        
-                        // Ocultar marco
-                        const frame = document.getElementById('qr-detection-frame');
-                        if (frame) frame.classList.add('hidden');
-                        
-                        // Detener escáner y procesar
-                        stopScanner();
-                        decodeQRFromImage(blob);
-                    }
-                }, 'image/jpeg', 0.95);
-                
-                return; // Salir del loop
+                canvas.height = video.videoHeight; 
             }
             
             canvasCtx.drawImage(video, 0, 0, canvas.width, canvas.height);
             const imageData = canvasCtx.getImageData(0, 0, canvas.width, canvas.height);
             
-            let code = null;
             scanLoopCount++;
             
-            // Actualizar indicador visual de potencia
+            // Actualizar barra de progreso
             const powerBar = document.getElementById('scan-power-bar');
             const powerLabel = document.getElementById('scan-power-label');
             
-            if (scanLoopCount <= 10) {
-                powerBar.style.width = '20%';
-                powerLabel.textContent = 'Estándar';
+            if (scanLoopCount <= 30) {
+                powerBar.style.width = '30%';
+                powerLabel.textContent = 'Buscando QR...';
                 powerBar.className = 'bg-gradient-to-r from-blue-400 to-blue-600 h-full transition-all duration-500';
-            } else if (scanLoopCount <= 30) {
-                powerBar.style.width = '50%';
-                powerLabel.textContent = 'Preparando marco...';
-                powerBar.className = 'bg-gradient-to-r from-green-400 to-green-600 h-full transition-all duration-500';
-            } else if (scanLoopCount <= 50) {
-                powerBar.style.width = '75%';
-                powerLabel.textContent = 'Preparando captura...';
+            } else if (scanLoopCount <= 60) {
+                powerBar.style.width = '70%';
+                powerLabel.textContent = 'Localizando...';
                 powerBar.className = 'bg-gradient-to-r from-yellow-400 to-yellow-600 h-full transition-all duration-500';
             } else {
                 powerBar.style.width = '100%';
                 powerLabel.textContent = '📸 Capturando...';
-                powerBar.className = 'bg-gradient-to-r from-red-500 to-red-700 h-full transition-all duration-500';
+                powerBar.className = 'bg-gradient-to-r from-green-500 to-green-700 h-full transition-all duration-500';
             }
             
-            // === DETECCIÓN EN TIEMPO REAL (mientras espera auto-captura) ===
-            
-            // PASO 1: Lectura normal ultra rápida
-            code = jsQR(imageData.data, imageData.width, imageData.height, {
-                inversionAttempts: "dontInvert"
+            // ⚡ DETECCIÓN EN TIEMPO REAL (como Google Lens)
+            let code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "attemptBoth"
             });
             
-            if (!code) {
-                // PASO 2: Con inversiones
-                code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "attemptBoth"
-                });
-            }
+            const frame = document.getElementById('qr-detection-frame');
+            const container = document.getElementById('interactive');
             
-            // PASO 3: Escalado 3x (después de 0.3s)
-            if (!code && scanLoopCount > 10) {
-                try {
-                    const scaled3x = preprocessImage(imageData, { 
-                        scale: 3.0, 
-                        contrast: 1.3,
-                        sharpen: true
-                    });
-                    code = jsQR(scaled3x.data, scaled3x.width, scaled3x.height, {
-                        inversionAttempts: "attemptBoth"
-                    });
-                } catch (e) {}
-            }
-            
-            // PASO 4: Escalado 5x (después de 0.5s)
-            if (!code && scanLoopCount > 15) {
-                try {
-                    const scaled5x = preprocessImage(imageData, { 
-                        scale: 5.0, 
-                        contrast: 1.4,
-                        sharpen: true
-                    });
-                    code = jsQR(scaled5x.data, scaled5x.width, scaled5x.height, {
-                        inversionAttempts: "attemptBoth"
-                    });
-                } catch (e) {}
-            }
-            
-            // PASO 5: Centro 60% escalado 8x (después de 0.7s)
-            if (!code && scanLoopCount > 20) {
-                try {
-                    const centerCanvas = document.createElement('canvas');
-                    const centerCtx = centerCanvas.getContext('2d');
-                    
-                    const cropSize = Math.min(canvas.width, canvas.height) * 0.6;
-                    const cropX = (canvas.width - cropSize) / 2;
-                    const cropY = (canvas.height - cropSize) / 2;
-                    
-                    centerCanvas.width = cropSize;
-                    centerCanvas.height = cropSize;
-                    centerCtx.drawImage(canvas, cropX, cropY, cropSize, cropSize, 0, 0, cropSize, cropSize);
-                    
-                    const centerData = centerCtx.getImageData(0, 0, centerCanvas.width, centerCanvas.height);
-                    const scaledCenter = preprocessImage(centerData, { 
-                        scale: 8.0, 
-                        contrast: 1.5,
-                        sharpen: true
-                    });
-                    
-                    code = jsQR(scaledCenter.data, scaledCenter.width, scaledCenter.height, {
-                        inversionAttempts: "attemptBoth"
-                    });
-                } catch (e) {}
-            }
-            
-            // PASO 6: Escalado 8x completo (después de 1s)
-            if (!code && scanLoopCount > 30) {
-                try {
-                    const scaled8x = preprocessImage(imageData, { 
-                        scale: 8.0, 
-                        contrast: 1.5, 
-                        sharpen: true 
-                    });
-                    code = jsQR(scaled8x.data, scaled8x.width, scaled8x.height, {
-                        inversionAttempts: "attemptBoth"
-                    });
-                } catch (e) {}
-            }
-            
-            // PASO 7: Alto contraste (después de 1s)
-            if (!code && scanLoopCount > 30) {
-                try {
-                    const highContrast = increaseContrast(imageData, 2.2);
-                    code = jsQR(highContrast.data, highContrast.width, highContrast.height, {
-                        inversionAttempts: "attemptBoth"
-                    });
-                } catch (e) {}
-            }
-            
-            // PASO 8: Escalado 10x (después de 1.5s)
-            if (!code && scanLoopCount > 45) {
-                try {
-                    const scaled10x = preprocessImage(imageData, { 
-                        scale: 10.0, 
-                        contrast: 1.6, 
-                        sharpen: true 
-                    });
-                    code = jsQR(scaled10x.data, scaled10x.width, scaled10x.height, {
-                        inversionAttempts: "attemptBoth"
-                    });
-                } catch (e) {}
-            }
-            
-            if (code) { 
-                console.log('✅ QR detectado en tiempo real en frame', scanLoopCount);
-                scanLoopCount = 0;
+            // Si detecta el QR → Mostrar marco en su posición exacta
+            if (code && code.location && frame && container) {
+                const rect = container.getBoundingClientRect();
+                const scaleX = rect.width / canvas.width;
+                const scaleY = rect.height / canvas.height;
                 
-                // Ocultar marco
-                const frame = document.getElementById('qr-detection-frame');
+                // Calcular bounding box del QR
+                const points = code.location;
+                const minX = Math.min(points.topLeftCorner.x, points.bottomLeftCorner.x);
+                const maxX = Math.max(points.topRightCorner.x, points.bottomRightCorner.x);
+                const minY = Math.min(points.topLeftCorner.y, points.topRightCorner.y);
+                const maxY = Math.max(points.bottomLeftCorner.y, points.bottomRightCorner.y);
+                
+                // Añadir margen 20%
+                const marginX = (maxX - minX) * 0.2;
+                const marginY = (maxY - minY) * 0.2;
+                
+                const qrX = Math.max(0, minX - marginX);
+                const qrY = Math.max(0, minY - marginY);
+                const qrWidth = (maxX - minX) + (marginX * 2);
+                const qrHeight = (maxY - minY) + (marginY * 2);
+                
+                // Posicionar marco exactamente donde está el QR
+                frame.style.left = (qrX * scaleX) + 'px';
+                frame.style.top = (qrY * scaleY) + 'px';
+                frame.style.width = (qrWidth * scaleX) + 'px';
+                frame.style.height = (qrHeight * scaleY) + 'px';
+                frame.classList.remove('hidden');
+                
+                // Guardar región detectada
+                if (!qrRegionDetected) {
+                    qrRegionDetected = { x: qrX, y: qrY, width: qrWidth, height: qrHeight };
+                    qrDetectionFrame = scanLoopCount;
+                    console.log('🎯 QR localizado en frame', scanLoopCount);
+                    powerLabel.textContent = '🎯 QR Localizado';
+                    powerBar.className = 'bg-gradient-to-r from-green-400 to-green-600 h-full transition-all duration-500';
+                }
+                
+                // AUTO-CAPTURA: 1 segundo después de detectar el QR
+                if (qrRegionDetected && (scanLoopCount - qrDetectionFrame >= 30)) {
+                    console.log('📸 Auto-captura de región QR activada');
+                    
+                    // Crear canvas de la región QR
+                    const regionCanvas = document.createElement('canvas');
+                    const regionCtx = regionCanvas.getContext('2d');
+                    regionCanvas.width = qrRegionDetected.width;
+                    regionCanvas.height = qrRegionDetected.height;
+                    
+                    // Extraer solo la región del QR
+                    regionCtx.drawImage(
+                        canvas,
+                        qrRegionDetected.x, qrRegionDetected.y,
+                        qrRegionDetected.width, qrRegionDetected.height,
+                        0, 0,
+                        qrRegionDetected.width, qrRegionDetected.height
+                    );
+                    
+                    console.log(`📸 Región capturada: ${regionCanvas.width}x${regionCanvas.height}`);
+                    
+                    // Convertir región a blob y procesar
+                    regionCanvas.toBlob((blob) => {
+                        if (blob) {
+                            console.log('📸 Procesando región QR con motor potente...');
+                            frame.classList.add('hidden');
+                            stopScanner();
+                            decodeQRFromImage(blob);
+                        }
+                    }, 'image/jpeg', 0.95);
+                    
+                    return;
+                }
+            } else {
+                // No detecta QR → Ocultar marco y resetear
                 if (frame) frame.classList.add('hidden');
-                
-                // Reset visual
-                powerBar.style.width = '20%';
-                powerLabel.textContent = 'Estándar';
-                handleQRRead(code.data); 
-            } else { 
-                animationFrameId = requestAnimationFrame(scanLoop); 
+                qrRegionDetected = null;
+                qrDetectionFrame = 0;
             }
+            
+            // FALLBACK: Si después de 3s no detectó nada, capturar frame completo
+            if (scanLoopCount >= 90 && !qrRegionDetected) {
+                console.log('📸 Fallback: Capturando frame completo después de 3s');
+                
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        console.log('📸 Procesando frame completo con motor potente...');
+                        if (frame) frame.classList.add('hidden');
+                        stopScanner();
+                        decodeQRFromImage(blob);
+                    }
+                }, 'image/jpeg', 0.95);
+                
+                return;
+            }
+            
+            animationFrameId = requestAnimationFrame(scanLoop);
         }
         
-        // Función mejorada para aumentar contraste
         function increaseContrast(imageData, factor = 1.5) {
             const data = new Uint8ClampedArray(imageData.data);
             const intercept = 128 * (1 - factor);
@@ -11981,6 +11916,10 @@
         function stopScanner() {
             scannerRunning = false;
             scanLoopCount = 0; // Reset del contador de frames
+            
+            // Reset variables de tracking QR
+            qrRegionDetected = null;
+            qrDetectionFrame = 0;
             
             // Ocultar marco Google Lens
             const frame = document.getElementById('qr-detection-frame');
