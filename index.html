@@ -11127,83 +11127,76 @@
                 
                 const baseImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 
-                // ESTRATEGIA ULTRA AGRESIVA PARA FOTOS GUARDADAS
+                // CALCULAR ESCALADOS SEGUROS basados en el tamaño de la imagen
+                const maxPixels = 4000 * 4000; // Límite seguro
+                const currentPixels = img.width * img.height;
+                
+                // Ajustar escalados para evitar crashes de memoria
+                let maxScale = 8.0;
+                if (currentPixels * (maxScale * maxScale) > maxPixels) {
+                    maxScale = Math.floor(Math.sqrt(maxPixels / currentPixels));
+                }
+                maxScale = Math.max(2, Math.min(8, maxScale)); // Entre 2x y 8x
+                
+                console.log(`📊 Escalado máximo seguro: ${maxScale}x`);
+                
+                // ESTRATEGIA OPTIMIZADA con escalados seguros
                 let attemptIndex = 0;
                 
                 const attempts = [
-                    // 1. ESCALADO EXTREMO 8X - Fuerza bruta máxima
+                    // 1. Escalado máximo seguro
                     () => {
-                        console.log('🔍 Intento 1: Escalado 8x extremo');
-                        document.getElementById('loading-status').textContent = '🔍 1/6: Escalado 8x...';
-                        const scaled = preprocessImage(baseImageData, { scale: 8.0, contrast: 1.3, sharpen: true });
+                        console.log(`🔍 Intento 1: Escalado ${maxScale}x`);
+                        document.getElementById('loading-status').textContent = `🔍 1/5: ${maxScale}x escalado...`;
+                        const scaled = preprocessImage(baseImageData, { scale: maxScale, contrast: 1.3, sharpen: true });
                         return jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
                     },
                     
-                    // 2. ESCALADO 6X - Muy efectivo
+                    // 2. Escalado medio-alto
                     () => {
-                        console.log('🔍 Intento 2: Escalado 6x');
-                        document.getElementById('loading-status').textContent = '🔍 2/6: Escalado 6x...';
-                        const scaled = preprocessImage(baseImageData, { scale: 6.0, contrast: 1.4, sharpen: true });
+                        const scale = Math.max(3, Math.floor(maxScale * 0.75));
+                        console.log(`🔍 Intento 2: Escalado ${scale}x`);
+                        document.getElementById('loading-status').textContent = `🔍 2/5: ${scale}x escalado...`;
+                        const scaled = preprocessImage(baseImageData, { scale: scale, contrast: 1.4, sharpen: true });
                         return jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
                     },
                     
-                    // 3. CENTRO 10X - Zona central escalada al máximo
+                    // 3. Binarización + escalado
                     () => {
-                        console.log('🔍 Intento 3: Centro 10x');
-                        document.getElementById('loading-status').textContent = '🔍 3/6: Centro 10x...';
-                        const w = baseImageData.width;
-                        const h = baseImageData.height;
-                        const centerX = Math.floor(w * 0.2);
-                        const centerY = Math.floor(h * 0.2);
-                        const centerW = Math.floor(w * 0.6);
-                        const centerH = Math.floor(h * 0.6);
-                        
-                        const tempCanvas = document.createElement('canvas');
-                        const tempCtx = tempCanvas.getContext('2d');
-                        tempCanvas.width = w;
-                        tempCanvas.height = h;
-                        tempCtx.putImageData(baseImageData, 0, 0);
-                        
-                        const regionCanvas = document.createElement('canvas');
-                        const regionCtx = regionCanvas.getContext('2d');
-                        regionCanvas.width = centerW;
-                        regionCanvas.height = centerH;
-                        regionCtx.drawImage(tempCanvas, centerX, centerY, centerW, centerH, 0, 0, centerW, centerH);
-                        
-                        const centerData = regionCtx.getImageData(0, 0, centerW, centerH);
-                        const scaled = preprocessImage(centerData, { scale: 10.0, contrast: 1.5, sharpen: true });
-                        return jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
-                    },
-                    
-                    // 4. BINARIZACIÓN + 6X
-                    () => {
-                        console.log('🔍 Intento 4: Binarización + 6x');
-                        document.getElementById('loading-status').textContent = '🔍 4/6: Binarización + 6x...';
+                        const scale = Math.max(3, Math.floor(maxScale * 0.75));
+                        console.log(`🔍 Intento 3: Binarización + ${scale}x`);
+                        document.getElementById('loading-status').textContent = `🔍 3/5: Binarización...`;
                         const binarized = enhanceQRContrast(baseImageData);
-                        const scaled = preprocessImage(binarized, { scale: 6.0, sharpen: true });
+                        const scaled = preprocessImage(binarized, { scale: scale, sharpen: true });
                         return jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
                     },
                     
-                    // 5. ESCALADO 4X simple
+                    // 4. Escalado moderado
                     () => {
-                        console.log('🔍 Intento 5: Escalado 4x');
-                        document.getElementById('loading-status').textContent = '🔍 5/6: Escalado 4x...';
-                        const scaled = preprocessImage(baseImageData, { scale: 4.0, contrast: 1.2 });
+                        console.log('🔍 Intento 4: Escalado 3x');
+                        document.getElementById('loading-status').textContent = '🔍 4/5: 3x escalado...';
+                        const scaled = preprocessImage(baseImageData, { scale: 3.0, contrast: 1.2 });
                         return jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
                     },
                     
-                    // 6. ORIGINAL
+                    // 5. Original
                     () => {
-                        console.log('🔍 Intento 6: Original');
-                        document.getElementById('loading-status').textContent = '🔍 6/6: Original...';
+                        console.log('🔍 Intento 5: Original');
+                        document.getElementById('loading-status').textContent = '🔍 5/5: Original...';
                         return jsQR(baseImageData.data, baseImageData.width, baseImageData.height, { inversionAttempts: "attemptBoth" });
                     }
                 ];
                 
                 const tryNextAttempt = () => {
                     if (attemptIndex >= attempts.length) {
-                        // ÚLTIMO RECURSO: Dividir en 9 cuadrículas y probar cada una con 12x
-                        tryGridSearch();
+                        document.getElementById('loading-status').classList.add('hidden');
+                        window.showErrorModal(
+                            "❌ No se pudo detectar el QR.\n\n" +
+                            "💡 Intenta:\n" +
+                            "• Hacer foto más cerca del QR\n" +
+                            "• Usar el escáner en vivo (funciona mejor)\n" +
+                            "• Asegurar buena iluminación"
+                        );
                         return;
                     }
                     
@@ -11220,85 +11213,12 @@
                                 tryNextAttempt();
                             }
                         } catch (e) {
-                            console.error('Error:', e);
+                            console.error('Error en intento:', e);
+                            // Continuar con siguiente intento en caso de error
                             attemptIndex++;
                             tryNextAttempt();
                         }
-                    }, 10); // Muy rápido
-                };
-                
-                // BÚSQUEDA EN CUADRÍCULA (último recurso)
-                const tryGridSearch = () => {
-                    console.log('🔍 ÚLTIMO RECURSO: Búsqueda en cuadrícula 3x3');
-                    document.getElementById('loading-status').textContent = '🔍 Búsqueda exhaustiva...';
-                    
-                    const w = baseImageData.width;
-                    const h = baseImageData.height;
-                    
-                    const tempCanvas = document.createElement('canvas');
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCanvas.width = w;
-                    tempCanvas.height = h;
-                    tempCtx.putImageData(baseImageData, 0, 0);
-                    
-                    // Dividir en 9 regiones (3x3)
-                    const gridSize = 3;
-                    const cellW = Math.floor(w / gridSize);
-                    const cellH = Math.floor(h / gridSize);
-                    
-                    let gridIndex = 0;
-                    const totalCells = gridSize * gridSize;
-                    
-                    const tryNextCell = () => {
-                        if (gridIndex >= totalCells) {
-                            document.getElementById('loading-status').classList.add('hidden');
-                            window.showErrorModal(
-                                "❌ No se pudo detectar el QR.\n\n" +
-                                "💡 Soluciones:\n" +
-                                "• Haz foto MÁS CERCA del QR\n" +
-                                "• Asegúrate que el QR ocupe más espacio\n" +
-                                "• Prueba el escáner en vivo (botón verde)"
-                            );
-                            return;
-                        }
-                        
-                        setTimeout(() => {
-                            try {
-                                const row = Math.floor(gridIndex / gridSize);
-                                const col = gridIndex % gridSize;
-                                const x = col * cellW;
-                                const y = row * cellH;
-                                
-                                console.log(`🔍 Celda ${gridIndex + 1}/${totalCells} (${row},${col})`);
-                                
-                                const cellCanvas = document.createElement('canvas');
-                                const cellCtx = cellCanvas.getContext('2d');
-                                cellCanvas.width = cellW;
-                                cellCanvas.height = cellH;
-                                cellCtx.drawImage(tempCanvas, x, y, cellW, cellH, 0, 0, cellW, cellH);
-                                
-                                const cellData = cellCtx.getImageData(0, 0, cellW, cellH);
-                                const scaled = preprocessImage(cellData, { scale: 12.0, contrast: 1.6, sharpen: true });
-                                
-                                const code = jsQR(scaled.data, scaled.width, scaled.height, { inversionAttempts: "attemptBoth" });
-                                
-                                if (code) {
-                                    document.getElementById('loading-status').classList.add('hidden');
-                                    console.log(`✅ QR encontrado en celda ${gridIndex + 1}`);
-                                    handleQRRead(code.data);
-                                } else {
-                                    gridIndex++;
-                                    tryNextCell();
-                                }
-                            } catch (e) {
-                                console.error('Error en celda:', e);
-                                gridIndex++;
-                                tryNextCell();
-                            }
-                        }, 10);
-                    };
-                    
-                    tryNextCell();
+                    }, 20);
                 };
                 
                 tryNextAttempt();
