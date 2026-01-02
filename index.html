@@ -10951,6 +10951,151 @@
             
             return processedData;
         }
+        
+        // NUEVA FUNCIÓN: Detectar automáticamente región del QR y recortar
+        function detectAndCropQR(imageData) {
+            const width = imageData.width;
+            const height = imageData.height;
+            const data = imageData.data;
+            
+            // Convertir a escala de grises y detectar bordes
+            const gray = new Uint8ClampedArray(width * height);
+            for (let i = 0; i < data.length; i += 4) {
+                const idx = i / 4;
+                gray[idx] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            }
+            
+            // Binarizar (threshold adaptativo simple)
+            const binary = new Uint8ClampedArray(width * height);
+            const threshold = 128;
+            for (let i = 0; i < gray.length; i++) {
+                binary[i] = gray[i] < threshold ? 0 : 255;
+            }
+            
+            // Encontrar límites del contenido (no blanco)
+            let minX = width, maxX = 0, minY = height, maxY = 0;
+            let hasContent = false;
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = 0; x < width; x++) {
+                    const idx = y * width + x;
+                    // Si el píxel es oscuro (parte del QR)
+                    if (binary[idx] < 128) {
+                        hasContent = true;
+                        if (x < minX) minX = x;
+                        if (x > maxX) maxX = x;
+                        if (y < minY) minY = y;
+                        if (y > maxY) maxY = y;
+                    }
+                }
+            }
+            
+            // Si no hay contenido oscuro, devolver imagen original
+            if (!hasContent || maxX <= minX || maxY <= minY) {
+                return imageData;
+            }
+            
+            // Añadir margen del 10% alrededor del QR detectado
+            const marginX = Math.floor((maxX - minX) * 0.1);
+            const marginY = Math.floor((maxY - minY) * 0.1);
+            
+            minX = Math.max(0, minX - marginX);
+            maxX = Math.min(width - 1, maxX + marginX);
+            minY = Math.max(0, minY - marginY);
+            maxY = Math.min(height - 1, maxY + marginY);
+            
+            const cropWidth = maxX - minX + 1;
+            const cropHeight = maxY - minY + 1;
+            
+            // Si el recorte es muy pequeño (< 20% de la imagen), probablemente sea ruido
+            if (cropWidth < width * 0.2 || cropHeight < height * 0.2) {
+                return imageData;
+            }
+            
+            // Crear nueva imagen recortada
+            const croppedCanvas = document.createElement('canvas');
+            const croppedCtx = croppedCanvas.getContext('2d');
+            croppedCanvas.width = cropWidth;
+            croppedCanvas.height = cropHeight;
+            
+            // Copiar región recortada
+            const tempCanvas = document.createElement('canvas');
+            const tempCtx = tempCanvas.getContext('2d');
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+            tempCtx.putImageData(imageData, 0, 0);
+            
+            croppedCtx.drawImage(tempCanvas, minX, minY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+            
+            const croppedData = croppedCtx.getImageData(0, 0, cropWidth, cropHeight);
+            
+            console.log(`📐 QR detectado y recortado: ${width}x${height} → ${cropWidth}x${cropHeight} (${Math.round(cropWidth*cropHeight/(width*height)*100)}% del original)`);
+            
+            return croppedData;
+        }
+        
+        // NUEVA FUNCIÓN: Mejorar contraste con binarización adaptativa
+        function enhanceQRContrast(imageData) {
+            const width = imageData.width;
+            const height = imageData.height;
+            const data = new Uint8ClampedArray(imageData.data);
+            
+            // Convertir a escala de grises
+            const gray = new Uint8ClampedArray(width * height);
+            for (let i = 0; i < data.length; i += 4) {
+                const idx = i / 4;
+                gray[idx] = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+            }
+            
+            // Calcular threshold adaptativo (método de Otsu simplificado)
+            let histogram = new Array(256).fill(0);
+            for (let i = 0; i < gray.length; i++) {
+                histogram[Math.floor(gray[i])]++;
+            }
+            
+            let sum = 0;
+            for (let i = 0; i < 256; i++) {
+                sum += i * histogram[i];
+            }
+            
+            let sumB = 0;
+            let wB = 0;
+            let wF = 0;
+            let maxVariance = 0;
+            let threshold = 0;
+            
+            for (let i = 0; i < 256; i++) {
+                wB += histogram[i];
+                if (wB === 0) continue;
+                
+                wF = gray.length - wB;
+                if (wF === 0) break;
+                
+                sumB += i * histogram[i];
+                const mB = sumB / wB;
+                const mF = (sum - sumB) / wF;
+                const variance = wB * wF * (mB - mF) * (mB - mF);
+                
+                if (variance > maxVariance) {
+                    maxVariance = variance;
+                    threshold = i;
+                }
+            }
+            
+            // Aplicar binarización
+            for (let i = 0; i < gray.length; i++) {
+                const binary = gray[i] < threshold ? 0 : 255;
+                const idx = i * 4;
+                data[idx] = binary;
+                data[idx + 1] = binary;
+                data[idx + 2] = binary;
+                // Alpha no se toca
+            }
+            
+            console.log(`🎨 Binarización aplicada con threshold: ${threshold}`);
+            
+            return new ImageData(data, width, height);
+        }
 
         function decodeQRFromImage(imageFileOrBlob) {
             document.getElementById('loading-status').textContent = "🔍 Analizando imagen...";
@@ -10961,31 +11106,86 @@
             img.onload = () => {
                 URL.revokeObjectURL(url);
                 
-                // ESTRATEGIA MEJORADA: Múltiples intentos con diferentes configuraciones
+                // ESTRATEGIA MEJORADA CON RECORTE AUTOMÁTICO
                 const attempts = [
-                    // Intento 1: Imagen original
-                    { scale: 1.0, brightness: 0, contrast: 1.0, sharpen: false, label: "original" },
+                    // Intento 1: Recorte automático + binarización (NUEVO - MUY EFECTIVO)
+                    { 
+                        autoCrop: true, 
+                        binarize: true, 
+                        scale: 1.0, 
+                        label: "recorte automático + binarización" 
+                    },
                     
-                    // Intento 2: Escalado 2x (para QR pequeños)
-                    { scale: 2.0, brightness: 0, contrast: 1.2, sharpen: true, label: "2x escalado + nitidez" },
+                    // Intento 2: Recorte automático + escalado 2x
+                    { 
+                        autoCrop: true, 
+                        scale: 2.0, 
+                        contrast: 1.2, 
+                        sharpen: true, 
+                        label: "recorte auto + 2x escalado" 
+                    },
                     
-                    // Intento 3: Escalado 3x (para QR muy pequeños)
-                    { scale: 3.0, brightness: 0, contrast: 1.3, sharpen: true, label: "3x escalado + nitidez" },
+                    // Intento 3: Binarización sin recorte (por si el recorte falla)
+                    { 
+                        binarize: true, 
+                        scale: 1.5, 
+                        label: "binarización completa" 
+                    },
                     
-                    // Intento 4: Alto contraste
-                    { scale: 1.5, brightness: 0.1, contrast: 1.5, sharpen: true, label: "alto contraste" },
+                    // Intento 4: Imagen original (control)
+                    { 
+                        scale: 1.0, 
+                        brightness: 0, 
+                        contrast: 1.0, 
+                        sharpen: false, 
+                        label: "original" 
+                    },
                     
-                    // Intento 5: Muy alto contraste (para QR muy borrosos)
-                    { scale: 2.0, brightness: 0.2, contrast: 2.0, sharpen: true, label: "muy alto contraste" },
+                    // Intento 5: Escalado 3x con recorte
+                    { 
+                        autoCrop: true,
+                        scale: 3.0, 
+                        contrast: 1.3, 
+                        sharpen: true, 
+                        label: "recorte auto + 3x escalado" 
+                    },
                     
-                    // Intento 6: Escalado masivo 4x
-                    { scale: 4.0, brightness: 0, contrast: 1.4, sharpen: true, label: "4x escalado" },
+                    // Intento 6: Alto contraste sin recorte
+                    { 
+                        scale: 2.0, 
+                        brightness: 0.1, 
+                        contrast: 1.5, 
+                        sharpen: true, 
+                        label: "alto contraste" 
+                    },
                     
-                    // Intento 7: Brillo aumentado
-                    { scale: 2.0, brightness: 0.3, contrast: 1.3, sharpen: true, label: "brillo aumentado" },
+                    // Intento 7: Muy alto contraste con recorte
+                    { 
+                        autoCrop: true,
+                        scale: 2.5, 
+                        brightness: 0.2, 
+                        contrast: 2.0, 
+                        sharpen: true, 
+                        label: "recorte auto + muy alto contraste" 
+                    },
                     
-                    // Intento 8: Imagen reducida (a veces ayuda)
-                    { scale: 0.5, brightness: 0, contrast: 1.3, sharpen: false, label: "reducida" }
+                    // Intento 8: Escalado masivo 4x con recorte
+                    { 
+                        autoCrop: true,
+                        scale: 4.0, 
+                        contrast: 1.4, 
+                        sharpen: true, 
+                        label: "recorte auto + 4x escalado" 
+                    },
+                    
+                    // Intento 9: Binarización + escalado masivo (último recurso)
+                    { 
+                        autoCrop: true,
+                        binarize: true,
+                        scale: 3.0, 
+                        sharpen: true,
+                        label: "recorte + binarización + 3x" 
+                    }
                 ];
                 
                 let attemptIndex = 0;
@@ -10998,7 +11198,8 @@
                             "💡 Consejos:\n" +
                             "• Asegúrate de que el QR sea visible\n" +
                             "• Intenta con mejor iluminación\n" +
-                            "• Usa una imagen más grande o clara"
+                            "• Usa una imagen más grande o clara\n" +
+                            "• El QR debe estar completo en la imagen"
                         );
                         return;
                     }
@@ -11015,13 +11216,25 @@
                             localCanvas.height = img.height;
                             ctx.drawImage(img, 0, 0, localCanvas.width, localCanvas.height);
                             
-                            const imageData = ctx.getImageData(0, 0, localCanvas.width, localCanvas.height);
+                            let imageData = ctx.getImageData(0, 0, localCanvas.width, localCanvas.height);
                             
-                            // Preprocesar con la configuración actual
-                            const processedData = preprocessImage(imageData, config);
+                            // PASO 1: Recorte automático (si está habilitado)
+                            if (config.autoCrop) {
+                                imageData = detectAndCropQR(imageData);
+                            }
                             
-                            // Intentar decodificar con todas las opciones de inversión
-                            let code = jsQR(processedData.data, processedData.width, processedData.height, {
+                            // PASO 2: Binarización (si está habilitada)
+                            if (config.binarize) {
+                                imageData = enhanceQRContrast(imageData);
+                            }
+                            
+                            // PASO 3: Preprocesar con configuración (escalado, contraste, etc.)
+                            if (config.scale !== 1.0 || config.brightness || config.contrast !== 1.0 || config.sharpen) {
+                                imageData = preprocessImage(imageData, config);
+                            }
+                            
+                            // PASO 4: Intentar decodificar
+                            let code = jsQR(imageData.data, imageData.width, imageData.height, {
                                 inversionAttempts: "attemptBoth"
                             });
                             
