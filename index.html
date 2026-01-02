@@ -1079,13 +1079,6 @@
                         <span>ESCANEAR QR AHORA</span>
                     </button>
                     
-                    <!-- NUEVO: Botón Capturar Foto QR (solo 2.0TD) -->
-                    <input type="file" id="camera-capture-input" accept="image/*" capture="environment" class="hidden">
-                    <button id="camera-capture-btn" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3 mb-3">
-                        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.125 3h3.75a2 2 0 011.664.89l.812 1.22a2 2 0 001.664.89H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path><circle cx="12" cy="13" r="1.5" fill="currentColor"/></svg>
-                        <span class="text-lg">📸 CAPTURAR FOTO QR</span>
-                    </button>
-                    
                     <input type="file" id="image-file-input" accept="image/*" class="hidden">
                     <button id="upload-menu-btn" class="w-full bg-drk-50 hover:bg-drk-100 text-drk-800 font-bold py-3 px-6 rounded-xl shadow-sm transform transition active:scale-95 flex items-center justify-center gap-3">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
@@ -1344,6 +1337,16 @@
         <div id="qr-options-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
             <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full">
                 <h3 class="text-xl font-bold text-drk-800 mb-4" id="modal-qr-title">Seleccione Opción QR</h3>
+                
+                <!-- Input oculto para captura de foto -->
+                <input type="file" id="camera-capture-input" accept="image/*" capture="environment" class="hidden">
+                
+                <!-- Botón Capturar Foto (primera opción) -->
+                <button id="camera-capture-btn" class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold py-3 px-6 rounded-xl shadow-md mb-3 flex items-center justify-center gap-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.125 3h3.75a2 2 0 011.664.89l.812 1.22a2 2 0 001.664.89H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                    <span>Capturar Foto</span>
+                </button>
+                
                 <button id="modal-upload-file-btn" class="w-full bg-drk-800 hover:bg-drk-900 text-white font-bold py-3 px-6 rounded-xl shadow-md mb-3">Subir Imagen</button>
                 <button id="modal-paste-image-btn" class="w-full bg-drk-600 hover:bg-drk-800 text-white font-bold py-3 px-6 rounded-xl shadow-md mb-4">Pegar Imagen (CTRL+V)</button>
                 <button onclick="document.getElementById('qr-options-modal').classList.add('hidden'); document.getElementById('qr-options-modal').classList.remove('flex');" class="w-full bg-slate-200 font-bold py-3 rounded-xl">Cancelar</button>
@@ -10970,6 +10973,8 @@
             
             // NUEVO: Botón Capturar Foto QR - Abre cámara nativa
             document.getElementById('camera-capture-btn').onclick = () => {
+                document.getElementById('qr-options-modal').classList.add('hidden');
+                document.getElementById('qr-options-modal').classList.remove('flex');
                 document.getElementById('camera-capture-input').click();
             };
             
