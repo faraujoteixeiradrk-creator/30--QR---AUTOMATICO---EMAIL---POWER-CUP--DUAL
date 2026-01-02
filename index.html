@@ -6059,34 +6059,38 @@ Por favor:
             
             breakdown += `TIPO: ${result.tariffType || 'N/A'}\n`;
             breakdown += `CUPS: ${result.cups || 'N/A'}\n`;
-            breakdown += `DÍAS: ${result.days || 'N/A'}\n\n`;
+            breakdown += `DÍAS: ${result.dias_facturados || result.days || 'N/A'}\n\n`;
             
             breakdown += `COSTES DE POTENCIA:\n`;
-            if (result.powerCosts) {
-                Object.entries(result.powerCosts).forEach(([period, cost]) => {
-                    breakdown += `  ${period}: ${cost.toFixed(2)} €\n`;
+            if (result.powerCosts && Array.isArray(result.powerCosts)) {
+                result.powerCosts.forEach(item => {
+                    if (item.kw > 0) {
+                        breakdown += `  P${item.period}: ${(item.cost || 0).toFixed(2)} € (${item.kw} kW x ${(item.priceDay || 0).toFixed(6)} €/día)\n`;
+                    }
                 });
-                breakdown += `  TOTAL POTENCIA: ${result.subPower?.toFixed(2) || '0.00'} €\n\n`;
+                breakdown += `  TOTAL POTENCIA: ${(result.subPower || 0).toFixed(2)} €\n\n`;
             }
             
             breakdown += `COSTES DE ENERGÍA:\n`;
-            if (result.energyCosts) {
-                Object.entries(result.energyCosts).forEach(([period, cost]) => {
-                    breakdown += `  ${period}: ${cost.toFixed(2)} €\n`;
+            if (result.energyCosts && Array.isArray(result.energyCosts)) {
+                result.energyCosts.forEach(item => {
+                    if (item.kwh > 0) {
+                        breakdown += `  E${item.period}: ${(item.cost || 0).toFixed(2)} € (${item.kwh} kWh x ${(item.price || 0).toFixed(6)} €/kWh)\n`;
+                    }
                 });
-                breakdown += `  TOTAL ENERGÍA: ${result.subEnergyNet?.toFixed(2) || '0.00'} €\n\n`;
+                breakdown += `  TOTAL ENERGÍA: ${(result.subEnergyNet || 0).toFixed(2)} €\n\n`;
             }
             
             breakdown += `IMPUESTOS Y OTROS:\n`;
-            breakdown += `  Impuesto Eléctrico: ${result.elec_tax?.toFixed(2) || '0.00'} €\n`;
-            breakdown += `  IVA: ${result.vat?.toFixed(2) || '0.00'} €\n`;
-            breakdown += `  Alquiler Contador: ${result.rental?.toFixed(2) || '0.00'} €\n\n`;
+            breakdown += `  Impuesto Eléctrico: ${(result.elec_tax || 0).toFixed(2)} €\n`;
+            breakdown += `  IVA: ${(result.vat || 0).toFixed(2)} €\n`;
+            breakdown += `  Alquiler Contador: ${(result.rental || 0).toFixed(2)} €\n\n`;
             
             breakdown += `TOTALES:\n`;
             breakdown += `  Subtotal: ${(result.subtotal || 0).toFixed(2)} €\n`;
-            breakdown += `  TOTAL PERIODO: ${result.importe_total?.toFixed(2) || '0.00'} €\n`;
-            breakdown += `  TOTAL ANUAL: ${result.totalAnnual?.toFixed(2) || '0.00'} €\n`;
-            breakdown += `  AHORRO: ${result.savings?.toFixed(2) || '0.00'} €\n`;
+            breakdown += `  TOTAL PERIODO: ${(result.importe_total || 0).toFixed(2)} €\n`;
+            breakdown += `  TOTAL ANUAL: ${(result.totalAnnual || result.originalBillAnnual || 0).toFixed(2)} €\n`;
+            breakdown += `  AHORRO: ${(result.savings || 0).toFixed(2)} €\n`;
             
             return breakdown;
         }
