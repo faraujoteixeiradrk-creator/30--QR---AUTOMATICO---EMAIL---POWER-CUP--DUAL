@@ -11329,7 +11329,7 @@
             overlay.classList.remove('hidden');
             overlay.classList.add('flex');
             progressMsg.textContent = 'Cargando imagen...';
-            attemptCounter.textContent = '0 / 8';
+            attemptCounter.textContent = '0 / 10';
             
             const img = new Image();
             const url = URL.createObjectURL(imageFileOrBlob);
@@ -11362,22 +11362,22 @@
                 let attemptNum = 0;
                 
                 // FUNCIÓN PARA PROBAR UN ESCALADO
-                const tryScale = (scale, label) => {
+                const tryScale = (scale, label, canvas = croppedCanvas) => {
                     attemptNum++;
                     console.log(`🔍 Intento ${attemptNum}: ${label} (escala ${scale}x)`);
                     
                     // Actualizar UI
                     progressMsg.textContent = label;
-                    attemptCounter.textContent = `${attemptNum} / 8`;
+                    attemptCounter.textContent = `${attemptNum} / 10`;
                     
                     try {
-                        // Escalar desde la imagen YA RECORTADA
+                        // Escalar desde la imagen proporcionada
                         const scaledCanvas = document.createElement('canvas');
                         const scaledCtx = scaledCanvas.getContext('2d');
-                        scaledCanvas.width = Math.floor(croppedCanvas.width * scale);
-                        scaledCanvas.height = Math.floor(croppedCanvas.height * scale);
+                        scaledCanvas.width = Math.floor(canvas.width * scale);
+                        scaledCanvas.height = Math.floor(canvas.height * scale);
                         
-                        scaledCtx.drawImage(croppedCanvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
+                        scaledCtx.drawImage(canvas, 0, 0, scaledCanvas.width, scaledCanvas.height);
                         const scaledData = scaledCtx.getImageData(0, 0, scaledCanvas.width, scaledCanvas.height);
                         
                         // Intentar detectar
@@ -11401,9 +11401,9 @@
                     return false;
                 };
                 
-                // SECUENCIA DE INTENTOS (ahora sobre imagen recortada)
+                // SECUENCIA DE INTENTOS
                 const runAttempts = () => {
-                    // Intento 1: Imagen recortada original
+                    // Intento 1: Región recortada original
                     if (tryScale(1.0, "📷 Región QR detectada")) return;
                     
                     setTimeout(() => {
@@ -11427,22 +11427,30 @@
                                         if (tryScale(6.0, "🚀 Región 6x escalada")) return;
                                         
                                         setTimeout(() => {
-                                            // Intento 7: 8x (último recurso)
+                                            // Intento 7: 8x
                                             if (tryScale(8.0, "💪 Región 8x escalada")) return;
                                             
                                             setTimeout(() => {
-                                                // Intento 8: Imagen original SIN recorte
+                                                // NUEVO: Intento 8 - Reducir resolución (para fotos DESENFOCADAS)
                                                 attemptNum++;
-                                                progressMsg.textContent = '📸 Probando imagen completa...';
-                                                attemptCounter.textContent = '8 / 8';
+                                                progressMsg.textContent = '🔧 Reduciendo resolución...';
+                                                attemptCounter.textContent = '8 / 10';
                                                 
                                                 try {
-                                                    const code = jsQR(baseImageData.data, baseImageData.width, baseImageData.height, {
+                                                    // Reducir a la mitad para fotos borrosas
+                                                    const reducedCanvas = document.createElement('canvas');
+                                                    const reducedCtx = reducedCanvas.getContext('2d');
+                                                    reducedCanvas.width = Math.floor(croppedCanvas.width / 2);
+                                                    reducedCanvas.height = Math.floor(croppedCanvas.height / 2);
+                                                    reducedCtx.drawImage(croppedCanvas, 0, 0, reducedCanvas.width, reducedCanvas.height);
+                                                    
+                                                    const reducedData = reducedCtx.getImageData(0, 0, reducedCanvas.width, reducedCanvas.height);
+                                                    const code = jsQR(reducedData.data, reducedData.width, reducedData.height, {
                                                         inversionAttempts: "attemptBoth"
                                                     });
                                                     
                                                     if (code) {
-                                                        console.log('✅ QR encontrado en imagen completa');
+                                                        console.log('✅ QR encontrado con reducción de resolución (foto desenfocada)');
                                                         progressMsg.textContent = '✅ ¡QR Detectado!';
                                                         setTimeout(() => {
                                                             overlay.classList.add('hidden');
@@ -11452,21 +11460,81 @@
                                                         return;
                                                     }
                                                 } catch (e) {
-                                                    console.error('Error en último intento:', e);
+                                                    console.error('Error en reducción:', e);
                                                 }
                                                 
-                                                // NO ENCONTRADO
-                                                console.log('❌ QR no detectado después de 8 intentos');
-                                                overlay.classList.add('hidden');
-                                                overlay.classList.remove('flex');
-                                                window.showErrorModal(
-                                                    "❌ No se detectó el código QR.\n\n" +
-                                                    "💡 Prueba:\n" +
-                                                    "• ESCÁNER EN VIVO (funciona mejor)\n" +
-                                                    "• Hacer foto MÁS CERCA del QR\n" +
-                                                    "• Recortar la imagen solo al QR\n" +
-                                                    "• Mejor iluminación"
-                                                );
+                                                setTimeout(() => {
+                                                    // Intento 9: Imagen original SIN recorte
+                                                    attemptNum++;
+                                                    progressMsg.textContent = '📸 Probando imagen completa...';
+                                                    attemptCounter.textContent = '9 / 10';
+                                                    
+                                                    try {
+                                                        const code = jsQR(baseImageData.data, baseImageData.width, baseImageData.height, {
+                                                            inversionAttempts: "attemptBoth"
+                                                        });
+                                                        
+                                                        if (code) {
+                                                            console.log('✅ QR encontrado en imagen completa');
+                                                            progressMsg.textContent = '✅ ¡QR Detectado!';
+                                                            setTimeout(() => {
+                                                                overlay.classList.add('hidden');
+                                                                overlay.classList.remove('flex');
+                                                                handleQRRead(code.data);
+                                                            }, 500);
+                                                            return;
+                                                        }
+                                                    } catch (e) {
+                                                        console.error('Error en imagen completa:', e);
+                                                    }
+                                                    
+                                                    setTimeout(() => {
+                                                        // Intento 10: Imagen completa reducida (último recurso para desenfoque)
+                                                        attemptNum++;
+                                                        progressMsg.textContent = '🔧 Último intento (desenfoque)...';
+                                                        attemptCounter.textContent = '10 / 10';
+                                                        
+                                                        try {
+                                                            const finalCanvas = document.createElement('canvas');
+                                                            const finalCtx = finalCanvas.getContext('2d');
+                                                            finalCanvas.width = Math.floor(canvas.width / 3);
+                                                            finalCanvas.height = Math.floor(canvas.height / 3);
+                                                            finalCtx.drawImage(canvas, 0, 0, finalCanvas.width, finalCanvas.height);
+                                                            
+                                                            const finalData = finalCtx.getImageData(0, 0, finalCanvas.width, finalCanvas.height);
+                                                            const code = jsQR(finalData.data, finalData.width, finalData.height, {
+                                                                inversionAttempts: "attemptBoth"
+                                                            });
+                                                            
+                                                            if (code) {
+                                                                console.log('✅ QR encontrado con reducción extrema (desenfoque severo)');
+                                                                progressMsg.textContent = '✅ ¡QR Detectado!';
+                                                                setTimeout(() => {
+                                                                    overlay.classList.add('hidden');
+                                                                    overlay.classList.remove('flex');
+                                                                    handleQRRead(code.data);
+                                                                }, 500);
+                                                                return;
+                                                            }
+                                                        } catch (e) {
+                                                            console.error('Error en reducción final:', e);
+                                                        }
+                                                        
+                                                        // NO ENCONTRADO
+                                                        console.log('❌ QR no detectado después de 10 intentos');
+                                                        overlay.classList.add('hidden');
+                                                        overlay.classList.remove('flex');
+                                                        window.showErrorModal(
+                                                            "❌ No se detectó el código QR.\n\n" +
+                                                            "💡 Consejos importantes:\n\n" +
+                                                            "📸 DISTANCIA: Saca la foto desde 20-30cm\n" +
+                                                            "   (no muy cerca o saldrá desenfocada)\n\n" +
+                                                            "💡 LUZ: Asegura buena iluminación\n\n" +
+                                                            "🎯 MEJOR OPCIÓN:\n" +
+                                                            "   Usa el ESCÁNER EN VIVO (funciona mejor)"
+                                                        );
+                                                    }, 300);
+                                                }, 300);
                                             }, 300);
                                         }, 300);
                                     }, 300);
