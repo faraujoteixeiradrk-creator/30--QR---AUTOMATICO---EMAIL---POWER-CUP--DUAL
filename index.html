@@ -2149,6 +2149,7 @@
             compareWithIndexed = false;
             bestOptionTariffChoice = 'fija';
             currentTariffType = null; // NUEVO: Resetear tipo de tarifa
+            window.lastGasComparisonResult = null; // NUEVO: Resetear datos de GAS
             
             // DUAL: Limpiar variables DUAL
             window.dualMode = false;
@@ -5825,7 +5826,11 @@
         async function handleRequestImprovement() {
             console.log('handleRequestImprovement llamada');
             
-            if (!lastComparisonResult) {
+            // Verificar si hay datos de ELECTRICIDAD o GAS
+            const hasElectricityData = lastComparisonResult !== null;
+            const hasGasData = window.lastGasComparisonResult !== null;
+            
+            if (!hasElectricityData && !hasGasData) {
                 return window.showErrorModal("Primero realice una comparación.");
             }
             
@@ -5842,31 +5847,96 @@
             }
             
             try {
-                // 1. Generar el comparativo HTML (igual que COPIAR COMPARATIVO)
                 let htmlContent = '';
-                if (lastIndexedResult && compareWithIndexed) {
-                    if (lastComparisonResult.isMultiCups) {
-                        htmlContent = generateMultiDualStyledHtmlOffer(commercialCode);
+                let desglose = '';
+                let tipoSuministro = '';
+                
+                // CASO 1: Datos de GAS
+                if (hasGasData && !hasElectricityData) {
+                    tipoSuministro = 'GAS';
+                    const gasData = window.lastGasComparisonResult;
+                    
+                    // Generar HTML de resultados de GAS
+                    htmlContent = `
+                        <div style="font-family: Arial, sans-serif; max-width: 800px;">
+                            <h2 style="color: #DC2626; text-align: center;">🔥 RESULTADO COMPARATIVA GAS</h2>
+                            <div style="background-color: #FEE2E2; border: 3px solid #DC2626; border-radius: 12px; padding: 24px; margin: 20px 0;">
+                                <h3 style="color: #DC2626; text-align: center; font-size: 24px;">LA MEJOR OPCIÓN ES</h3>
+                                <h2 style="color: #991B1B; text-align: center; font-size: 36px; margin: 16px 0;">Tu Tarifa Actual</h2>
+                                <p style="text-align: center; color: #DC2626; font-size: 18px;">Es la mejor opción detectada</p>
+                            </div>
+                            
+                            <div style="background-color: white; border: 2px solid #FCA5A5; border-radius: 12px; padding: 20px; margin: 16px 0;">
+                                <h4 style="color: #DC2626; text-align: center; font-size: 20px;">¡ENHORABUENA!</h4>
+                                <p style="text-align: center; color: #991B1B; font-weight: bold;">Actualmente estás en una buena tarifa.</p>
+                                <p style="text-align: center; color: #DC2626;">Seguiremos estudiando el mercado y te avisaremos cuando encontremos alguna tarifa que se adapte a tu perfil de consumo.</p>
+                            </div>
+                            
+                            <div style="background-color: #FEE2E2; border-radius: 12px; padding: 16px; margin-top: 16px;">
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr>
+                                        <td style="padding: 8px; font-weight: bold; color: #991B1B;">TU COSTE ACTUAL CONSOLIDADO</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; font-size: 24px; color: #991B1B; font-weight: bold;">Total factura: ${gasData.totalCliente.toFixed(2)} €</td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; font-size: 18px; color: #991B1B; font-weight: bold;">Estimación anual: ${(gasData.totalCliente * 365 / gasData.dias).toFixed(2)} €/año</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Generar desglose de GAS
+                    desglose = `TIPO DE SUMINISTRO: GAS
+TARIFA: ${gasData.tariffType}
+PERIODO ANALIZADO: ${gasData.dias} días
+CONSUMO: ${gasData.kwh} kWh
+TOTAL FACTURA ACTUAL: ${gasData.totalCliente.toFixed(2)} €
+
+MEJOR AHORRO DETECTADO: ${gasData.bestSaving.toFixed(2)} € (NEGATIVO - Cliente ya tiene buena tarifa)
+
+TARIFAS ANALIZADAS:
+${gasData.results.map((r, i) => `
+${i + 1}. ${r.name}
+   - Total: ${r.total.toFixed(2)} €
+   - Ahorro anual: ${r.ahorro_anual.toFixed(2)} €
+`).join('')}`;
+                
+                // CASO 2: Datos de ELECTRICIDAD (código original)
+                } else if (hasElectricityData) {
+                    tipoSuministro = 'ELECTRICIDAD';
+                // CASO 2: Datos de ELECTRICIDAD (código original)
+                } else if (hasElectricityData) {
+                    tipoSuministro = 'ELECTRICIDAD';
+                    
+                    if (lastIndexedResult && compareWithIndexed) {
+                        if (lastComparisonResult.isMultiCups) {
+                            htmlContent = generateMultiDualStyledHtmlOffer(commercialCode);
+                        } else {
+                            htmlContent = generateDualStyledHtmlOffer(commercialCode, lastComparisonResult, lastIndexedResult);
+                        }
                     } else {
-                        htmlContent = generateDualStyledHtmlOffer(commercialCode, lastComparisonResult, lastIndexedResult);
+                        if (lastComparisonResult.isMulti) {
+                            htmlContent = generateMultiStyledHtmlOffer(commercialCode);
+                        } else {
+                            htmlContent = generateStyledHtmlOffer(commercialCode);
+                        }
                     }
-                } else {
-                    if (lastComparisonResult.isMulti) {
-                        htmlContent = generateMultiStyledHtmlOffer(commercialCode);
-                    } else {
-                        htmlContent = generateStyledHtmlOffer(commercialCode);
-                    }
+                    
+                    // 2. Generar desglose detallado de cálculos
+                    desglose = generateCalculationBreakdown(lastComparisonResult);
                 }
                 
-                // 2. Generar desglose detallado de cálculos
-                const desglose = generateCalculationBreakdown(lastComparisonResult);
-                
                 // 3. Preparar el contenido del email
-                const emailSubject = `Solicitud Mejora - ${clientName || 'Cliente'} - ${cups || 'Sin CUPS'}`;
+                const emailSubject = `Solicitud Mejora ${tipoSuministro} - ${clientName || 'Cliente'} - ${cups || 'Sin CUPS'}`;
                 
-                const emailBody = `SOLICITUD DE MEJORA DE COMPARATIVO
+                const emailBody = `SOLICITUD DE MEJORA DE COMPARATIVO - ${tipoSuministro}
                 
 El comercial ${commercialCode} solicita una mejora de este comparativo.
+
+TIPO DE SUMINISTRO: ${tipoSuministro}
 
 DATOS DEL CLIENTE:
 - Nombre: ${clientName || 'No proporcionado'}
@@ -5901,8 +5971,12 @@ ${desglose}
                 tempElement.contentEditable = true;
                 tempElement.innerHTML = `
                     <div style="font-family: Arial, sans-serif;">
-                        <h2 style="color: #E50000;">SOLICITUD DE MEJORA DE COMPARATIVO</h2>
+                        <h2 style="color: #E50000;">SOLICITUD DE MEJORA DE COMPARATIVO - ${tipoSuministro}</h2>
                         <p><strong>El comercial ${commercialCode} solicita una mejora de este comparativo.</strong></p>
+                        
+                        <div style="background-color: #E0F2FE; border-left: 4px solid #0EA5E9; padding: 12px; margin: 16px 0;">
+                            <p style="margin: 0; font-weight: bold;">📋 TIPO DE SUMINISTRO: ${tipoSuministro}</p>
+                        </div>
                         
                         <h3>DATOS DEL CLIENTE:</h3>
                         <ul>
@@ -12901,6 +12975,10 @@ Por favor:
             // Desactivar modo DUAL (solo activo cuando se navega desde dualSelectTariff)
             window.dualMode = false;
             checkDualMode(); // Actualizar visibilidad del botón DUAL
+            
+            // Limpiar resultados anteriores de GAS
+            window.lastGasComparisonResult = null;
+            
             hideAllScreens();
             document.getElementById('screen-gas').classList.add('active');
             // Ocultar el modo de comparación (ya está seleccionado)
@@ -15345,16 +15423,59 @@ ${clientName}
             // Ordenar por mejor ahorro
             results.sort((a, b) => b.ahorro_anual - a.ahorro_anual);
             
+            // NUEVO: Detectar si NO hay ahorro en ninguna tarifa
+            const bestSaving = results.length > 0 ? results[0].ahorro_anual : 0;
+            const noSavings = bestSaving <= 0;
+            
             let html = '';
             
-            results.forEach((result, index) => {
-                const isPositiveSaving = result.ahorro_anual > 0;
-                const savingClass = isPositiveSaving ? 'text-green-600' : 'text-red-600';
-                
+            // NUEVO: Si no hay ahorro, mostrar mensaje especial
+            if (noSavings) {
                 html += `
-                <div class="mb-6 p-4 border-2 ${isPositiveSaving ? 'border-green-200 bg-green-50' : 'border-slate-200'} rounded-xl">
-                    <h3 class="text-xl font-bold text-drk-900 mb-2">${result.name}</h3>
-                    <p class="text-sm text-slate-600 mb-4">${result.descripcion}</p>
+                <div class="mb-6 p-6 border-4 border-red-500 bg-red-50 rounded-2xl">
+                    <div class="text-center mb-6">
+                        <h3 class="text-3xl font-black text-red-600 mb-4">LA MEJOR OPCIÓN PARA TI ES</h3>
+                        <h2 class="text-5xl font-black text-red-700 mb-3">Tu Tarifa Actual</h2>
+                        <p class="text-lg text-red-600 font-semibold">Es la mejor opción detectada</p>
+                    </div>
+                    
+                    <div class="bg-white p-6 rounded-xl border-2 border-red-200">
+                        <h4 class="text-2xl font-bold text-red-600 mb-3 text-center">¡ENHORABUENA!</h4>
+                        <p class="text-lg leading-tight font-bold text-red-700 text-center mb-3">Actualmente estás en una buena tarifa.</p>
+                        <p class="text-base text-red-600 text-center leading-relaxed">Seguiremos estudiando el mercado y te avisaremos cuando encontremos alguna tarifa que se adapte a tu perfil de consumo.</p>
+                    </div>
+                    
+                    <div class="mt-6 p-4 bg-red-100 rounded-xl">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold text-red-800">TU COSTE ACTUAL CONSOLIDADO</span>
+                        </div>
+                        <div class="flex justify-between items-center text-2xl">
+                            <span class="font-bold text-red-700">Total factura:</span>
+                            <span class="font-bold text-red-700">${totalCliente.toFixed(2)} €</span>
+                        </div>
+                        <div class="flex justify-between items-center mt-2 text-xl">
+                            <span class="font-bold text-red-700">Estimación anual:</span>
+                            <span class="font-bold text-red-700">${(totalCliente * 365 / dias).toFixed(2)} €/año</span>
+                        </div>
+                    </div>
+                </div>
+                `;
+                
+                // Mostrar botón "SOLICITAR MEJORA A DRK"
+                document.getElementById('request-improvement-btn').style.display = 'flex';
+                
+            } else {
+                // HAY AHORRO: Mostrar comparativo normal
+                document.getElementById('request-improvement-btn').style.display = 'none';
+                
+                results.forEach((result, index) => {
+                    const isPositiveSaving = result.ahorro_anual > 0;
+                    const savingClass = isPositiveSaving ? 'text-green-600' : 'text-red-600';
+                    
+                    html += `
+                    <div class="mb-6 p-4 border-2 ${isPositiveSaving ? 'border-green-200 bg-green-50' : 'border-slate-200'} rounded-xl">
+                        <h3 class="text-xl font-bold text-drk-900 mb-2">${result.name}</h3>
+                        <p class="text-sm text-slate-600 mb-4">${result.descripcion}</p>
                     
                     <table class="w-full text-sm">
                         <tr class="border-b">
@@ -15413,10 +15534,26 @@ ${clientName}
                 `;
             });
             
+            } // FIN del else (cuando HAY ahorro)
+            
             // GUARDAR DATOS PARA EXPORTAR (NUEVO)
             const comparisonMode = document.querySelector('input[name="comparison_mode"]:checked')?.value || 'drk_only';
             window.gasExportData = { results, dias, kwh, totalCliente, comparisonMode };
             console.log('💾 Guardando gasExportData:', {results: results.map(r => ({name: r.name, ahorro: r.ahorro_anual})), comparisonMode});
+            
+            // NUEVO: Guardar resultado para solicitud de mejora cuando no hay ahorro
+            if (noSavings) {
+                window.lastGasComparisonResult = {
+                    isGas: true,
+                    results: results,
+                    dias: dias,
+                    kwh: kwh,
+                    totalCliente: totalCliente,
+                    tariffType: currentGasTariff,
+                    bestSaving: bestSaving
+                };
+                console.log('💾 Guardando lastGasComparisonResult para solicitud de mejora:', window.lastGasComparisonResult);
+            }
             
             // NUEVO: Guardar resultados para DUAL
             // Identificar si hay DRK y PowerCup
@@ -15453,40 +15590,42 @@ ${clientName}
                 powercup: window.lastGasPowerCupResult
             });
             
-            // AGREGAR BOTONES DE EXPORTAR (NUEVO)
-            html += `
-                <div class="mt-8 p-6 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200">
-                    <h3 class="text-xl font-bold text-drk-900 mb-4 text-center">📤 Exportar Presentación</h3>
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <!-- Botón PDF -->
-                        <button
-                            onclick="generateGasPDF()"
-                            class="flex items-center justify-center gap-3 px-6 py-4 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 transition shadow-lg"
-                        >
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
-                            </svg>
-                            <span>Generar PDF</span>
-                        </button>
+            // AGREGAR BOTONES DE EXPORTAR (solo si HAY ahorro)
+            if (!noSavings) {
+                html += `
+                    <div class="mt-8 p-6 bg-gradient-to-r from-slate-50 to-slate-100 rounded-xl border-2 border-slate-200">
+                        <h3 class="text-xl font-bold text-drk-900 mb-4 text-center">📤 Exportar Presentación</h3>
                         
-                        <!-- Botón HTML -->
-                        <button
-                            onclick="generateGasHTML()"
-                            class="flex items-center justify-center gap-3 px-6 py-4 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition shadow-lg"
-                        >
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-                            </svg>
-                            <span>Generar HTML para Email</span>
-                        </button>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Botón PDF -->
+                            <button
+                                onclick="generateGasPDF()"
+                                class="flex items-center justify-center gap-3 px-6 py-4 bg-red-500 text-white rounded-lg font-bold hover:bg-red-600 transition shadow-lg"
+                            >
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>Generar PDF</span>
+                            </button>
+                            
+                            <!-- Botón HTML -->
+                            <button
+                                onclick="generateGasHTML()"
+                                class="flex items-center justify-center gap-3 px-6 py-4 bg-blue-500 text-white rounded-lg font-bold hover:bg-blue-600 transition shadow-lg"
+                            >
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
+                                </svg>
+                                <span>Generar HTML para Email</span>
+                            </button>
+                        </div>
+                        
+                        <p class="text-xs text-slate-500 text-center mt-4">
+                            Genera documentos profesionales para presentar al cliente
+                        </p>
                     </div>
-                    
-                    <p class="text-xs text-slate-500 text-center mt-4">
-                        Genera documentos profesionales para presentar al cliente
-                    </p>
-                </div>
-            `;
+                `;
+            }
             
             container.innerHTML = html;
             
