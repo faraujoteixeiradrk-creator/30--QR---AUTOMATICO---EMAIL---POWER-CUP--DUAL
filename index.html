@@ -1234,6 +1234,13 @@
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2v-2m-4-4l-4 4m0 0l-4-4m4 4V5"></path></svg>
                     <span>COPIAR COMPARATIVO</span>
                 </button>
+                
+                <!-- NUEVO: Botón para solicitar mejora cuando no hay ahorro -->
+                <button id="request-improvement-btn" style="display:none;" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3 mb-3">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    <span>SOLICITAR MEJORA A DRK</span>
+                </button>
+                
                 <button onclick="document.getElementById('details-container').classList.toggle('hidden')" class="text-center text-drk-800 font-bold text-sm hover:underline flex items-center justify-center gap-1" id="details-toggle-btn">Ver desglose detallado del cálculo</button>
             </div>
             
@@ -1374,6 +1381,37 @@
                     📄 CREAR PDF COMPARATIVO
                 </button>
                 <button onclick="document.getElementById('send-offer-modal').classList.add('hidden'); document.getElementById('send-offer-modal').classList.remove('flex');" class="w-full bg-slate-200 font-bold py-3 rounded-xl text-sm">Cancelar</button>
+            </div>
+        </div>
+
+        <!-- 9.5. Request Improvement Modal (Nuevo) -->
+        <div id="request-improvement-modal" class="fixed inset-0 bg-black/80 hidden items-center justify-center p-4 z-50 backdrop-blur-sm">
+            <div class="bg-white p-6 rounded-2xl shadow-2xl max-w-sm w-full">
+                <h3 class="text-xl font-bold text-drk-800 mb-4">Solicitar Mejora a DRK</h3>
+                <p class="text-sm text-slate-600 mb-4">Complete los datos para que el equipo de Back Office pueda revisar este comparativo y buscar una mejor opción.</p>
+                
+                <input type="text" id="improvement-comercial-code" placeholder="CÓDIGO COMERCIAL (Obligatorio)" class="w-full mb-3 p-3 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                <input type="text" id="improvement-client-name" placeholder="Nombre Cliente" class="w-full mb-3 p-3 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                <input type="text" id="improvement-client-cups" placeholder="CUPS" class="w-full mb-3 p-3 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                <input type="tel" id="improvement-client-phone" placeholder="Teléfono" class="w-full mb-3 p-3 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                <input type="email" id="improvement-client-email" placeholder="Email" class="w-full mb-3 p-3 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500 outline-none">
+                <textarea id="improvement-observations" placeholder="Observaciones (opcional)" rows="3" class="w-full mb-4 p-3 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-amber-500 outline-none resize-none"></textarea>
+                
+                <!-- Recordatorio -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                    <div class="flex items-start gap-2">
+                        <span class="text-blue-600 text-xl">📎</span>
+                        <div class="text-xs text-blue-800">
+                            <p class="font-bold mb-1">RECORDATORIO:</p>
+                            <p class="leading-relaxed">Por favor, adjunte las facturas del cliente en su respuesta al email automático que recibirá.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <button id="execute-improvement-request-btn" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black py-3 rounded-xl shadow-md mb-3">
+                    📧 ENVIAR SOLICITUD
+                </button>
+                <button onclick="document.getElementById('request-improvement-modal').classList.add('hidden'); document.getElementById('request-improvement-modal').classList.remove('flex');" class="w-full bg-slate-200 font-bold py-3 rounded-xl text-sm">Cancelar</button>
             </div>
         </div>
 
@@ -3363,6 +3401,9 @@
                 // Ocultar columnas de precios
                 document.getElementById('price-columns').style.display = 'none';
                 
+                // NUEVO: Mostrar botón para solicitar mejora a DRK
+                document.getElementById('request-improvement-btn').style.display = 'flex';
+                
                 newCostLabelEl.textContent = "TU COSTE ACTUAL CONSOLIDADO";
                 oldCostPeriodEl.classList.remove('line-through');
                 oldCostPeriodEl.classList.add('text-cta-green-500');
@@ -3377,6 +3418,9 @@
                 
                 // Mostrar columnas de precios
                 document.getElementById('price-columns').style.display = 'grid';
+                
+                // Ocultar botón de solicitar mejora
+                document.getElementById('request-improvement-btn').style.display = 'none';
                 
                 newCostLabelEl.textContent = `TU NUEVO COSTE ${brand.NAME.includes('DRK') ? 'DRK' : 'POWER CUP'} CONSOLIDADO`;
                 oldCostPeriodEl.classList.add('line-through', 'text-red-400', 'decoration-red-400/50');
@@ -5767,6 +5811,204 @@
                 console.error('Error generando PDF MULTICUPS dual:', error);
                 window.showErrorModal(`Error al generar PDF: ${error.message}`);
             }
+        }
+
+        
+        // --- SOLICITAR MEJORA A DRK (SIN AHORRO) ---
+        
+        async function handleRequestImprovement() {
+            console.log('handleRequestImprovement llamada');
+            
+            if (!lastComparisonResult) {
+                return window.showErrorModal("Primero realice una comparación.");
+            }
+            
+            // Validar campos obligatorios
+            const commercialCode = document.getElementById('improvement-comercial-code').value.trim();
+            const clientName = document.getElementById('improvement-client-name').value.trim();
+            const cups = document.getElementById('improvement-client-cups').value.trim();
+            const phone = document.getElementById('improvement-client-phone').value.trim();
+            const email = document.getElementById('improvement-client-email').value.trim();
+            const observations = document.getElementById('improvement-observations').value.trim();
+            
+            if (!commercialCode) {
+                return window.showErrorModal("El Código Comercial es obligatorio.");
+            }
+            
+            try {
+                // 1. Generar el comparativo HTML (igual que COPIAR COMPARATIVO)
+                let htmlContent = '';
+                if (lastIndexedResult && compareWithIndexed) {
+                    if (lastComparisonResult.isMultiCups) {
+                        htmlContent = generateMultiDualStyledHtmlOffer(commercialCode);
+                    } else {
+                        htmlContent = generateDualStyledHtmlOffer(commercialCode, lastComparisonResult, lastIndexedResult);
+                    }
+                } else {
+                    if (lastComparisonResult.isMulti) {
+                        htmlContent = generateMultiStyledHtmlOffer(commercialCode);
+                    } else {
+                        htmlContent = generateStyledHtmlOffer(commercialCode);
+                    }
+                }
+                
+                // 2. Generar desglose detallado de cálculos
+                const desglose = generateCalculationBreakdown(lastComparisonResult);
+                
+                // 3. Preparar el contenido del email
+                const emailSubject = `Solicitud Mejora - ${clientName || 'Cliente'} - ${cups || 'Sin CUPS'}`;
+                
+                const emailBody = `SOLICITUD DE MEJORA DE COMPARATIVO
+                
+El comercial ${commercialCode} solicita una mejora de este comparativo.
+
+DATOS DEL CLIENTE:
+- Nombre: ${clientName || 'No proporcionado'}
+- CUPS: ${cups || 'No proporcionado'}
+- Teléfono: ${phone || 'No proporcionado'}
+- Email: ${email || 'No proporcionado'}
+${observations ? `- Observaciones: ${observations}` : ''}
+
+RECORDATORIO: Por favor adjuntar las facturas del cliente.
+
+-------------------------------------------
+COMPARATIVO:
+-------------------------------------------
+
+${htmlContent.replace(/<[^>]*>/g, '').substring(0, 1000)}...
+
+(Ver versión completa HTML en el email)
+
+-------------------------------------------
+DESGLOSE DETALLADO DE CÁLCULOS:
+-------------------------------------------
+
+${desglose}
+`;
+
+                // 4. Crear mailto con múltiples destinatarios
+                const recipients = 'F.araujo@drk.es,rguerra@drk.es,l.grande@drk.es';
+                const mailtoLink = `mailto:${recipients}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody.substring(0, 1800))}`;
+                
+                // 5. Copiar HTML completo al portapapeles para pegar en el email
+                const tempElement = document.createElement('div');
+                tempElement.contentEditable = true;
+                tempElement.innerHTML = `
+                    <div style="font-family: Arial, sans-serif;">
+                        <h2 style="color: #E50000;">SOLICITUD DE MEJORA DE COMPARATIVO</h2>
+                        <p><strong>El comercial ${commercialCode} solicita una mejora de este comparativo.</strong></p>
+                        
+                        <h3>DATOS DEL CLIENTE:</h3>
+                        <ul>
+                            <li><strong>Nombre:</strong> ${clientName || 'No proporcionado'}</li>
+                            <li><strong>CUPS:</strong> ${cups || 'No proporcionado'}</li>
+                            <li><strong>Teléfono:</strong> ${phone || 'No proporcionado'}</li>
+                            <li><strong>Email:</strong> ${email || 'No proporcionado'}</li>
+                            ${observations ? `<li><strong>Observaciones:</strong> ${observations}</li>` : ''}
+                        </ul>
+                        
+                        <div style="background-color: #FEF3C7; border-left: 4px solid #F59E0B; padding: 12px; margin: 16px 0;">
+                            <p style="margin: 0; font-weight: bold;">📎 RECORDATORIO:</p>
+                            <p style="margin: 4px 0 0 0;">Por favor adjuntar las facturas del cliente.</p>
+                        </div>
+                        
+                        <hr style="margin: 24px 0;">
+                        
+                        <h3>COMPARATIVO:</h3>
+                        ${htmlContent}
+                        
+                        <hr style="margin: 24px 0;">
+                        
+                        <h3>DESGLOSE DETALLADO DE CÁLCULOS:</h3>
+                        <pre style="background-color: #f5f5f5; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 12px;">${desglose}</pre>
+                    </div>
+                `;
+                tempElement.style.position = 'fixed';
+                tempElement.style.left = '-9999px';
+                document.body.appendChild(tempElement);
+                
+                const range = document.createRange();
+                range.selectNodeContents(tempElement);
+                const sel = window.getSelection();
+                sel.removeAllRanges();
+                sel.addRange(range);
+                
+                const success = document.execCommand('copy');
+                document.body.removeChild(tempElement);
+                
+                // 6. Abrir cliente de correo
+                window.location.href = mailtoLink;
+                
+                // 7. Mostrar mensaje de éxito
+                if (success) {
+                    window.showMessageModal(`✅ Email preparado y contenido copiado al portapapeles.
+
+Se ha abierto su cliente de correo con:
+- Destinatarios: F.araujo@drk.es, rguerra@drk.es, l.grande@drk.es
+- Asunto ya incluido
+
+Por favor:
+1. Pegue (Ctrl+V) el contenido completo en el cuerpo del email
+2. Adjunte las facturas del cliente
+3. Envíe el email`);
+                    
+                    // Cerrar modal
+                    document.getElementById('request-improvement-modal').classList.add('hidden');
+                    document.getElementById('request-improvement-modal').classList.remove('flex');
+                    
+                    // Limpiar campos
+                    document.getElementById('improvement-comercial-code').value = '';
+                    document.getElementById('improvement-client-name').value = '';
+                    document.getElementById('improvement-client-cups').value = '';
+                    document.getElementById('improvement-client-phone').value = '';
+                    document.getElementById('improvement-client-email').value = '';
+                    document.getElementById('improvement-observations').value = '';
+                } else {
+                    window.showErrorModal("No se pudo copiar el contenido. Por favor, contacte a soporte.");
+                }
+                
+            } catch (error) {
+                console.error('Error en handleRequestImprovement:', error);
+                window.showErrorModal(`Error al preparar la solicitud: ${error.message}`);
+            }
+        }
+        
+        // Función auxiliar para generar desglose de cálculos
+        function generateCalculationBreakdown(result) {
+            let breakdown = '';
+            
+            breakdown += `TIPO: ${result.tariffType || 'N/A'}\n`;
+            breakdown += `CUPS: ${result.cups || 'N/A'}\n`;
+            breakdown += `DÍAS: ${result.days || 'N/A'}\n\n`;
+            
+            breakdown += `COSTES DE POTENCIA:\n`;
+            if (result.powerCosts) {
+                Object.entries(result.powerCosts).forEach(([period, cost]) => {
+                    breakdown += `  ${period}: ${cost.toFixed(2)} €\n`;
+                });
+                breakdown += `  TOTAL POTENCIA: ${result.subPower?.toFixed(2) || '0.00'} €\n\n`;
+            }
+            
+            breakdown += `COSTES DE ENERGÍA:\n`;
+            if (result.energyCosts) {
+                Object.entries(result.energyCosts).forEach(([period, cost]) => {
+                    breakdown += `  ${period}: ${cost.toFixed(2)} €\n`;
+                });
+                breakdown += `  TOTAL ENERGÍA: ${result.subEnergyNet?.toFixed(2) || '0.00'} €\n\n`;
+            }
+            
+            breakdown += `IMPUESTOS Y OTROS:\n`;
+            breakdown += `  Impuesto Eléctrico: ${result.elec_tax?.toFixed(2) || '0.00'} €\n`;
+            breakdown += `  IVA: ${result.vat?.toFixed(2) || '0.00'} €\n`;
+            breakdown += `  Alquiler Contador: ${result.rental?.toFixed(2) || '0.00'} €\n\n`;
+            
+            breakdown += `TOTALES:\n`;
+            breakdown += `  Subtotal: ${(result.subtotal || 0).toFixed(2)} €\n`;
+            breakdown += `  TOTAL PERIODO: ${result.importe_total?.toFixed(2) || '0.00'} €\n`;
+            breakdown += `  TOTAL ANUAL: ${result.totalAnnual?.toFixed(2) || '0.00'} €\n`;
+            breakdown += `  AHORRO: ${result.savings?.toFixed(2) || '0.00'} €\n`;
+            
+            return breakdown;
         }
 
         
@@ -11033,6 +11275,18 @@
             
             document.getElementById('execute-send-offer-btn').addEventListener('click', handleCopyOffer);
             document.getElementById('execute-pdf-offer-btn').addEventListener('click', handleGeneratePDF);
+            
+            // NUEVO: Event listeners para solicitar mejora a DRK
+            document.getElementById('request-improvement-btn').onclick = () => {
+                if (lastComparisonResult) {
+                    document.getElementById('request-improvement-modal').classList.remove('hidden');
+                    document.getElementById('request-improvement-modal').classList.add('flex');
+                } else {
+                    window.showErrorModal("Por favor, analice una factura primero.");
+                }
+            };
+            
+            document.getElementById('execute-improvement-request-btn').addEventListener('click', handleRequestImprovement);
 
             document.getElementById('qr-toggle-checkbox').addEventListener('change', (e) => {
                 const wrapper = document.getElementById('qr-content-wrapper');
