@@ -11925,29 +11925,110 @@
             let totalDaysWeighted = 0;
             let totalOriginalBill = 0; // NUEVO: Total factura actual
             
+            // NUEVO: Analizar ahorros individuales
+            const suppliesWithSavings = [];
+            const suppliesWithoutSavings = [];
+            
             dualSupplies.forEach(supply => {
                 if (supply.results) {
-                    totalDRK += supply.results.drk?.total_anual || 0;
-                    totalPowerCup += supply.results.powercup?.total_anual || 0;
+                    const drkCost = supply.results.drk?.total_anual || 0;
+                    const powercupCost = supply.results.powercup?.total_anual || 0;
+                    const originalBill = supply.originalBillAnnual || 0;
+                    
+                    totalDRK += drkCost;
+                    totalPowerCup += powercupCost;
                     totalDaysWeighted += supply.data.dias || 30;
+                    totalOriginalBill += originalBill;
+                    
+                    // Determinar si este suministro tiene ahorro
+                    const isPowerCupMode = comparisonMode === 'overall_best';
+                    const currentCost = isPowerCupMode ? powercupCost : drkCost;
+                    const savings = originalBill - currentCost;
+                    
+                    if (savings > 0) {
+                        suppliesWithSavings.push({...supply, savings});
+                    } else {
+                        suppliesWithoutSavings.push({...supply, savings});
+                    }
                 }
-                // Sumar factura original
-                totalOriginalBill += supply.originalBillAnnual || 0;
             });
             
-            // Calcular ahorro
-            const totalSavings = totalOriginalBill - totalDRK;
+            // Calcular ahorro total
+            const isPowerCupMode = comparisonMode === 'overall_best';
+            const totalNew = isPowerCupMode ? totalPowerCup : totalDRK;
+            const totalSavings = totalOriginalBill - totalNew;
             
-            // Guardar resultados globales
+            console.log('📊 Análisis de ahorros:');
+            console.log('- Con ahorro:', suppliesWithSavings.length);
+            console.log('- Sin ahorro:', suppliesWithoutSavings.length);
+            console.log('- Ahorro total:', totalSavings.toFixed(2), '€');
+            
+            // NUEVO: Manejo inteligente de casos sin ahorro
+            if (totalSavings <= 0) {
+                // Ningún suministro tiene ahorro
+                if (suppliesWithSavings.length === 0) {
+                    const elecSupply = dualSupplies.find(s => s.type === 'electricidad');
+                    const gasSupply = dualSupplies.find(s => s.type === 'gas');
+                    
+                    window.showErrorModal(
+                        `⚠️ ACTUALMENTE NO HAY AHORRO EN NINGÚN SUMINISTRO\n\n` +
+                        `📊 Análisis:\n` +
+                        `${elecSupply ? `⚡ Electricidad: Sin ahorro` : ''}\n` +
+                        `${gasSupply ? `🔥 Gas: Sin ahorro` : ''}\n\n` +
+                        `💡 Sugerencias:\n` +
+                        `• Revisa que los datos introducidos sean correctos\n` +
+                        `• Verifica los consumos y potencias\n` +
+                        `• Puede que tu tarifa actual ya sea competitiva`,
+                        '⚠️ Sin ahorro detectado'
+                    );
+                    return;
+                }
+                
+                // Hay ahorro en algunos suministros pero no en total
+                const elecWithSavings = suppliesWithSavings.filter(s => s.type === 'electricidad');
+                const gasWithSavings = suppliesWithSavings.filter(s => s.type === 'gas');
+                
+                if (elecWithSavings.length > 0 && gasWithSavings.length === 0) {
+                    // Solo electricidad tiene ahorro
+                    window.showErrorModal(
+                        `⚡ SOLO ELECTRICIDAD TIENE AHORRO\n\n` +
+                        `El suministro de GAS no genera ahorro actualmente.\n\n` +
+                        `💡 Opciones:\n` +
+                        `1. Continuar solo con ELECTRICIDAD\n` +
+                        `2. Revisar los datos del GAS\n` +
+                        `3. Añadir otro suministro de GAS diferente`,
+                        '⚠️ Sin ahorro en GAS'
+                    );
+                    return;
+                }
+                
+                if (gasWithSavings.length > 0 && elecWithSavings.length === 0) {
+                    // Solo gas tiene ahorro
+                    window.showErrorModal(
+                        `🔥 SOLO GAS TIENE AHORRO\n\n` +
+                        `El suministro de ELECTRICIDAD no genera ahorro actualmente.\n\n` +
+                        `💡 Opciones:\n` +
+                        `1. Continuar solo con GAS\n` +
+                        `2. Revisar los datos de ELECTRICIDAD\n` +
+                        `3. Añadir otro suministro de ELECTRICIDAD diferente`,
+                        '⚠️ Sin ahorro en ELECTRICIDAD'
+                    );
+                    return;
+                }
+            }
+            
+            // Guardar resultados globales (incluyendo análisis de ahorros)
             window.dualGlobalResults = {
-                comparisonMode: comparisonMode, // AGREGADO: para saber si es DRK o Power Cup
+                comparisonMode: comparisonMode,
                 totalDRK,
                 totalPowerCup,
                 totalOriginalBill,
                 totalSavings,
                 diff: totalPowerCup - totalDRK,
                 supplies: dualSupplies.length,
-                avgDays: Math.round(totalDaysWeighted / dualSupplies.length)
+                avgDays: Math.round(totalDaysWeighted / dualSupplies.length),
+                suppliesWithSavings: suppliesWithSavings.length,
+                suppliesWithoutSavings: suppliesWithoutSavings.length
             };
             
             // Mostrar resultados
@@ -12346,16 +12427,44 @@ ${clientName}
             const primaryColor = isPowerCup ? '#4d7c0f' : '#546e7a';
             const accentColor = isPowerCup ? '#84cc16' : '#607d8b';
             
-            const totalSavings = results.totalSavings || 0;
-            const totalOriginalBill = results.totalOriginalBill || 0;
-            const totalNew = isPowerCup ? results.totalPowerCup : results.totalDRK;
+            // NUEVO: Filtrar suministros con ahorro para el PDF/HTML
+            const suppliesToShow = dualSupplies.filter(s => {
+                const currentCost = isPowerCup ? (s.results.powercup?.total_anual || 0) : (s.results.drk?.total_anual || 0);
+                const originalBill = s.originalBillAnnual || 0;
+                const savings = originalBill - currentCost;
+                return savings > 0; // Solo incluir si tiene ahorro
+            });
+            
+            // Si no hay ningún suministro con ahorro, no generar documento
+            if (suppliesToShow.length === 0) {
+                alert('No hay suministros con ahorro para generar el documento.');
+                return null;
+            }
+            
+            // Recalcular totales solo con suministros que tienen ahorro
+            let totalOriginalBillFiltered = 0;
+            let totalNewFiltered = 0;
+            
+            suppliesToShow.forEach(s => {
+                const currentCost = isPowerCup ? (s.results.powercup?.total_anual || 0) : (s.results.drk?.total_anual || 0);
+                totalOriginalBillFiltered += s.originalBillAnnual || 0;
+                totalNewFiltered += currentCost;
+            });
+            
+            const totalSavingsFiltered = totalOriginalBillFiltered - totalNewFiltered;
+            
+            // Usar valores filtrados para el documento
+            const totalSavings = totalSavingsFiltered;
+            const totalOriginalBill = totalOriginalBillFiltered;
+            const totalNew = totalNewFiltered;
+            
+            console.log('📊 Suministros en documento:', suppliesToShow.length, 'de', dualSupplies.length);
+            console.log('💰 Ahorro total filtrado:', totalSavings.toFixed(2), '€');
             
             const eur = n => new Intl.NumberFormat('es-ES', {minimumFractionDigits: 2, maximumFractionDigits: 2}).format(n || 0) + ' €';
             
-            // Generar tabla de suministros
-            
-            // Generar desgloses detallados
-            const desgloses = dualSupplies.map((s, i) => {
+            // Generar desgloses detallados (USAR suppliesToShow en lugar de dualSupplies)
+            const desgloses = suppliesToShow.map((s, i) => {
                 // Construir nombre completo de tarifa: COMERCIALIZADORA - TARIFA
                 const comercializadora = s.offer?.name || '';
                 const tarifa = s.offer?.description || '';
@@ -12544,7 +12653,7 @@ ${clientName}
                     </tr>
                 </thead>
                 <tbody>
-                ${dualSupplies.map((s, i) => {
+                ${suppliesToShow.map((s, i) => {
                     const ahorro = (s.originalBillAnnual||0) - (s.totalAnnual||0);
                     const emoji = s.type === 'electricidad' ? '⚡' : '🔥';
                     const tipo = s.type === 'electricidad' ? 'Electricidad' : 'Gas';
@@ -12609,7 +12718,7 @@ ${clientName}
         
         <!-- DESGLOSES -->
         <div style="padding:0">
-            ${dualSupplies.map((s, i) => {
+            ${suppliesToShow.map((s, i) => {
                 const eb = s.electricityBreakdown;
                 const gb = s.gasBreakdown;
                 const isElec = s.type === 'electricidad';
@@ -12720,7 +12829,7 @@ ${clientName}
         <!-- FOOTER INSTRUCCIONES -->
         <div style="background:#546e7a;padding:20px 30px;margin-top:20px">
             <p style="margin:0 0 10px 0;font-size:11px;color:white;font-weight:bold">PARA FORMALIZAR ESTE CONTRATO:</p>
-            <p style="margin:0 0 8px 0;font-size:10px;color:white">Responde a este email adjuntando la documentación de los ${dualSupplies.length} CUPS:</p>
+            <p style="margin:0 0 8px 0;font-size:10px;color:white">Responde a este email adjuntando la documentación de los ${suppliesToShow.length} CUPS:</p>
             <ol style="margin:0;padding-left:20px;font-size:10px;color:white;line-height:1.6">
                 <li>Foto del DNI/CIF (anverso y reverso)</li>
                 <li>Última factura (menos de 3 meses de antigüedad)</li>
@@ -12741,7 +12850,7 @@ ${clientName}
             <p style="margin:0 0 20px 0;font-size:14px;color:#64748b;font-weight:bold">Adjunta la documentación requerida</p>
             <p style="margin:0 0 25px 0;font-size:14px;color:#64748b">Envía el email</p>
             
-            <a href="${generateMailtoLink(comercialCode, clientName, clientPhone, clientEmail, dualSupplies, results, isPowerCup, brandName, totalSavings, totalOriginalBill, totalNew)}" 
+            <a href="${generateMailtoLink(comercialCode, clientName, clientPhone, clientEmail, suppliesToShow, results, isPowerCup, brandName, totalSavings, totalOriginalBill, totalNew)}" 
                style="display:inline-block;background:#22c55e;color:white;text-decoration:none;padding:16px 40px;border-radius:8px;font-size:16px;font-weight:bold;box-shadow:0 4px 6px rgba(34,197,94,0.3)">
                 ✅ CONFIRMAR Y ENVIAR
             </a>
