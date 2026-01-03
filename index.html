@@ -5846,7 +5846,9 @@
             // Verificar si hay datos de ELECTRICIDAD, GAS o DUAL
             const hasElectricityData = lastComparisonResult !== null;
             const hasGasData = window.lastGasComparisonResult !== null;
-            const hasDualData = window.dualGlobalResults !== null && dualSupplies && dualSupplies.length >= 2;
+            const hasDualData = window.dualGlobalResults !== null && typeof dualSupplies !== 'undefined' && dualSupplies && dualSupplies.length >= 2;
+            
+            console.log('Verificando datos:', {hasElectricityData, hasGasData, hasDualData});
             
             if (!hasElectricityData && !hasGasData && !hasDualData) {
                 return window.showErrorModal("Primero realice una comparación.");
@@ -5869,8 +5871,9 @@
                 let desglose = '';
                 let tipoSuministro = '';
                 
-                // CASO 1: Datos DUAL (ambos suministros)
-                if (hasDualData && !hasElectricityData && !hasGasData) {
+                // CASO 1: Datos DUAL (PRIORIDAD - si hay datos DUAL, usar esos)
+                if (hasDualData) {
+                    console.log('✅ Usando datos DUAL');
                     tipoSuministro = 'DUAL (ELECTRICIDAD + GAS)';
                     const dualResults = window.dualGlobalResults;
                     const isDrk = dualResults.comparisonMode !== 'overall_best';
@@ -5976,8 +5979,9 @@ Ahorro detectado: ${(dualResults.totalSavings || 0).toFixed(2)} € (CERO o NEGA
 
 El cliente está actualmente en tarifas competitivas tanto en electricidad como en gas.`;
                 
-                // CASO 2: Datos de GAS
-                } else if (hasGasData && !hasElectricityData) {
+                // CASO 2: Datos de GAS (solo si NO es DUAL)
+                } else if (hasGasData && !hasDualData) {
+                    console.log('✅ Usando datos GAS individual');
                     tipoSuministro = 'GAS';
                     const gasData = window.lastGasComparisonResult;
                     
@@ -6041,8 +6045,9 @@ ${i + 1}. ${r.name}
    - Ahorro anual: ${r.ahorro_anual.toFixed(2)} €
 `).join('')}`;
                 
-                // CASO 3: Datos de ELECTRICIDAD
-                } else if (hasElectricityData) {
+                // CASO 3: Datos de ELECTRICIDAD (solo si NO es DUAL ni GAS)
+                } else if (hasElectricityData && !hasDualData) {
+                    console.log('✅ Usando datos ELECTRICIDAD individual');
                     tipoSuministro = 'ELECTRICIDAD';
                     
                     // Verificar si hay ahorro o no
