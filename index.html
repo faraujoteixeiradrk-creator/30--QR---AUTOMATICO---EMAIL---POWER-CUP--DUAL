@@ -5958,6 +5958,42 @@
                                     })()}
                                 </div>
                                 
+                                <!-- PRECIOS APLICADOS -->
+                                <div style="background-color: #DBEAFE; border-radius: 6px; padding: 12px; margin: 12px 0;">
+                                    <p style="font-weight: bold; color: #1E40AF; margin: 0 0 8px 0; font-size: 14px;">📋 PRECIOS APLICADOS:</p>
+                                    ${(() => {
+                                        const eb = electricitySupply?.electricityBreakdown;
+                                        let html = '<div style="font-size:12px;">';
+                                        
+                                        // Precios de POTENCIA
+                                        if (eb?.powerCosts && Array.isArray(eb.powerCosts)) {
+                                            html += '<p style="margin:0 0 6px 0; font-weight:bold; color:#1E40AF; font-size:11px;">POTENCIA:</p>';
+                                            html += '<table style="width:100%; margin-bottom:12px;">';
+                                            eb.powerCosts.forEach(item => {
+                                                if ((item.kw || 0) > 0 && item.priceDay) {
+                                                    html += `<tr><td style="padding:2px;">P${item.period}:</td><td style="text-align:right;">${item.priceDay.toFixed(6)} €/kW/día</td></tr>`;
+                                                }
+                                            });
+                                            html += '</table>';
+                                        }
+                                        
+                                        // Precios de ENERGÍA
+                                        if (eb?.energyCosts && Array.isArray(eb.energyCosts)) {
+                                            html += '<p style="margin:0 0 6px 0; font-weight:bold; color:#1E40AF; font-size:11px;">ENERGÍA:</p>';
+                                            html += '<table style="width:100%;">';
+                                            eb.energyCosts.forEach(item => {
+                                                if ((item.kwh || 0) > 0 && item.price) {
+                                                    html += `<tr><td style="padding:2px;">P${item.period}:</td><td style="text-align:right;">${item.price.toFixed(6)} €/kWh</td></tr>`;
+                                                }
+                                            });
+                                            html += '</table>';
+                                        }
+                                        
+                                        html += '</div>';
+                                        return html;
+                                    })()}
+                                </div>
+                                
                                 <!-- Costes del periodo -->
                                 <div style="background-color: #DBEAFE; border-radius: 6px; padding: 12px; margin: 12px 0;">
                                     <p style="font-weight: bold; color: #1E40AF; margin: 0 0 8px 0; font-size: 14px;">💰 COSTES PERIODO:</p>
@@ -6124,12 +6160,32 @@
                         
                         // Extraer potencias de powerCosts array
                         let potenciaP1 = 0, potenciaP2 = 0, potenciaP3 = 0;
+                        let preciosPotencia = '';
                         
                         if (eb?.powerCosts && Array.isArray(eb.powerCosts)) {
                             eb.powerCosts.forEach(item => {
                                 if (item.period === 1) potenciaP1 = item.kw || 0;
                                 else if (item.period === 2) potenciaP2 = item.kw || 0;
                                 else if (item.period === 3) potenciaP3 = item.kw || 0;
+                            });
+                            
+                            // Extraer precios de potencia
+                            preciosPotencia = 'PRECIOS POTENCIA:\n';
+                            eb.powerCosts.forEach(item => {
+                                if ((item.kw || 0) > 0 && item.priceDay) {
+                                    preciosPotencia += `  P${item.period}: ${item.priceDay.toFixed(6)} €/kW/día\n`;
+                                }
+                            });
+                        }
+                        
+                        // Extraer precios de energía
+                        let preciosEnergia = '';
+                        if (eb?.energyCosts && Array.isArray(eb.energyCosts)) {
+                            preciosEnergia = 'PRECIOS ENERGÍA:\n';
+                            eb.energyCosts.forEach(item => {
+                                if ((item.kwh || 0) > 0 && item.price) {
+                                    preciosEnergia += `  P${item.period}: ${item.price.toFixed(6)} €/kWh\n`;
+                                }
                             });
                         }
                         
@@ -6149,6 +6205,8 @@ ${potenciaP1 > 0 ? `  P1: ${potenciaP1} kW` : ''}
 ${potenciaP2 > 0 ? `  P2: ${potenciaP2} kW` : ''}
 ${potenciaP3 > 0 ? `  P3: ${potenciaP3} kW` : ''}
 
+${preciosPotencia}
+${preciosEnergia}
 COSTES PERIODO:
   Potencia: ${eb?.subPower?.toFixed(2) || '0.00'} €
   Energía: ${eb?.subEnergy?.toFixed(2) || '0.00'} €
@@ -6172,6 +6230,10 @@ COSTES ANUALES:
 Tarifa: ${gasSupply.tariff || 'N/A'}
 Periodo: ${gData?.dias || gBreakdown?.dias || 'N/A'} días
 Consumo: ${gData?.kwh || gBreakdown?.kwh || 0} kWh
+
+PRECIOS APLICADOS:
+  Término fijo: ${(gBreakdown?.termino_fijo_diario || gasSupply?.offer?.p_fijo_diario || 0).toFixed(6)} €/día
+  Precio energía: ${(gasSupply?.offer?.p1_price || 0).toFixed(6)} €/kWh
 
 COSTES PERIODO:
   Término fijo: ${gBreakdown?.termino_fijo?.toFixed(2) || 'N/A'} €
