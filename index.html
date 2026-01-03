@@ -13704,7 +13704,18 @@ Destinatarios: F.araujo@drk.es, rguerra@drk.es, l.grande@drk.es
                 </div>
                 
                 <!-- Tarjeta AHORRO TOTAL (SOLO si NO es modo Power Cup) -->
-                ${results.comparisonMode !== 'overall_best' && results.totalSavings > 0 ? `
+                ${(() => {
+                    // Verificar si TODOS los suministros tienen ahorro <= 0
+                    let allWithoutSavings = true;
+                    dualSupplies.forEach(s => {
+                        const currentCost = s.totalAnnual || 0;
+                        const originalBill = s.originalBillAnnual || 0;
+                        const savings = originalBill - currentCost;
+                        if (savings > 0) allWithoutSavings = false;
+                    });
+                    
+                    if (results.comparisonMode !== 'overall_best' && results.totalSavings > 0 && !allWithoutSavings) {
+                        return `
                 <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: 2px solid #5BA3F5;">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold text-white">💰 Ahorro Total</h3>
@@ -13726,7 +13737,9 @@ Destinatarios: F.araujo@drk.es, rguerra@drk.es, l.grande@drk.es
                         <p class="text-sm text-white opacity-80 mt-2">${(results.totalSavings / 12).toFixed(2).replace('.', ',')} € al mes</p>
                     </div>
                 </div>
-                ` : results.comparisonMode !== 'overall_best' && results.totalSavings <= 0 ? `
+                        `;
+                    } else if (results.comparisonMode !== 'overall_best' && allWithoutSavings) {
+                        return `
                 <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border: 2px solid #0ea5e9;">
                     <div class="text-center text-white">
                         <h3 class="text-3xl font-bold mb-4">¡ENHORABUENA!</h3>
@@ -13740,10 +13753,24 @@ Destinatarios: F.araujo@drk.es, rguerra@drk.es, l.grande@drk.es
                         </div>
                     </div>
                 </div>
-                ` : ''}
+                        `;
+                    }
+                    return '';
+                })()}
                 
                 <!-- Tarjeta AHORRO TOTAL para Power Cup (SOLO si es modo Power Cup) -->
-                ${results.comparisonMode === 'overall_best' && results.totalSavings > 0 ? `
+                ${(() => {
+                    // Verificar si TODOS los suministros tienen ahorro <= 0
+                    let allWithoutSavings = true;
+                    dualSupplies.forEach(s => {
+                        const currentCost = s.totalAnnual || 0;
+                        const originalBill = s.originalBillAnnual || 0;
+                        const savings = originalBill - currentCost;
+                        if (savings > 0) allWithoutSavings = false;
+                    });
+                    
+                    if (results.comparisonMode === 'overall_best' && results.totalSavings > 0 && !allWithoutSavings) {
+                        return `
                 <div class="bg-gradient-to-br from-powercup-600 to-powercup-800 text-white rounded-2xl shadow-2xl p-6 border-2 border-powercup-500 mb-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold">💰 Ahorro Total</h3>
@@ -13765,7 +13792,9 @@ Destinatarios: F.araujo@drk.es, rguerra@drk.es, l.grande@drk.es
                         <p class="text-sm text-powercup-100 mt-2">${(results.totalSavings / 12).toFixed(2).replace('.', ',')} € al mes</p>
                     </div>
                 </div>
-                ` : results.comparisonMode === 'overall_best' && results.totalSavings <= 0 ? `
+                        `;
+                    } else if (results.comparisonMode === 'overall_best' && allWithoutSavings) {
+                        return `
                 <div class="bg-gradient-to-br from-powercup-600 to-powercup-800 text-white rounded-2xl shadow-2xl p-6 border-2 border-powercup-500 mb-6">
                     <div class="text-center">
                         <h3 class="text-3xl font-bold mb-4">¡ENHORABUENA!</h3>
@@ -13779,16 +13808,35 @@ Destinatarios: F.araujo@drk.es, rguerra@drk.es, l.grande@drk.es
                         </div>
                     </div>
                 </div>
-                ` : ''}
+                        `;
+                    }
+                    return '';
+                })()}
             `;
             
             // NUEVO: Mostrar/ocultar botón de solicitar mejora
+            // Verificar si AMBOS suministros tienen ahorro <= 0
+            let allSuppliesWithoutSavings = true;
+            
+            dualSupplies.forEach(s => {
+                const isPowerCupMode = results.comparisonMode === 'overall_best';
+                const currentCost = s.totalAnnual || 0;
+                const originalBill = s.originalBillAnnual || 0;
+                const savings = originalBill - currentCost;
+                
+                if (savings > 0) {
+                    allSuppliesWithoutSavings = false;
+                }
+            });
+            
             const dualImprovementBtn = document.getElementById('dual-request-improvement-container');
             if (dualImprovementBtn) {
-                if (results.totalSavings <= 0) {
+                if (allSuppliesWithoutSavings) {
                     dualImprovementBtn.style.display = 'block';
+                    console.log('✅ DUAL: Mostrando botón SOLICITAR MEJORA (ambos sin ahorro)');
                 } else {
                     dualImprovementBtn.style.display = 'none';
+                    console.log('❌ DUAL: Ocultando botón (al menos uno tiene ahorro)');
                 }
             }
         }
