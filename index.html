@@ -806,6 +806,14 @@
                     
                     <!-- Botones de descarga -->
                     <div class="mt-6 flex flex-col gap-3">
+                        <!-- NUEVO: Botón para solicitar mejora cuando NO hay ahorro en DUAL -->
+                        <div id="dual-request-improvement-container" style="display:none;">
+                            <button id="dual-request-improvement-btn" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg transform transition active:scale-95 flex items-center justify-center gap-3 mb-3">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                                <span>SOLICITAR MEJORA A DRK</span>
+                            </button>
+                        </div>
+                        
                         <button onclick="showClientDataModal()" class="w-full py-3 bg-slate-700 hover:bg-slate-800 text-white rounded-xl font-semibold transition-all text-sm shadow-md flex items-center justify-center gap-2">
                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M9 19l3 3m0 0l3-3m-3 3V10"></path>
@@ -2158,6 +2166,7 @@
             bestOptionTariffChoice = 'fija';
             currentTariffType = null; // NUEVO: Resetear tipo de tarifa
             window.lastGasComparisonResult = null; // NUEVO: Resetear datos de GAS
+            window.dualGlobalResults = null; // NUEVO: Resetear datos DUAL
             
             // DUAL: Limpiar variables DUAL
             window.dualMode = false;
@@ -5834,11 +5843,12 @@
         async function handleRequestImprovement() {
             console.log('handleRequestImprovement llamada');
             
-            // Verificar si hay datos de ELECTRICIDAD o GAS
+            // Verificar si hay datos de ELECTRICIDAD, GAS o DUAL
             const hasElectricityData = lastComparisonResult !== null;
             const hasGasData = window.lastGasComparisonResult !== null;
+            const hasDualData = window.dualGlobalResults !== null && dualSupplies && dualSupplies.length >= 2;
             
-            if (!hasElectricityData && !hasGasData) {
+            if (!hasElectricityData && !hasGasData && !hasDualData) {
                 return window.showErrorModal("Primero realice una comparación.");
             }
             
@@ -5859,8 +5869,115 @@
                 let desglose = '';
                 let tipoSuministro = '';
                 
-                // CASO 1: Datos de GAS
-                if (hasGasData && !hasElectricityData) {
+                // CASO 1: Datos DUAL (ambos suministros)
+                if (hasDualData && !hasElectricityData && !hasGasData) {
+                    tipoSuministro = 'DUAL (ELECTRICIDAD + GAS)';
+                    const dualResults = window.dualGlobalResults;
+                    const isDrk = dualResults.comparisonMode !== 'overall_best';
+                    const brandColor = isDrk ? '#0ea5e9' : '#84cc16';
+                    const brandName = isDrk ? 'DRK' : 'POWER CUP';
+                    
+                    // Separar suministros de electricidad y gas
+                    const electricitySupply = dualSupplies.find(s => s.type === 'electricidad');
+                    const gasSupply = dualSupplies.find(s => s.type === 'gas');
+                    
+                    htmlContent = `
+                        <div style="font-family: Arial, sans-serif; max-width: 900px;">
+                            <h2 style="color: ${brandColor}; text-align: center;">⚡🔥 RESULTADO COMPARATIVA DUAL</h2>
+                            <div style="background: linear-gradient(135deg, ${isDrk ? '#f0f9ff' : '#f7fee7'} 0%, ${isDrk ? '#e0f2fe' : '#ecfccb'} 100%); border: 3px solid ${brandColor}; border-radius: 12px; padding: 24px; margin: 20px 0;">
+                                <h3 style="color: ${brandColor}; text-align: center; font-size: 24px;">LA MEJOR OPCIÓN PARA TI ES</h3>
+                                <h2 style="color: ${isDrk ? '#0c4a6e' : '#365314'}; text-align: center; font-size: 36px; margin: 16px 0;">Tus Tarifas Actuales</h2>
+                                <p style="text-align: center; color: ${brandColor}; font-size: 18px;">Es la mejor opción detectada</p>
+                            </div>
+                            
+                            <div style="background-color: white; border: 2px solid ${isDrk ? '#bfdbfe' : '#d9f99d'}; border-radius: 12px; padding: 20px; margin: 16px 0;">
+                                <h4 style="color: ${brandColor}; text-align: center; font-size: 20px;">¡ENHORABUENA!</h4>
+                                <p style="text-align: center; color: ${isDrk ? '#0c4a6e' : '#365314'}; font-weight: bold; font-size: 18px;">Actualmente estás en buenas tarifas</p>
+                                <p style="text-align: center; color: ${brandColor}; margin-top: 8px;">Tanto en ELECTRICIDAD como en GAS tienes tarifas competitivas.</p>
+                            </div>
+                            
+                            <!-- Detalle ELECTRICIDAD -->
+                            <div style="background-color: #EFF6FF; border-left: 4px solid #3B82F6; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                                <h3 style="color: #1E40AF; margin-bottom: 12px;">⚡ ELECTRICIDAD</h3>
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr style="border-bottom: 1px solid #BFDBFE;">
+                                        <td style="padding: 8px; font-weight: bold;">Tarifa:</td>
+                                        <td style="padding: 8px; text-align: right;">${electricitySupply?.tariff || 'N/A'}</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #BFDBFE;">
+                                        <td style="padding: 8px; font-weight: bold;">Consumo:</td>
+                                        <td style="padding: 8px; text-align: right;">${electricitySupply?.data ? (electricitySupply.data.consumo_total_kwh || '0') + ' kWh' : 'N/A'}</td>
+                                    </tr>
+                                    <tr style="background-color: #DBEAFE;">
+                                        <td style="padding: 12px; font-size: 16px; font-weight: bold; color: #1E3A8A;">Coste actual anual:</td>
+                                        <td style="padding: 12px; font-size: 18px; text-align: right; color: #1E3A8A; font-weight: bold;">${(electricitySupply?.originalBillAnnual || 0).toFixed(2)} €</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <!-- Detalle GAS -->
+                            <div style="background-color: #FEE2E2; border-left: 4px solid #DC2626; border-radius: 8px; padding: 16px; margin: 16px 0;">
+                                <h3 style="color: #991B1B; margin-bottom: 12px;">🔥 GAS</h3>
+                                <table style="width: 100%; border-collapse: collapse;">
+                                    <tr style="border-bottom: 1px solid #FCA5A5;">
+                                        <td style="padding: 8px; font-weight: bold;">Tarifa:</td>
+                                        <td style="padding: 8px; text-align: right;">${gasSupply?.tariff || 'N/A'}</td>
+                                    </tr>
+                                    <tr style="border-bottom: 1px solid #FCA5A5;">
+                                        <td style="padding: 8px; font-weight: bold;">Consumo:</td>
+                                        <td style="padding: 8px; text-align: right;">${gasSupply?.data ? (gasSupply.data.kwh || '0') + ' kWh' : 'N/A'}</td>
+                                    </tr>
+                                    <tr style="background-color: #FECACA;">
+                                        <td style="padding: 12px; font-size: 16px; font-weight: bold; color: #7F1D1D;">Coste actual anual:</td>
+                                        <td style="padding: 12px; font-size: 18px; text-align: right; color: #7F1D1D; font-weight: bold;">${(gasSupply?.originalBillAnnual || 0).toFixed(2)} €</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            
+                            <!-- Total consolidado -->
+                            <div style="background: linear-gradient(135deg, ${brandColor} 0%, ${isDrk ? '#0369a1' : '#65a30d'} 100%); border-radius: 12px; padding: 20px; margin-top: 20px;">
+                                <h3 style="color: white; text-align: center; margin-bottom: 16px; font-size: 20px;">📊 COSTE TOTAL ANUAL CONSOLIDADO</h3>
+                                <div style="background-color: rgba(255, 255, 255, 0.15); border-radius: 8px; padding: 16px;">
+                                    <table style="width: 100%; color: white;">
+                                        <tr>
+                                            <td style="padding: 8px; font-size: 32px; font-weight: bold; text-align: center;" colspan="2">${(dualResults.totalOriginalBill || 0).toFixed(2)} €/año</td>
+                                        </tr>
+                                        <tr style="border-top: 1px solid rgba(255,255,255,0.3);">
+                                            <td style="padding: 8px; padding-top: 12px;">⚡ Electricidad:</td>
+                                            <td style="padding: 8px; padding-top: 12px; text-align: right; font-weight: bold;">${(electricitySupply?.originalBillAnnual || 0).toFixed(2)} €</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 8px;">🔥 Gas:</td>
+                                            <td style="padding: 8px; text-align: right; font-weight: bold;">${(gasSupply?.originalBillAnnual || 0).toFixed(2)} €</td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Generar desglose de DUAL
+                    desglose = `TIPO DE SUMINISTRO: DUAL (ELECTRICIDAD + GAS)
+MODO: ${brandName}
+
+=== ELECTRICIDAD ===
+Tarifa: ${electricitySupply?.tariff || 'N/A'}
+Consumo: ${electricitySupply?.data ? (electricitySupply.data.consumo_total_kwh || '0') : '0'} kWh
+Coste actual anual: ${(electricitySupply?.originalBillAnnual || 0).toFixed(2)} €
+
+=== GAS ===
+Tarifa: ${gasSupply?.tariff || 'N/A'}
+Consumo: ${gasSupply?.data ? (gasSupply.data.kwh || '0') : '0'} kWh
+Coste actual anual: ${(gasSupply?.originalBillAnnual || 0).toFixed(2)} €
+
+=== TOTAL CONSOLIDADO ===
+Coste total anual actual: ${(dualResults.totalOriginalBill || 0).toFixed(2)} €
+Ahorro detectado: ${(dualResults.totalSavings || 0).toFixed(2)} € (CERO o NEGATIVO - Cliente ya tiene buenas tarifas)
+
+El cliente está actualmente en tarifas competitivas tanto en electricidad como en gas.`;
+                
+                // CASO 2: Datos de GAS
+                } else if (hasGasData && !hasElectricityData) {
                     tipoSuministro = 'GAS';
                     const gasData = window.lastGasComparisonResult;
                     
@@ -5924,7 +6041,7 @@ ${i + 1}. ${r.name}
    - Ahorro anual: ${r.ahorro_anual.toFixed(2)} €
 `).join('')}`;
                 
-                // CASO 2: Datos de ELECTRICIDAD
+                // CASO 3: Datos de ELECTRICIDAD
                 } else if (hasElectricityData) {
                     tipoSuministro = 'ELECTRICIDAD';
                     
@@ -11477,6 +11594,19 @@ Destinatarios: F.araujo@drk.es, rguerra@drk.es, l.grande@drk.es
                 };
             }
             
+            // NUEVO: Event listener para botón de solicitar mejora en DUAL
+            const dualImprovementBtn = document.getElementById('dual-request-improvement-btn');
+            if (dualImprovementBtn) {
+                dualImprovementBtn.onclick = () => {
+                    if (window.dualGlobalResults && dualSupplies.length >= 2) {
+                        document.getElementById('request-improvement-modal').classList.remove('hidden');
+                        document.getElementById('request-improvement-modal').classList.add('flex');
+                    } else {
+                        window.showErrorModal("Por favor, realice una comparación DUAL primero.");
+                    }
+                };
+            }
+            
             document.getElementById('execute-improvement-request-btn').addEventListener('click', handleRequestImprovement);
 
             document.getElementById('qr-toggle-checkbox').addEventListener('change', (e) => {
@@ -13574,7 +13704,7 @@ Destinatarios: F.araujo@drk.es, rguerra@drk.es, l.grande@drk.es
                 </div>
                 
                 <!-- Tarjeta AHORRO TOTAL (SOLO si NO es modo Power Cup) -->
-                ${results.comparisonMode !== 'overall_best' ? `
+                ${results.comparisonMode !== 'overall_best' && results.totalSavings > 0 ? `
                 <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #4A90E2 0%, #357ABD 100%); border: 2px solid #5BA3F5;">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold text-white">💰 Ahorro Total</h3>
@@ -13596,10 +13726,24 @@ Destinatarios: F.araujo@drk.es, rguerra@drk.es, l.grande@drk.es
                         <p class="text-sm text-white opacity-80 mt-2">${(results.totalSavings / 12).toFixed(2).replace('.', ',')} € al mes</p>
                     </div>
                 </div>
+                ` : results.comparisonMode !== 'overall_best' && results.totalSavings <= 0 ? `
+                <div class="rounded-2xl shadow-2xl p-6 mb-6" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); border: 2px solid #0ea5e9;">
+                    <div class="text-center text-white">
+                        <h3 class="text-3xl font-bold mb-4">¡ENHORABUENA!</h3>
+                        <div class="bg-white bg-opacity-10 rounded-xl p-6 mb-4">
+                            <p class="text-xl font-bold mb-3">Actualmente estás en buenas tarifas</p>
+                            <p class="text-base opacity-90">Tanto en ELECTRICIDAD como en GAS tienes tarifas competitivas.</p>
+                        </div>
+                        <div class="bg-white bg-opacity-10 rounded-xl p-4">
+                            <p class="text-sm opacity-80">📊 Factura actual total anual:</p>
+                            <p class="text-3xl font-bold mt-2">${formatEuro(results.totalOriginalBill)}</p>
+                        </div>
+                    </div>
+                </div>
                 ` : ''}
                 
                 <!-- Tarjeta AHORRO TOTAL para Power Cup (SOLO si es modo Power Cup) -->
-                ${results.comparisonMode === 'overall_best' ? `
+                ${results.comparisonMode === 'overall_best' && results.totalSavings > 0 ? `
                 <div class="bg-gradient-to-br from-powercup-600 to-powercup-800 text-white rounded-2xl shadow-2xl p-6 border-2 border-powercup-500 mb-6">
                     <div class="flex items-center justify-between mb-4">
                         <h3 class="text-2xl font-bold">💰 Ahorro Total</h3>
@@ -13621,8 +13765,32 @@ Destinatarios: F.araujo@drk.es, rguerra@drk.es, l.grande@drk.es
                         <p class="text-sm text-powercup-100 mt-2">${(results.totalSavings / 12).toFixed(2).replace('.', ',')} € al mes</p>
                     </div>
                 </div>
+                ` : results.comparisonMode === 'overall_best' && results.totalSavings <= 0 ? `
+                <div class="bg-gradient-to-br from-powercup-600 to-powercup-800 text-white rounded-2xl shadow-2xl p-6 border-2 border-powercup-500 mb-6">
+                    <div class="text-center">
+                        <h3 class="text-3xl font-bold mb-4">¡ENHORABUENA!</h3>
+                        <div class="bg-white bg-opacity-10 rounded-xl p-6 mb-4">
+                            <p class="text-xl font-bold mb-3">Actualmente estás en buenas tarifas</p>
+                            <p class="text-base opacity-90">Tanto en ELECTRICIDAD como en GAS tienes tarifas competitivas.</p>
+                        </div>
+                        <div class="bg-white bg-opacity-10 rounded-xl p-4">
+                            <p class="text-sm opacity-80">📊 Factura actual total anual:</p>
+                            <p class="text-3xl font-bold mt-2">${formatEuro(results.totalOriginalBill)}</p>
+                        </div>
+                    </div>
+                </div>
                 ` : ''}
             `;
+            
+            // NUEVO: Mostrar/ocultar botón de solicitar mejora
+            const dualImprovementBtn = document.getElementById('dual-request-improvement-container');
+            if (dualImprovementBtn) {
+                if (results.totalSavings <= 0) {
+                    dualImprovementBtn.style.display = 'block';
+                } else {
+                    dualImprovementBtn.style.display = 'none';
+                }
+            }
         }
         
         // Función: Mostrar modal de datos del comercial y cliente
