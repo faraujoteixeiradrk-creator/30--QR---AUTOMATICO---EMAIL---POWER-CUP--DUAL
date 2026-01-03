@@ -5965,21 +5965,45 @@
                         const eb = electricitySupply.electricityBreakdown;
                         const data = electricitySupply.data;
                         
+                        // Extraer consumos de energyCosts array
+                        let consumoP1 = 0, consumoP2 = 0, consumoP3 = 0;
+                        let consumoTotal = 0;
+                        
+                        if (eb?.energyCosts && Array.isArray(eb.energyCosts)) {
+                            eb.energyCosts.forEach(item => {
+                                if (item.period === 1) consumoP1 = item.kwh || 0;
+                                else if (item.period === 2) consumoP2 = item.kwh || 0;
+                                else if (item.period === 3) consumoP3 = item.kwh || 0;
+                                consumoTotal += item.kwh || 0;
+                            });
+                        }
+                        
+                        // Extraer potencias de powerCosts array
+                        let potenciaP1 = 0, potenciaP2 = 0, potenciaP3 = 0;
+                        
+                        if (eb?.powerCosts && Array.isArray(eb.powerCosts)) {
+                            eb.powerCosts.forEach(item => {
+                                if (item.period === 1) potenciaP1 = item.kw || 0;
+                                else if (item.period === 2) potenciaP2 = item.kw || 0;
+                                else if (item.period === 3) potenciaP3 = item.kw || 0;
+                            });
+                        }
+                        
                         desgloseElectricidad = `=== ELECTRICIDAD ===
 Tarifa: ${electricitySupply.tariff || 'N/A'}
-CUPS: ${data?.cups || 'N/A'}
-Periodo: ${data?.dias_facturados || 'N/A'} días
+CUPS: ${electricitySupply.cups || data?.cups || 'N/A'}
+Periodo: ${eb?.dias || data?.dias_facturados || 'N/A'} días
 
 CONSUMOS:
-${data?.consumo_p1_kwh ? `  P1: ${data.consumo_p1_kwh} kWh` : ''}
-${data?.consumo_p2_kwh ? `  P2: ${data.consumo_p2_kwh} kWh` : ''}
-${data?.consumo_p3_kwh ? `  P3: ${data.consumo_p3_kwh} kWh` : ''}
-  TOTAL ENERGÍA: ${data?.consumo_total_kwh || 0} kWh
+${consumoP1 > 0 ? `  P1: ${consumoP1.toFixed(0)} kWh` : ''}
+${consumoP2 > 0 ? `  P2: ${consumoP2.toFixed(0)} kWh` : ''}
+${consumoP3 > 0 ? `  P3: ${consumoP3.toFixed(0)} kWh` : ''}
+  TOTAL ENERGÍA: ${consumoTotal.toFixed(0)} kWh
 
 POTENCIAS CONTRATADAS:
-${data?.potencia_p1_kw ? `  P1: ${data.potencia_p1_kw} kW` : ''}
-${data?.potencia_p2_kw ? `  P2: ${data.potencia_p2_kw} kW` : ''}
-${data?.potencia_p3_kw ? `  P3: ${data.potencia_p3_kw} kW` : ''}
+${potenciaP1 > 0 ? `  P1: ${potenciaP1} kW` : ''}
+${potenciaP2 > 0 ? `  P2: ${potenciaP2} kW` : ''}
+${potenciaP3 > 0 ? `  P3: ${potenciaP3} kW` : ''}
 
 COSTES PERIODO:
   Potencia: ${eb?.subPower?.toFixed(2) || '0.00'} €
@@ -5997,28 +6021,20 @@ COSTES ANUALES:
                     let desgloseGas = '';
                     if (gasSupply) {
                         const gData = gasSupply.data;
-                        const gResults = gasSupply.results;
-                        
-                        // Buscar el resultado DRK o el primero disponible
-                        let gasDetail = null;
-                        if (gResults?.drk) {
-                            gasDetail = gResults.drk;
-                        } else if (gResults?.powercup) {
-                            gasDetail = gResults.powercup;
-                        }
+                        const gBreakdown = gasSupply.gasBreakdown; // Usar gasBreakdown en lugar de results
                         
                         desgloseGas = `
 === GAS ===
 Tarifa: ${gasSupply.tariff || 'N/A'}
-Periodo: ${gData?.dias || 'N/A'} días
-Consumo: ${gData?.kwh || 0} kWh
+Periodo: ${gData?.dias || gBreakdown?.dias || 'N/A'} días
+Consumo: ${gData?.kwh || gBreakdown?.kwh || 0} kWh
 
 COSTES PERIODO:
-  Término fijo: ${gasDetail?.total_fijo?.toFixed(2) || 'N/A'} €
-  Energía: ${gasDetail?.total_energia?.toFixed(2) || 'N/A'} €
-  Impuesto hidrocarburos: ${gasDetail?.impuesto_hidrocarburo?.toFixed(2) || 'N/A'} €
-  IVA (21%): ${gasDetail?.iva?.toFixed(2) || 'N/A'} €
-  TOTAL PERIODO: ${gasDetail?.total?.toFixed(2) || 'N/A'} €
+  Término fijo: ${gBreakdown?.termino_fijo?.toFixed(2) || 'N/A'} €
+  Energía: ${gBreakdown?.energia?.toFixed(2) || 'N/A'} €
+  Impuesto hidrocarburos: ${gBreakdown?.impuesto_hidrocarburos?.toFixed(2) || 'N/A'} €
+  IVA (21%): ${gBreakdown?.iva?.toFixed(2) || 'N/A'} €
+  TOTAL PERIODO: ${gBreakdown?.total?.toFixed(2) || 'N/A'} €
 
 COSTES ANUALES:
   Factura actual anual: ${(gasSupply.originalBillAnnual || 0).toFixed(2)} €
