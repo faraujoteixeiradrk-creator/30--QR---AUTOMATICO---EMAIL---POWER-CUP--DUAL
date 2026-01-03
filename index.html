@@ -5959,25 +5959,94 @@
                         </div>
                     `;
                     
-                    // Generar desglose de DUAL
+                    // Generar desglose COMPLETO de DUAL
+                    let desgloseElectricidad = '';
+                    if (electricitySupply) {
+                        const eb = electricitySupply.electricityBreakdown;
+                        const data = electricitySupply.data;
+                        
+                        desgloseElectricidad = `=== ELECTRICIDAD ===
+Tarifa: ${electricitySupply.tariff || 'N/A'}
+CUPS: ${data?.cups || 'N/A'}
+Periodo: ${data?.dias_facturados || 'N/A'} días
+
+CONSUMOS:
+${data?.consumo_p1_kwh ? `  P1: ${data.consumo_p1_kwh} kWh` : ''}
+${data?.consumo_p2_kwh ? `  P2: ${data.consumo_p2_kwh} kWh` : ''}
+${data?.consumo_p3_kwh ? `  P3: ${data.consumo_p3_kwh} kWh` : ''}
+  TOTAL ENERGÍA: ${data?.consumo_total_kwh || 0} kWh
+
+POTENCIAS CONTRATADAS:
+${data?.potencia_p1_kw ? `  P1: ${data.potencia_p1_kw} kW` : ''}
+${data?.potencia_p2_kw ? `  P2: ${data.potencia_p2_kw} kW` : ''}
+${data?.potencia_p3_kw ? `  P3: ${data.potencia_p3_kw} kW` : ''}
+
+COSTES PERIODO:
+  Potencia: ${eb?.subPower?.toFixed(2) || '0.00'} €
+  Energía: ${eb?.subEnergy?.toFixed(2) || '0.00'} €
+  Impuesto eléctrico (5.113%): ${eb?.costIE?.toFixed(2) || '0.00'} €
+  IVA (21%): ${eb?.costIVA?.toFixed(2) || '0.00'} €
+  TOTAL PERIODO: ${eb?.totalPeriod?.toFixed(2) || '0.00'} €
+
+COSTES ANUALES:
+  Factura actual anual: ${(electricitySupply.originalBillAnnual || 0).toFixed(2)} €
+  Con ${brandName} pagarías: ${(electricitySupply.totalAnnual || 0).toFixed(2)} €
+  Ahorro anual: ${((electricitySupply.originalBillAnnual || 0) - (electricitySupply.totalAnnual || 0)).toFixed(2)} €`;
+                    }
+                    
+                    let desgloseGas = '';
+                    if (gasSupply) {
+                        const gData = gasSupply.data;
+                        const gResults = gasSupply.results;
+                        
+                        // Buscar el resultado DRK o el primero disponible
+                        let gasDetail = null;
+                        if (gResults?.drk) {
+                            gasDetail = gResults.drk;
+                        } else if (gResults?.powercup) {
+                            gasDetail = gResults.powercup;
+                        }
+                        
+                        desgloseGas = `
+=== GAS ===
+Tarifa: ${gasSupply.tariff || 'N/A'}
+Periodo: ${gData?.dias || 'N/A'} días
+Consumo: ${gData?.kwh || 0} kWh
+
+COSTES PERIODO:
+  Término fijo: ${gasDetail?.total_fijo?.toFixed(2) || 'N/A'} €
+  Energía: ${gasDetail?.total_energia?.toFixed(2) || 'N/A'} €
+  Impuesto hidrocarburos: ${gasDetail?.impuesto_hidrocarburo?.toFixed(2) || 'N/A'} €
+  IVA (21%): ${gasDetail?.iva?.toFixed(2) || 'N/A'} €
+  TOTAL PERIODO: ${gasDetail?.total?.toFixed(2) || 'N/A'} €
+
+COSTES ANUALES:
+  Factura actual anual: ${(gasSupply.originalBillAnnual || 0).toFixed(2)} €
+  Con ${brandName} pagarías: ${(gasSupply.totalAnnual || 0).toFixed(2)} €
+  Ahorro anual: ${((gasSupply.originalBillAnnual || 0) - (gasSupply.totalAnnual || 0)).toFixed(2)} €`;
+                    }
+                    
                     desglose = `TIPO DE SUMINISTRO: DUAL (ELECTRICIDAD + GAS)
 MODO: ${brandName}
 
-=== ELECTRICIDAD ===
-Tarifa: ${electricitySupply?.tariff || 'N/A'}
-Consumo: ${electricitySupply?.data ? (electricitySupply.data.consumo_total_kwh || '0') : '0'} kWh
-Coste actual anual: ${(electricitySupply?.originalBillAnnual || 0).toFixed(2)} €
+${desgloseElectricidad}
+${desgloseGas}
 
-=== GAS ===
-Tarifa: ${gasSupply?.tariff || 'N/A'}
-Consumo: ${gasSupply?.data ? (gasSupply.data.kwh || '0') : '0'} kWh
-Coste actual anual: ${(gasSupply?.originalBillAnnual || 0).toFixed(2)} €
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+=== RESUMEN CONSOLIDADO ===
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-=== TOTAL CONSOLIDADO ===
-Coste total anual actual: ${(dualResults.totalOriginalBill || 0).toFixed(2)} €
-Ahorro detectado: ${(dualResults.totalSavings || 0).toFixed(2)} € (CERO o NEGATIVO - Cliente ya tiene buenas tarifas)
+Factura actual total anual: ${(dualResults.totalOriginalBill || 0).toFixed(2)} €
+Con ${brandName} pagarías: ${(isDrk ? dualResults.totalDRK : dualResults.totalPowerCup).toFixed(2)} €
+Ahorro total anual: ${(dualResults.totalSavings || 0).toFixed(2)} €
 
-El cliente está actualmente en tarifas competitivas tanto en electricidad como en gas.`;
+${(dualResults.totalSavings || 0) <= 0 ? 'IMPORTANTE: El cliente ya está en buenas tarifas tanto en electricidad como en gas.' : ''}
+
+Desglose mensual estimado:
+  Factura actual: ${(dualResults.totalOriginalBill / 12).toFixed(2)} €/mes
+  Con ${brandName}: ${((isDrk ? dualResults.totalDRK : dualResults.totalPowerCup) / 12).toFixed(2)} €/mes
+  Ahorro mensual: ${(dualResults.totalSavings / 12).toFixed(2)} €/mes
+`;
                 
                 // CASO 2: Datos de GAS (solo si NO es DUAL)
                 } else if (hasGasData && !hasDualData) {
